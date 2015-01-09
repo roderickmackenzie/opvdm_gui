@@ -1,30 +1,12 @@
-#    Organic Photovoltaic Device Model - a drift diffusion base/Shockley-Read-Hall
-#    model for organic solar cells. 
-#    Copyright (C) 2012 Roderick C. I. MacKenzie
-#
-#	roderick.mackenzie@nottingham.ac.uk
-#	www.opvdm.com
-#	Room B86 Coates, University Park, Nottingham, NG7 2RD, UK
-#
-#    This program is free software; you can redistribute it and/or modify
-#    it under the terms of the GNU General Public License as published by
-#    the Free Software Foundation; either version 2 of the License, or
-#    (at your option) any later version.
-#
-#    This program is distributed in the hope that it will be useful,
-#    but WITHOUT ANY WARRANTY; without even the implied warranty of
-#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#    GNU General Public License for more details.
-#
-#    You should have received a copy of the GNU General Public License along
-#    with this program; if not, write to the Free Software Foundation, Inc.,
-#    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 import pygtk
 pygtk.require('2.0')
 import gtk
 import sys
 import os
 import shutil
+from inp import inp_isfile
+from inp import inp_load_file
+from inp import inp_write_lines_to_file
 from numpy import *
 from matplotlib.figure import Figure
 from numpy import arange, sin, pi
@@ -54,14 +36,19 @@ import gobject
 articles = []
 HOMO_articles = []
 
-class tab_bands(gtk.Table):
+class tab_bands(gtk.HBox):
 	lines=[]
 	edit_list=[]
 
 	line_number=[]
 	save_file_name=""
-	enabled=os.path.exists("lumo0.inp")
 
+	file_name=""
+	name=""
+	visible=1
+
+	def update(self):
+		self.enabled=inp_isfile("./lumo0.inp")
 
 	def __create_model(self):
 
@@ -228,7 +215,7 @@ class tab_bands(gtk.Table):
 		)
 
 	def on_add_HOMO_clicked(self, button, model):
-		new_item = ["0e-9","0" ,True]
+		new_item = ["exp","0" ,"A","B","C",True]
 		HOMO_articles.append(new_item)
 
 		iter = model.append()
@@ -242,27 +229,45 @@ class tab_bands(gtk.Table):
 		)
 	def save_model(self, ):
 		print "Saved"
-		a = open("lumo0.inp", "w")
+		lines=[]
+		function=0
 		for item in self.LUMO_model:
-			a.write(item[LUMO_FUNCTION]+"\n")
-			a.write(item[LUMO_ENABLE]+"\n")
-			a.write(item[LUMO_A]+"\n")
-			a.write(item[LUMO_B]+"\n")
-			a.write(item[LUMO_C]+"\n")
-		a.write("#end\n")
-		a.close()
+			lines.append("#function_"+item[HOMO_FUNCTION]+str(function))
+			lines.append(item[LUMO_FUNCTION])
+			lines.append("#function_"+item[HOMO_FUNCTION]+str(function)+"_enable")
+			lines.append(item[LUMO_ENABLE])
+			lines.append("#function_"+item[HOMO_FUNCTION]+str(function)+"_a")
+			lines.append(item[LUMO_A])
+			lines.append("#function_"+item[HOMO_FUNCTION]+str(function)+"_b")
+			lines.append(item[LUMO_B])
+			lines.append("#function_"+item[HOMO_FUNCTION]+str(function)+"_c")
+			lines.append(item[LUMO_C])
+			function=function+1
+		lines.append("#ver")
+		lines.append("#1.0")
+		lines.append("#end")
+		inp_write_lines_to_file("./lumo0.inp",lines)
 
-		a = open("homo0.inp", "w")
+		lines=[]
+		function=0
 		for item in self.HOMO_model:
-			a.write(item[HOMO_FUNCTION]+"\n")
-			a.write(item[HOMO_ENABLE]+"\n")
-			a.write(item[HOMO_A]+"\n")
-			a.write(item[HOMO_B]+"\n")
-			a.write(item[HOMO_C]+"\n")			
-		a.write("#end\n")			
-		a.close()
+			lines.append("#function_"+item[HOMO_FUNCTION]+str(function))
+			lines.append(item[HOMO_FUNCTION])
+			lines.append("#function_"+item[HOMO_FUNCTION]+str(function)+"_enable")
+			lines.append(item[HOMO_ENABLE])
+			lines.append("#function_"+item[HOMO_FUNCTION]+str(function)+"_a")
+			lines.append(item[HOMO_A])
+			lines.append("#function_"+item[HOMO_FUNCTION]+str(function)+"_b")
+			lines.append(item[HOMO_B])
+			lines.append("#function_"+item[HOMO_FUNCTION]+str(function)+"_c")
+			lines.append(item[HOMO_C])
+			function=function+1
+		lines.append("#ver")
+		lines.append("#1.0")		
+		lines.append("#end")			
+		inp_write_lines_to_file("./homo0.inp",lines)
 
-	def on_remove_item_clicked(self, button, treeview):
+	def on_remove_item_from_lumo_clicked(self, button, treeview):
 
 		selection = treeview.get_selection()
 		model, iter = selection.get_selected()
@@ -272,6 +277,20 @@ class tab_bands(gtk.Table):
 			model.remove(iter)
 
 			del articles[ path ]
+
+		self.save_model()
+		self.update_graph()
+
+	def on_remove_item_from_homo_clicked(self, button, treeview):
+
+		selection = treeview.get_selection()
+		model, iter = selection.get_selected()
+
+		if iter:
+			path = model.get_path(iter)[0]
+			model.remove(iter)
+
+			del HOMO_articles[ path ]
 
 		self.save_model()
 		self.update_graph()
@@ -321,33 +340,34 @@ class tab_bands(gtk.Table):
 		column = cell.get_data("column")
 
 		if column == HOMO_FUNCTION:
-			articles[path][HOMO_FUNCTION] = new_text
+			HOMO_articles[path][HOMO_FUNCTION] = new_text
 
-			model.set(iter, column, articles[path][HOMO_FUNCTION])
+			model.set(iter, column, HOMO_articles[path][HOMO_FUNCTION])
 
 		if column == HOMO_ENABLE:
 			#old_text = model.get_value(iter, column)
-			articles[path][HOMO_ENABLE] = new_text
+			HOMO_articles[path][HOMO_ENABLE] = new_text
 			print new_text
-			model.set(iter, column, articles[path][HOMO_ENABLE])
+			model.set(iter, column, HOMO_articles[path][HOMO_ENABLE])
 
 		if column == HOMO_A:
 			#old_text = model.get_value(iter, column)
-			articles[path][HOMO_A] = new_text
+			print path
+			HOMO_articles[path][HOMO_A] = new_text
 			print new_text
-			model.set(iter, column, articles[path][HOMO_A])
+			model.set(iter, column, HOMO_articles[path][HOMO_A])
 
 		if column == HOMO_B:
 			#old_text = model.get_value(iter, column)
-			articles[path][HOMO_B] = new_text
+			HOMO_articles[path][HOMO_B] = new_text
 			print new_text
-			model.set(iter, column, articles[path][HOMO_B])
+			model.set(iter, column, HOMO_articles[path][HOMO_B])
 
 		if column == HOMO_C:
 			#old_text = model.get_value(iter, column)
-			articles[path][HOMO_C] = new_text
+			HOMO_articles[path][HOMO_C] = new_text
 			print new_text
-			model.set(iter, column, articles[path][HOMO_C])
+			model.set(iter, column, HOMO_articles[path][HOMO_C])
 
 		self.save_model()
 		self.update_graph()
@@ -356,11 +376,8 @@ class tab_bands(gtk.Table):
 		#cmd = './go.o --onlypos'
 		#ret= os.system(cmd)
 		self.LUMO_fig.clf()
-		self.HOMO_fig.clf()
 		self.draw_graph_lumo()
-		self.draw_graph_homo()
 		self.LUMO_fig.canvas.draw()
-		self.HOMO_fig.canvas.draw()
 
 	def draw_graph_lumo(self):
 
@@ -370,104 +387,124 @@ class tab_bands(gtk.Table):
 
 		ax1 = self.LUMO_fig.add_subplot(111)
 
-		ax1.set_ylabel('DoS (m^(-3) eV^(-1))')
-		ax1.set_xlabel('LUMO - Energy (eV)')
+		ax1.set_ylabel('$DoS (m^{-3} eV^{-1})$')
+		ax1.set_xlabel('Energy (eV)')
 
 		#ax2 = ax1.twinx()
 		x_pos=0.0
 		layer=0
 		color =['r','g','b','y','o','r','g','b','y','o']
 		ax1.set_yscale('log')
-		ax1.set_ylim(ymin=1e12,ymax=1e28)
+		ax1.set_ylim(ymin=1e17,ymax=1e28)
 		pos=0
-		x = linspace(0, -1, num=20)
+		Eg=2.0
+		ax1.set_xlim([0,-Eg])
+		x = linspace(0, -Eg, num=40)
 		for item in self.LUMO_model:
 			if item[LUMO_FUNCTION]=="exp":
 				y = float(item[LUMO_A])*exp(x/float(item[LUMO_B]))
 
-				line, = ax1.plot(x,y , '--', linewidth=2)
+				line, = ax1.plot(x,y , '-', linewidth=3)
 			if item[LUMO_FUNCTION]=="gaus":
 	
 				y = float(item[LUMO_A])*exp(-pow(((float(item[LUMO_B])+x)/(sqrt(2.0)*float(item[LUMO_C])*1.0)),2.0))
 
-				line, = ax1.plot(x,y , color[pos], linewidth=2)
+				line, = ax1.plot(x,y , color[pos], linewidth=3)
 				pos=pos+1
 
-
-	def draw_graph_homo(self):
-
-		print "Drawing graph"
-
-		n=0
-		ax1 = self.HOMO_fig.add_subplot(111)
-		
-		ax1.set_ylabel('DoS (m^(-3) eV^(-1))')
-		ax1.set_xlabel('HOMO - Energy (eV)')
-		#ax2 = ax1.twinx()
-		x_pos=0.0
-		layer=0
-		color =['r','g','b','y','o','r','g','b','y','o']
-		ax1.set_yscale('log')
-		ax1.set_ylim(ymin=1e12,ymax=1e28)
-		ax1.set_xlim([0,-1])
-
 		pos=0
-		x = linspace(0, -1, num=10)
+
+		x_homo = linspace(-Eg, 0, num=40)
 		for item in self.HOMO_model:
 			if item[HOMO_FUNCTION]=="exp":
 
 				y = float(item[HOMO_A])*exp(x/float(item[HOMO_B]))
 
-				line, = ax1.plot(x,y , '--', linewidth=2)
+				line, = ax1.plot(x_homo,y , '-', linewidth=3)
 			if item[LUMO_FUNCTION]=="gaus":
 				y = float(item[HOMO_A])*exp(-pow(((float(item[HOMO_B])+x)/(sqrt(2.0)*float(item[HOMO_C])*1.0)),2.0))
 
-				line, = ax1.plot(x,y , color[pos], linewidth=2)
+				line, = ax1.plot(x_homo,y , color[pos], linewidth=3)
 				pos=pos+1
 
+	def save_image(self,file_name):
+		data=os.path.splitext(file_name)[0]
+		lumo=data+'_bands.jpg'
+		self.canvas_lumo.figure.savefig(lumo)
 
-	def delete_event(self, widget, event, data=None):
-		gtk.main_quit()
-		return False
+
+
+	def callback_save(self, widget, data=None):
+		dialog = gtk.FileChooserDialog("Save as..",
+                               None,
+                               gtk.FILE_CHOOSER_ACTION_SAVE,
+                               (gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL,
+                                gtk.STOCK_SAVE, gtk.RESPONSE_OK))
+		dialog.set_default_response(gtk.RESPONSE_OK)
+
+		filter = gtk.FileFilter()
+		filter.set_name(".jpg")
+		filter.add_pattern("*.jpg")
+		dialog.add_filter(filter)
+
+		response = dialog.run()
+		if response == gtk.RESPONSE_OK:
+			file_name=dialog.get_filename()
+
+			print os.path.splitext(file_name)[1]
+			if os.path.splitext(file_name)[1]:
+				self.save_image(file_name)
+			else:
+				filter=dialog.get_filter()
+				self.save_image(file_name+filter.get_name())
+			
+		elif response == gtk.RESPONSE_CANCEL:
+		    print 'Closed, no files selected'
+		dialog.destroy()
+
+
 
 	def wow(self):
 		self.edit_list=[]
 		self.line_number=[]
+		self.lines=[]
 		self.save_file_name="lumo0.inp"
 		print "loading ",self.save_file_name
-		f = open(self.save_file_name)
-		self.lines = f.readlines()
-		f.close()
-		pos=0
-		for i in range(0, len(self.lines)):
-			self.lines[i]=self.lines[i].rstrip()
+		inp_load_file(self.lines,"./lumo0.inp")
 
 		n=0
-		gui_pos=0
 		pos=0
 
 		while True:
-			function=self.lines[pos]	#read label
-			pos=pos+1
-			print "My function",function
-			if function=="#end":
+			if self.lines[pos]=="#end":
 				print "Exiting"
 				break
+			if self.lines[pos]=="#ver":
+				print "Exiting"
+				break
+			pos=pos+1	#skip hash tag
+
+			function=self.lines[pos]	#read label
+			pos=pos+1
 
 
-			enabled=self.lines[pos] 	#read thicknes
+			pos=pos+1	#skip hash tag
+			enabled=self.lines[pos] 	#read value
 			pos=pos+1
 			#print "enabled=",enabled
 			
-			a=self.lines[pos] 	#read thicknes
+			pos=pos+1	#skip hash tag
+			a=self.lines[pos] 	#read value
 			pos=pos+1
 			#print "a=",a
 
-			b=self.lines[pos] 	#read thicknes
+			pos=pos+1	#skip hash tag
+			b=self.lines[pos] 	#read value
 			pos=pos+1
 			#print "b=",b
 
-			c=self.lines[pos] 	#read thicknes
+			pos=pos+1	#skip hash tag
+			c=self.lines[pos] 	#read value
 			pos=pos+1
 			#print "c=",c
 
@@ -476,72 +513,81 @@ class tab_bands(gtk.Table):
 
 		self.save_file_name="homo0.inp"
 		print "loading ",self.save_file_name
-		f = open(self.save_file_name)
-		self.lines = f.readlines()
-		f.close()
-		pos=0
-		for i in range(0, len(self.lines)):
-			self.lines[i]=self.lines[i].rstrip()
-
+		inp_load_file(self.lines,"./homo0.inp")
 		n=0
-		gui_pos=0
 		pos=0
 
 		while True:
-			function=self.lines[pos]	#read label
-			pos=pos+1
-			print "My function",function
-			if function=="#end":
+			if self.lines[pos]=="#end":
 				print "Exiting"
 				break
+			if self.lines[pos]=="#ver":
+				print "Exiting"
+				break
+			pos=pos+1	#skip hash tag
 
 
-			enabled=self.lines[pos] 	#read thicknes
+			function=self.lines[pos]	#read label
+			pos=pos+1
+
+
+			pos=pos+1	#skip hash tag
+			enabled=self.lines[pos] 	#read value
 			pos=pos+1
 			#print "enabled=",enabled
 			
-			a=self.lines[pos] 	#read thicknes
+			pos=pos+1	#skip hash tag
+			a=self.lines[pos] 	#read value
 			pos=pos+1
 			#print "a=",a
 
-			b=self.lines[pos] 	#read thicknes
+			pos=pos+1	#skip hash tag
+			b=self.lines[pos] 	#read  value
 			pos=pos+1
 			#print "b=",b
 
-			c=self.lines[pos] 	#read thicknes
+			pos=pos+1	#skip hash tag
+			c=self.lines[pos] 	#read  value
 			pos=pos+1
 			#print "c=",c
 
 			HOMO_articles.append([ str(function), str(enabled), str(a), str(b), str(c), True ])
 
 
-		gui_pos=gui_pos+1
+		tooltips = gtk.Tooltips()
+
+		toolbar = gtk.Toolbar()
+		toolbar.set_orientation(gtk.ORIENTATION_VERTICAL)
+		toolbar.set_style(gtk.TOOLBAR_ICONS)
+		toolbar.set_size_request(50, -1)
+
+		save = gtk.ToolButton(gtk.STOCK_SAVE)
+		tooltips.set_tip(save, "Save image")
+		pos=0
+		toolbar.insert(save, pos)
+		save.connect("clicked", self.callback_save)
+		toolbar.show_all()
+		self.pack_start(toolbar, False, True, 0)
+
+
  		vbox = gtk.VBox(False, 2)
 		self.LUMO_model = self.__create_model()
-		self.LUMO_fig = Figure(figsize=(5,4), dpi=100)
-		self.draw_graph_lumo()
-		canvas = FigureCanvas(self.LUMO_fig)  # a gtk.DrawingArea
-		canvas.figure.patch.set_facecolor('white')
-		#canvas.set_size_request(125, -1)
-		canvas.show()
-		vbox.pack_start(canvas, True, True, 10)
-		
-
-
 		self.HOMO_model = self.__create_model_mesh()
-		self.HOMO_fig = Figure(figsize=(5,4), dpi=100)
-		self.draw_graph_homo()
-		canvas = FigureCanvas(self.HOMO_fig)
-		canvas.figure.patch.set_facecolor('white')
-		#canvas.set_size_request(125, -1)
-		canvas.show()
-		vbox.pack_start(canvas, True, True, 10)
-		self.attach(vbox, 0, 3, 0, 2)
+		self.LUMO_fig = Figure(figsize=(5,4), dpi=100)
+
+
+		self.draw_graph_lumo()
+		self.canvas_lumo = FigureCanvas(self.LUMO_fig)  # a gtk.DrawingArea
+		self.canvas_lumo.figure.patch.set_facecolor('white')
+		self.canvas_lumo.show()
+		vbox.pack_start(self.canvas_lumo, True, True, 1)
+		
+		self.pack_start(vbox, True, True, 0)
+		#self.attach(vbox, 0, 3, 0, 2)
 		vbox.show()
 		#Layer editor
 
-		self.LUMO_fig.tight_layout(pad=2.5)
-		self.HOMO_fig.tight_layout(pad=2.5)
+		self.LUMO_fig.tight_layout(pad=0.5)
 
 	        vbox = gtk.VBox(False, 2)
 		
@@ -562,7 +608,7 @@ class tab_bands(gtk.Table):
 		add_button.show()
 
 		delete_button = gtk.Button("Delete",gtk.STOCK_DELETE)
-		delete_button.connect("clicked", self.on_remove_item_clicked, treeview)
+		delete_button.connect("clicked", self.on_remove_item_from_lumo_clicked, treeview)
 		delete_button.show()
 
 	        hbox = gtk.HBox(False, 2)
@@ -599,13 +645,12 @@ class tab_bands(gtk.Table):
 		vbox_mesh.pack_start(treeview, False, False, 0)
 		treeview.show()
 
-		gui_pos=3
 		add_button = gtk.Button("Add",gtk.STOCK_ADD)
 		add_button.connect("clicked", self.on_add_HOMO_clicked, self.HOMO_model)
 		add_button.show()
 
 		delete_button = gtk.Button("Delete",gtk.STOCK_DELETE)
-		delete_button.connect("clicked", self.on_remove_item_clicked, treeview)
+		delete_button.connect("clicked", self.on_remove_item_from_homo_clicked, treeview)
 		delete_button.show()
 
 	        hbox = gtk.HBox(False, 2)
@@ -618,7 +663,8 @@ class tab_bands(gtk.Table):
 		frame.show()
 		vbox_mesh.show()
 		hbox.show()
-		self.attach(vbox, 3, 4, 0, 1,gtk.SHRINK ,gtk.SHRINK)
+		self.pack_start(vbox, False, False, 0)
+		#self.attach(vbox, 3, 4, 0, 1,gtk.SHRINK ,gtk.SHRINK)
 		vbox.show()
 
 

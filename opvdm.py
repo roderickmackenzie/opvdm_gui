@@ -1,32 +1,12 @@
 #!/usr/bin/env python
-#    Organic Photovoltaic Device Model - a drift diffusion base/Shockley-Read-Hall
-#    model for organic solar cells. 
-#    Copyright (C) 2012 Roderick C. I. MacKenzie
-#
-#	roderick.mackenzie@nottingham.ac.uk
-#	www.opvdm.com
-#	Room B86 Coates, University Park, Nottingham, NG7 2RD, UK
-#
-#    This program is free software; you can redistribute it and/or modify
-#    it under the terms of the GNU General Public License as published by
-#    the Free Software Foundation; either version 2 of the License, or
-#    (at your option) any later version.
-#
-#    This program is distributed in the hope that it will be useful,
-#    but WITHOUT ANY WARRANTY; without even the implied warranty of
-#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#    GNU General Public License for more details.
-#
-#    You should have received a copy of the GNU General Public License along
-#    with this program; if not, write to the Free Software Foundation, Inc.,
-#    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 import sys
+import pdb
 import pygtk
-inp_dir='/usr/share/opvdm/'
 gui_dir='/usr/share/opvdm/gui/'
+lib_dir='/usr/lib64/opvdm/'
 sys.path.append('./gui/')
-sys.path.append(gui_dir)
+sys.path.append(lib_dir)
 pygtk.require('2.0')
 import gtk
 
@@ -34,190 +14,611 @@ import os
 import shutil
 from scan import scan_class
 from tab import tab_class
-from search import find_fit_log
-from tab_optical import tab_optical
+from search import find_fit_error
+from optics import class_optical
 import signal
 import subprocess
-from util import replace
-from util import get_token_value
-from tab_emesh import tab_electrical_mesh
+from inp import inp_update_token_value
+from inp import inp_get_token_value
+from inp import inp_isfile
+from util import set_exe_command
+from util import get_orig_inp_file_path
+from util import opvdm_clone
+from export_as import export_as
+from emesh import tab_electrical_mesh
 from welcome import welcome_class
+from copying import copying
+from hpc import hpc_class
 from tab_homo import tab_bands
 from tempfile import mkstemp
+from plot_gen import plot_gen
+from plot_gen import set_plot_auto_close
+from import_archive import import_archive
+from about import about_dialog_show
+from util import find_data_file
+from notice import notice
+import os, fnmatch
+import pyinotify
+import pynotify
+import threading
+import time
+import gobject
+import numpy
+import matplotlib
+import matplotlib.pyplot as plt
+from used_files_menu import used_files_menu
+from tab_dump_time import tab_dump_time
+from tab_terminal import tab_terminal
+from plot import load_graph
+from scan_item import scan_item_add
+from cmp_class import cmp_class
+from plot_command import plot_command_class
+import logging
+import time
+from Queue import *
+from util import check_is_config_file
+from window_list import windows
+from config import config
+import random
+from plot import plot_data
+from import_archive import delete_scan_dirs
+from undo import undo_list_class
+from command_args import command_args
+from splash import splash_window
+from ver import ver
+
 
 if os.geteuid() == 0:
 	exit("Don't run me as root!!")
 
-check_list=[]
-rod=[]
 
-def find_data_file(name):
-	local_file="./"+name
-	if os.path.isfile(local_file)==True:
-		ret=local_file
-	else:
-		ret=inp_dir+"/"+name
-	return ret
+if os.path.exists('/tmp/opvdm.log'):
+	os.remove('/tmp/opvdm.log')
+
+
+
+#def trace(frame, event, arg):
+#    print "%s, %s:%d" % (event, frame.f_code.co_filename, frame.f_lineno)
+#    return trace
+
+#sys.settrace(trace)
+
+logging.basicConfig(filename='/tmp/opvdm.log', level=logging.INFO)
+
+logging.info(time.strftime("%c"))
+
+print notice()
+
+gobject.threads_init()
+
 	
-exe_name='not set'
-exe_command='not set'
 notebook = gtk.Notebook()
 
-def set_exe_command():
-	global exe_command
-	global exe_name
-
-	if os.path.isfile("./go.o")==True:
-		exe_command="./go.o"
-		exe_name="go.o"
-	else:
-		exe_command="opvdm_core"
-		exe_name="opvdm_core"
-
-def notebook_load_pages():
-
-	if os.path.exists("device.inp")==True:
-		hello=tab_electrical_mesh()
-		hello.wow()
-		hello.show()
-		notebook.append_page(hello, gtk.Label("Electrical Mesh"))
-
-		hello=tab_optical()
-		if hello.enabled==True:
-			hello.wow()
-			hello.show()
-			notebook.append_page(hello, gtk.Label("Optics Epitaxy"))
-
-		hello=tab_bands()
-		if hello.enabled==True:
-			hello.wow()
-			hello.show()
-			notebook.append_page(hello, gtk.Label("Bands"))
-
-		f = open("./device_epitaxy.inp")
-		lines = f.readlines()
-		f.close()
-		pos=0
-		for i in range(0, len(lines)):
-			lines[i]=lines[i].rstrip()
-
-		for i in range(0, int(lines[1])):
-			dos_file='dos'+str(i)+'.inp'
-			dos_name='DoS layer '+str(i)
-			if os.path.exists(dos_file)==True:
-				rod.append(tab_class(8, 2, True))
-				rod[pos].wow(dos_file,dos_name,check_list)
-
-				rod[pos].show()
-
-				notebook.append_page(rod[pos], gtk.Label(dos_name))
-				pos=pos+1
-
-		names = ["Device","JV Curve","Light","Output","CELIV","Numerics","Optics", "ToF"]
-		files = ["device.inp","jv.inp","light.inp","dump.inp","celiv.inp","math.inp","optics.inp","tof.inp"]
-
-	
-		for i in range(0, len(names)):
-			bufferf = "Append Frame %d" % (i+1)
-			bufferl = "Page %d" % (i+1)
-			if os.path.exists(files[i])==True:
-				rod.append(tab_class(8, 2, True))
-				rod[pos].wow(files[i],names[i],check_list)
-
-				rod[pos].show()
-
-
-				notebook.append_page(rod[pos], gtk.Label(names[i]))
-				pos=pos+1
-	else:
-		hello=welcome_class()
-		hello.wow(find_data_file("gui/image.jpg"))
-		hello.show()
-		notebook.append_page(hello, gtk.Label("Welcome"))
-
-
+def process_events():
+	while gtk.events_pending():
+		gtk.main_iteration(False)
 
 def set_active_name(combobox, name):
+    logging.info('set_active_name'+name)
     liststore = combobox.get_model()
     for i in xrange(len(liststore)):
         if liststore[i][0] == name:
             combobox.set_active(i)
 
+global thread_data
+
+class _IdleObject(gobject.GObject):
+	"""
+	Override gobject.GObject to always emit signals in the main thread
+	by emmitting on an idle handler
+	"""
+	def __init__(self):
+		gobject.GObject.__init__(self)
+	 
+	def emit(self, *args):
+		gobject.idle_add(gobject.GObject.emit,self,*args)
+
+class _FooThread(threading.Thread, _IdleObject):
+	__gsignals__ = {
+		"file_changed": (
+		gobject.SIGNAL_RUN_LAST, gobject.TYPE_NONE, [])
+		}
+	 
+	def __init__(self, *args):
+		threading.Thread.__init__(self)
+		_IdleObject.__init__(self)
+ 
+	def onChange(self,ev):
+		file_name=os.path.basename(ev.pathname)
+		file_name=file_name.rstrip()
+		global thread_data
+		thread_data.put(file_name)
+		self.emit("file_changed")
+
+	def run(self):
+		wm = pyinotify.WatchManager()
+		wm.add_watch('./', pyinotify.IN_CLOSE_WRITE, self.onChange,False,False)
+		self.notifier = pyinotify.Notifier(wm)
+		self.notifier.loop()
+
+	def stop(self):
+		self.notifier.stop()
+
 class NotebookExample:
 
+	icon_theme = gtk.icon_theme_get_default()
+	plot_after_run=False
+	plot_after_run_file=""
+	electrical_mesh=None
+	scan_window=None
+	cluster_window=None
+	exe_command , exe_name  =  set_exe_command()
+	#print exe_command
 
-	def callback_plot_doping(self, widget, data=None):
-		self.load_graph(0,"x_Nad.plot")
+	def check_model_error(self):
+			logging.info('check_model_error')
+			print "Thread ID=",threading.currentThread()
+			f = open("error.dat")
+			lines = f.readlines()
+			f.close()
+			read_lines=lines[0].strip()
+			read_lines_split=read_lines.split()
+			if (read_lines_split.count('License')==0):
+				message = gtk.MessageDialog(type=gtk.MESSAGE_ERROR, buttons=gtk.BUTTONS_OK)
+				message.set_markup(lines[0].strip())
+				message.run()
+				message.destroy()
+			else:
+				c=copying()
+				c.wow(self.exe_command)
+
+	def gui_sim_start(self):
+		self.notebook_active_page=notebook.get_current_page()
+
+		for i in range(0,len(notebook.get_children())):
+    			if notebook.get_nth_page(i).name=="Terminal":
+				if notebook.get_nth_page(i).visible==1:
+					notebook.set_current_page(i)
+					break
+
+		self.spin.start()
+		self.statusicon.set_from_stock(gtk.STOCK_NO) 
+
+	def gui_sim_stop(self,text):
+		self.progress.hide()
+
+		message=""
+		notebook.set_current_page(self.notebook_active_page)
+		self.spin.stop()
+		self.statusicon.set_from_stock(gtk.STOCK_YES)
+		if os.path.isfile("signal_stop.dat")==True:
+			f = open('signal_stop.dat')
+			lines = f.readlines()
+			f.close()
+			message=lines[0].rstrip()
+
+		if text!="":
+			message=text
+
+		if message!="":
+			pynotify.init ("opvdm")
+			Hello=pynotify.Notification ("opvdm:",message,find_data_file("gui/application-opvdm.svg"))
+			print find_data_file("gui/icon.png")
+			Hello.set_timeout(2000)
+			Hello.show ()
+
+
+
+	def user_callback(self,object):
+		logging.info('user_callback')
+		global thread_data
+		file_name=thread_data.get()
+		if (file_name=="signal_start.dat"):
+			self.gui_sim_start()
+
+		if (file_name=="signal_stop.dat"):
+			#print "stopping!\n"
+			self.gui_sim_stop("")
+			if self.plot_after_run==True:
+				if self.plot_after_run_file!="":
+					plot_gen([self.plot_after_run_file,"old.dat"],[],None)
+
+		if (file_name=="signal_plot.dat"):
+			#print "stopping!\n"
+			self.gui_sim_plot()
+
+		if (file_name=="error.dat"):
+			print "GUI found error"
+			self.check_model_error()
+
+		thread_data.task_done()
+
+	def make_menu(self,event_button, event_time, data=None):
+		menu = gtk.Menu()
+		#open_item = gtk.MenuItem("Open App")
+		close_item = gtk.MenuItem("Quit")
+		#Append the menu items
+		#menu.append(open_item)
+		menu.append(close_item)
+		#add callbacks
+		#open_item.connect_object("activate", open_app, "Open App")
+		close_item.connect_object("activate", self.callback_close_window, "Quit")
+		#Show the menu items
+		#open_item.show()
+		close_item.show()
+		#Popup the menu
+		menu.popup(None, None, None, event_button, event_time)
+
+	def on_status_icon_right_click(self,data, event_button, event_time):
+		self.make_menu(event_button, event_time)
+
+	def notebook_load_pages(self):
+		global thread_data
+		thread_data = Queue(maxsize=0)
+		
+		logging.info('notebook_load_pages')
+		self.progress.show()
+		self.finished_loading=False
+		self.rod=[]
+		self.number_of_tabs=0
+
+		self.optics_window=class_optical()
+		self.optics_window.init()
+		if self.optics_window.enabled==True:
+			self.optics_window.wow(self.exe_command)
+			self.optics_window.hide()
+
+		if os.path.exists("sim.opvdm")==True:
+			self.play.set_sensitive(True)
+			self.stop.set_sensitive(True)
+			self.mesh.set_sensitive(True)
+			self.examine.set_sensitive(True)
+			self.param_scan.set_sensitive(True)
+			self.optics_button.set_sensitive(True)
+			self.plot_select.set_sensitive(True)
+
+			f = open("./device_epitaxy.inp")
+			lines = f.readlines()
+			f.close()
+			pos=0
+			for i in range(0, len(lines)):
+				lines[i]=lines[i].rstrip()
+
+			dos_files=int(lines[1])
+
+			visible = []
+			names = []
+			files = []
+
+			try:
+				f = open("./gui_config.inp")
+				lines = f.readlines()
+				f.close()
+
+				for i in range(0, len(lines)):
+					lines[i]=lines[i].rstrip()
+
+				i=0
+				while i<len(lines) :
+					visible.append(lines[i])
+					i=i+1
+
+					files.append(lines[i])
+
+					i=i+1
+					names.append(lines[i])
+					i=i+1
+			except:
+				print "No gui_config.inp file found\n"
+
+
+			internal_names = ["Device","JV Curve","JV simple","Light","Output","CELIV","Numerics","Optics", "ToF", "stark", "Bands", "Dump Time", "Pulse","Pulse voc", "photokit","Exp. Optical Model","Terminal","Sun voc","TPC"]
+			internal_files = ["device.inp","jv.inp","jv_simple.inp","light.inp","dump.inp","celiv.inp","math.inp","optics.inp","tof.inp","stark.inp","lumo0.inp","dump_time.inp","server.inp","pulse_voc.inp","photokit.inp","light_exp.inp","terminal.inp","sun_voc.inp","tpc.inp"]
+
+			i=0
+			while i<len(internal_names) :
+				if (files.count(internal_files[i])==0):
+					visible.append("1")
+					files.append(internal_files[i])
+					names.append(internal_names[i])
+				i=i+1
+
+			for i in range(0, dos_files):
+				dos_file='dos'+str(i)+'.inp'
+				if files.count(dos_file) == 0:
+					visible.append("1")
+					files.append(dos_file)
+					names.append('DoS layer '+str(i))
+
+			for i in range(0, len(names)):
+				self.progress.set_fraction(float(i)/float(len(names)))
+				process_events()
+				cur_file=files[i]
+				cur_name=names[i]
+				cur_visible=int(visible[i])
+				add_to_menu=False
+
+				print cur_file,cur_name
+
+				if cur_file=="dump_time.inp":
+					hello=tab_dump_time()
+					add_to_menu=True
+					self.rod.append(hello)
+					self.rod[self.number_of_tabs].visible=cur_visible
+					self.rod[self.number_of_tabs].wow(os.getcwd()+"/")
+					self.rod[self.number_of_tabs].name=cur_name
+					self.rod[self.number_of_tabs].file_name=cur_file
+
+				elif cur_file=="terminal.inp":
+					hello=tab_terminal()
+					add_to_menu=True
+					self.rod.append(hello)
+					self.rod[self.number_of_tabs].visible=cur_visible
+					self.rod[self.number_of_tabs].wow(os.getcwd()+"/")
+					self.rod[self.number_of_tabs].name=cur_name
+					self.rod[self.number_of_tabs].file_name=cur_file
+					self.terminal=hello.terminal
+
+				elif cur_file=="lumo0.inp":
+					hello=tab_bands()
+					hello.update()
+					if hello.enabled==True:
+						add_to_menu=True
+						self.rod.append(hello)
+						self.rod[self.number_of_tabs].visible=cur_visible
+						self.rod[self.number_of_tabs].wow()
+						self.rod[self.number_of_tabs].name=cur_name
+						self.rod[self.number_of_tabs].file_name=cur_file
+
+
+				elif check_is_config_file(cur_file)!="none":
+					add_to_menu=True
+					self.rod.append(tab_class())
+					self.rod[self.number_of_tabs].visible=cur_visible
+					self.rod[self.number_of_tabs].init(cur_file,cur_name,self.check_list)
+					self.rod[self.number_of_tabs].name=cur_name
+					self.rod[self.number_of_tabs].file_name=cur_file
+
+
+				if add_to_menu==True:
+					hbox=gtk.HBox()
+					hbox.set_size_request(-1, 25)
+					mytext=cur_name
+					logging.info('Adding page'+mytext)
+					if len(mytext)<10:
+						for i in range(len(mytext),10):
+							mytext=mytext+" "
+
+					label=gtk.Label(mytext)
+					label.set_justify(gtk.JUSTIFY_LEFT)
+					hbox.pack_start(label, False, True, 0)
+
+					button = gtk.Button()
+					close_image = gtk.Image()
+					close_image.set_from_file(self.icon_theme.lookup_icon("window-close", 16, 0).get_filename())
+					close_image.show()
+					# a button to contain the image widget
+					#button = gtk.Button()
+					button.add(close_image)
+
+
+
+					button.props.relief = gtk.RELIEF_NONE
+					button.connect("clicked", self.callback_close_button,cur_name)
+					button.set_size_request(25, 25)
+					button.show()
+					
+
+					hbox.pack_end(button, False, False, 0)
+					hbox.show_all()
+
+					notebook.append_page(self.rod[self.number_of_tabs],hbox )
+
+					if (cur_visible==True):
+						self.rod[self.number_of_tabs].show()
+
+
+					notebook.set_tab_reorderable(self.rod[self.number_of_tabs],True)
+					a = (( "/View/"+cur_name,  None, self.callback_view_toggle, 0, "<ToggleItem>" ),   )
+					self.item_factory.create_items( a, )
+					myitem=self.item_factory.get_item("/View/"+cur_name)
+					myitem.set_active(cur_visible)
+					self.number_of_tabs=self.number_of_tabs+1
+		else:
+			self.play.set_sensitive(False)
+			self.stop.set_sensitive(False)
+			self.mesh.set_sensitive(False)
+			self.examine.set_sensitive(False)
+			self.param_scan.set_sensitive(False)
+			self.optics_button.set_sensitive(False)
+			self.plot_select.set_sensitive(False)
+
+		hello=welcome_class()
+		hello.wow(find_data_file("gui/image.jpg"))
+		hello.show()
+		notebook.append_page(hello, gtk.Label("Information"))
+		self.finished_loading=True
+		self.progress.hide()
+		self.progress.set_fraction(0.0)
+		logging.info('Added all pages to notebook')
+
+	def callback_plot_after_run_toggle(self, widget, data):
+		self.plot_after_run=data.get_active()
+		self.config.set_value("#plot_after_simulation",data.get_active())
+
+	def callback_set_plot_auto_close(self, widget, data):
+		set_plot_auto_close(data.get_active())
+		self.config.set_value("#one_plot_window",data.get_active())
+
+	def toggle_tab_visible(self,name):
+		logging.info('toggle_tab_visible '+str(self.finished_loading))
+		if self.finished_loading==True:
+			for i in range(0, self.number_of_tabs):
+				if self.rod[i].name==name:
+					widget=self.item_factory.get_widget("/View/"+name)
+					if self.rod[i].visible==0:
+						widget.set_active(True)
+						self.rod[i].show()
+						self.rod[i].visible=1
+					else:
+						widget.set_active(False)
+						self.rod[i].hide()
+						self.rod[i].visible=0
+
+
+	 		a = open("./gui_config.inp", "w")
+			for i in range(0, self.number_of_tabs):
+				a.write(str(self.rod[i].visible)+"\n")
+				a.write(self.rod[i].file_name+"\n")
+				a.write(self.rod[i].name+"\n")
+
+			a.close()
+
+	def callback_close_button(self, widget, data):
+		self.toggle_tab_visible(data)
+
+
+	def callback_view_toggle(self, widget, data):
+		self.toggle_tab_visible(data.get_label())
+
+
+	def gui_sim_plot(self):
+
+		#cmd = self.exe_command + ' --1fit\n'
+		#self.terminal.feed_child(cmd)
+		#ret= os.system(cmd)
+		#if ret!=0 :
+		#	message = gtk.MessageDialog(type=gtk.MESSAGE_ERROR, buttons=gtk.BUTTONS_OK)
+		#	message.set_markup("Error in solver")
+		#	message.run()
+		#	message.destroy()
+		#else:
+		load_graph("./plot/fit.plot")
 
 	def callback_simulate_all_exp(self, widget, data=None):
+		try:
+			os.rename("error_sun_voc0_sim.dat", "old.dat")
+		except:
+			pass
 
-		cmd = exe_command + ' --1fit'
-		ret= os.system(cmd)
-		if ret!=0 :
-			message = gtk.MessageDialog(type=gtk.MESSAGE_ERROR, buttons=gtk.BUTTONS_OK)
-			message.set_markup("Error in solver")
-			message.run()
-			message.destroy()
-		else:
-			self.p_plot_fit=self.load_graph(self.p_plot_fit,"fit.plot")
+		cmd = "cd "+self.sim_dir+";"+self.exe_command + ' --1fit\n'
+		self.terminal.feed_child(cmd)
+
 
 	def callback_simulate(self, widget, data=None):
 
-		#cmd = 'mv ivexternal.dat ivexternal_last.dat'
-		#os.system(cmd)
+		#self.spin.start()
+		if self.plot_after_run==True:
+			try:
+				ret= os.system("cp "+self.plot_after_run_file+" old.dat")
+			except:
+				pass
 
-		#cmd = 'mv charge.dat charge_last.dat'
-		#os.system(cmd)
+		cmd = self.exe_command+" &\n"
+		#ret= os.system(cmd)
 
-		cmd = exe_command + ' &'
-		ret= os.system(cmd)
-		if ret!=0 :
-			message = gtk.MessageDialog(type=gtk.MESSAGE_ERROR, buttons=gtk.BUTTONS_OK)
-			message.set_markup("Error in solver")
-			message.run()
-			message.destroy()
+		#
+
+		self.terminal.feed_child(cmd)
+
+
+		#self.spin.stop()
 
 	def callback_simulate_stop(self, widget, data=None):
-		cmd = 'killall '+exe_name
+		logging.info('callback_simulate_stop')
+		cmd = 'killall '+self.exe_name
 		ret= os.system(cmd)
+		self.spin.stop()
+
+	def callback_cluster(self, widget, data=None):
+		if self.cluster_window==None:
+			self.cluster_window=hpc_class()
+			self.cluster_window.init(self.hpc_root_dir,self.exe_dir,self.terminal)
+
+		print self.cluster_window.get_property("visible")
+
+		if self.cluster_window.get_property("visible")==True:
+			self.cluster_window.hide()
+		else:
+			self.cluster_window.show()
+
 
 	def callback_scan(self, widget, data=None):
-		a=scan_class(check_list)
-		a.open_window()
+		logging.info('callback_scan')
+		if self.scan_window==None:
+			self.scan_window=scan_class(gtk.WINDOW_TOPLEVEL)
+			self.scan_window.init(self.check_list,self.exe_name,self.exe_command,self.progress,self.gui_sim_start,self.gui_sim_stop,self.terminal)
 
-	def load_graph(self, pid ,data):
-		print pid,"in"
-		#if pid!=0:
-		#	#p.kill()
-		#	os.killpg(pid, signal.SIGTERM)
-		#	print "Killing graph"
+		print self.scan_window.hide()
 
-		plot_dir=self.simulation_dir+'/plot/'
-		print "Plot dir="+plot_dir
-		cmd = '/usr/bin/gnuplot -persist '+plot_dir+data
-		print cmd
-		#os.system(cmd)
-		p = subprocess.Popen(['/usr/bin/gnuplot', '-persist', plot_dir+data], stdout=subprocess.PIPE, shell=False)
-		#print p.pid,"out"
-		return p.pid
+		if self.scan_window.get_property("visible")==True:
+			self.scan_window.hide()
+		else:
+			self.scan_window.show()
 
-	def callback_plot_jv(self, widget, data=None):
-		self.load_graph(0,"jv.plot")
+
+
+	def callback_plot_select(self, widget, data=None):
+		logging.info('callback_plot_select')
+		dialog = gtk.FileChooserDialog("Open graph..",
+                               None,
+                               gtk.FILE_CHOOSER_ACTION_OPEN,
+                               (gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL,
+                                gtk.STOCK_OPEN, gtk.RESPONSE_OK))
+		dialog.set_default_response(gtk.RESPONSE_OK)
+
+		filter = gtk.FileFilter()
+		filter.set_name("dat files")
+		filter.add_pattern("*.dat")
+		dialog.add_filter(filter)
+
+		response = dialog.run()
+		if response == gtk.RESPONSE_OK:
+			self.plot_open.set_sensitive(True)
+			plot_gen([dialog.get_filename()],[],None)
+
+			plot_token=plot_command_class()
+			plot_token.path=os.path.dirname(dialog.get_filename())+"/"
+			plot_token.file0=os.path.basename(dialog.get_filename())
+			plot_token.tag0=""
+			plot_token.file1=""
+			plot_token.tag1=""
+
+			self.plotted_graphs.append(plot_token,True)
+			self.plot_after_run_file=dialog.get_filename()
+		elif response == gtk.RESPONSE_CANCEL:
+		    print 'Closed, no files selected'
+		dialog.destroy()
+
+	def callback_plot_open(self, widget, data=None):
+		plot_gen([self.plot_after_run_file],[],None)
+
+	def callback_last_menu_click(self, widget, data):
+		self.plot_open.set_sensitive(True)
+		file_to_load=data.path+"/"+data.file0
+		plot_gen([file_to_load],[],None)
+		self.plot_after_run_file=file_to_load
 
 	def callback_plot_fit(self, widget, data=None):
-		self.p_plot_fit=self.load_graph(self.p_plot_fit,"fit.plot")
-		
+		self.plot_open.set_sensitive(True)
+		plot_gen(["./plot/fit.plot"],[],None)
+		self.plot_after_run_file="./plot/fit.plot"
+
+	def callback_plot_fit_erros(self, widget, data=None):
+		find_fit_error()	
+		load_graph("./plot/fit_errors.plot")
 
 	def callback_plot_charge(self, widget, data=None):
-		self.load_graph(0,"charge.plot")
+		plot_gen(["charge.dat"],[],None)
 
 	def callback_plot_converge(self, widget, data=None):
-		self.load_graph(0,"converge.plot")
+		load_graph("./plot/converge.plot")
 
-	def callback_plot_i_time(self, widget, data=None):
-		self.load_graph(0,"gui_celiv_i_time.plot")
+	def callback_plot_matrix(self, widget, data=None):
+		plot_gen(["matrix.dat"],[],None)
 
 	def callback_import(self, widget, data=None):
+		logging.info('callback_import')
 		dialog = gtk.FileChooserDialog("Import..",
                                None,
                                gtk.FILE_CHOOSER_ACTION_OPEN,
@@ -226,32 +627,34 @@ class NotebookExample:
 		dialog.set_default_response(gtk.RESPONSE_OK)
 
 		filter = gtk.FileFilter()
-		filter.set_name("All files")
-		filter.add_pattern("*")
-		dialog.add_filter(filter)
-
-		filter = gtk.FileFilter()
-		filter.set_name("Images")
-		filter.add_mime_type("image/png")
-		filter.add_mime_type("image/jpeg")
-		filter.add_mime_type("image/gif")
-		filter.add_pattern("*.png")
-		filter.add_pattern("*.jpg")
-		filter.add_pattern("*.gif")
-		filter.add_pattern("*.tif")
-		filter.add_pattern("*.xpm")
-		dialog.set_action(gtk.FILE_CHOOSER_ACTION_SELECT_FOLDER)
+		filter.set_name(".tar.gz")
+		filter.add_pattern("*.tar.gz")
 		dialog.add_filter(filter)
 
 		response = dialog.run()
 		if response == gtk.RESPONSE_OK:
-			cmd = './opvdm_import '+dialog.get_filename()+'/'
-			os.system(cmd)
+			import_archive(dialog.get_filename(),"./",False)
+			self.change_dir_and_refresh_interface(os.getcwd()+"/")
 		elif response == gtk.RESPONSE_CANCEL:
 		    print 'Closed, no files selected'
 		dialog.destroy()
 
+	def change_sim_dir(self,new_dir):
+		logging.info('change_sim_dir')
+		print "Changing directory to ",new_dir
+		os.chdir(new_dir)
+		self.sim_dir=os.getcwd()+'/'
+		try:
+			self.thread.stop()
+			self.thread = _FooThread()
+			self.thread.connect("file_changed", self.user_callback)
+			self.thread.daemon = True
+			self.thread.start()
+		except:
+			print "Can't stop start thread"
+
 	def callback_new(self, widget, data=None):
+		logging.info('callback_new')
 		dialog = gtk.FileChooserDialog("Make new opvdm simulation dir..",
                                None,
                                gtk.FILE_CHOOSER_ACTION_OPEN,
@@ -270,23 +673,76 @@ class NotebookExample:
 			if not os.path.exists(dialog.get_filename()):
 				os.makedirs(dialog.get_filename())
 
-			self.simulation_dir=dialog.get_filename()+'/'
-			print self.simulation_dir
-			os.chdir(self.simulation_dir)
-			set_exe_command()
-			self.status_bar.push(self.context_id, self.simulation_dir)
-			os.system("opvdm_clone")
+			self.change_sim_dir(dialog.get_filename()+'/')
+			opvdm_clone()
 
-			check_list=[]
-			for child in notebook.get_children():
-            			notebook.remove(child)
+			self.change_dir_and_refresh_interface(dialog.get_filename())
 
-			notebook_load_pages()
 		elif response == gtk.RESPONSE_CANCEL:
 		    print 'Closed, no dir selected'
 		dialog.destroy()
+		logging.info('Leaving callback callback_new')
+
+	def change_dir_and_refresh_interface(self,new_dir):
+		logging.info('change_dir_and_refresh_interface')
+		#if os.path.isfile("ver.inp")==True:
+		#	f = open("ver.inp")
+		#	lines = f.readlines()
+		#	f.close()
+		#	for i in range(0, len(lines)):
+		#		lines[i]=lines[i].rstrip()
+		#
+		#	if lines[1]!=version:
+		#		myerror="I can only load files from opvdm version "+ver()+" current version "+lines[1]+"\n."
+		#		logging.info(os.getcwd())
+		#		logging.info(myerror)
+		#		message = gtk.MessageDialog(type=gtk.MESSAGE_ERROR, buttons=gtk.BUTTONS_OK)
+		#		message.set_markup(myerror)
+		#		message.run()
+		#		message.destroy()
+		#		sys.exit(myerror) 
+
+		self.change_sim_dir(new_dir)
+		self.config.load(self.sim_dir)
+		self.exe_command , self.exe_name = set_exe_command()
+		self.status_bar.push(self.context_id, os.getcwd()+"/")
+		self.check_list=[]
+		self.plot_open.set_sensitive(False)
+		for child in notebook.get_children():
+    			notebook.remove(child)
+
+		self.notebook_load_pages()
+		self.plotted_graphs.init(os.getcwd()+'/gui_last_menu.inp',self.callback_last_menu_click)
+
+		self.plotted_graphs.reload_list()
+
+		set_active_name(self.light, inp_get_token_value("light.inp", "#Psun"))
+		set_active_name(self.sim_mode, inp_get_token_value("sim.inp", "#simmode"))
+
+		scan_item_add(self.check_list,"sim.inp","#simmode","sim mode")
+		scan_item_add(self.check_list,"light.inp","#Psun","light intensity")
+
+		print "self.scan_window",self.scan_window
+		if self.scan_window!=None:
+			logging.info('Del scan_window')
+			del self.scan_window
+			self.scan_window=None
+
+		print "self.electrical_mesh",self.electrical_mesh
+		if self.electrical_mesh!=None:
+			logging.info('Del scan_window')
+			del self.electrical_mesh
+			self.electrical_mesh=None
+
+		myitem=self.item_factory.get_item("/Plots/One plot window")
+		myitem.set_active(self.config.get_value("#one_plot_window",False))
+		myitem=self.item_factory.get_item("/Plots/Plot after simulation")
+		myitem.set_active(self.config.get_value("#plot_after_simulation",False))
+
+		logging.info('Finished change_dir_and_refresh_interface')
 
 	def callback_open(self, widget, data=None):
+		logging.info('callback_open')
 		dialog = gtk.FileChooserDialog("Open..",
                                None,
                                gtk.FILE_CHOOSER_ACTION_OPEN,
@@ -302,22 +758,15 @@ class NotebookExample:
 
 		response = dialog.run()
 		if response == gtk.RESPONSE_OK:
-			self.simulation_dir=dialog.get_filename()+'/'
-			print "New simulation dir="+self.simulation_dir
-			os.chdir(self.simulation_dir)
-			set_exe_command()
-			self.status_bar.push(self.context_id, self.simulation_dir)
-			check_list=[]
-			for child in notebook.get_children():
-            			notebook.remove(child)
+			self.change_dir_and_refresh_interface(dialog.get_filename())
 
-			notebook_load_pages()
 		elif response == gtk.RESPONSE_CANCEL:
 		    print 'Closed, no files selected'
 		dialog.destroy()
 
-	def callback_save(self, widget, data=None):
-		dialog = gtk.FileChooserDialog("Save..",
+	def callback_export(self, widget, data=None):
+		logging.info('callback_export')
+		dialog = gtk.FileChooserDialog("Save as..",
                                None,
                                gtk.FILE_CHOOSER_ACTION_SAVE,
                                (gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL,
@@ -325,58 +774,124 @@ class NotebookExample:
 		dialog.set_default_response(gtk.RESPONSE_OK)
 
 		filter = gtk.FileFilter()
-		filter.set_name("gz files")
-		filter.add_pattern("*.gz")
+		filter.set_name(".tar.gz")
+		filter.add_pattern("*.tar.gz")
 		dialog.add_filter(filter)
 
 		filter = gtk.FileFilter()
-		filter.set_name("Archive")
-		#filter.add_mime_type("image/png")
-		#filter.add_mime_type("image/jpeg")
-		#filter.add_mime_type("image/gif")
-		filter.add_pattern("*.gz")
+		filter.set_name(".pdf")
+		filter.add_pattern("*.pdf")
+		dialog.add_filter(filter)
 
+		filter = gtk.FileFilter()
+		filter.set_name(".jpg")
+		filter.add_pattern("*.jpg")
+		dialog.add_filter(filter)
+
+		filter = gtk.FileFilter()
+		filter.set_name(".tex")
+		filter.add_pattern("*.tex")
 		dialog.add_filter(filter)
 
 		response = dialog.run()
 		if response == gtk.RESPONSE_OK:
-			cmd = 'tar -czvf '+dialog.get_filename()+'.tar.gz ./*.inp ./*.dat '
-			os.system(cmd)
+			file_name=dialog.get_filename()
+			mode=self.sim_mode.get_active_text()
+
+			print os.path.splitext(file_name)[1]
+			if os.path.splitext(file_name)[1]:
+				export_as(file_name)
+			else:
+				filter=dialog.get_filter()
+				export_as(file_name+filter.get_name())
+			
 		elif response == gtk.RESPONSE_CANCEL:
 		    print 'Closed, no files selected'
 		dialog.destroy()
 
+
 	def callback_edit_file(self, widget, data=None):
+		logging.info('callback_edit_file')
 		page = notebook.get_current_page()
-		cmd = 'gnome-open '+rod[page].file_name
+		cmd = 'gnome-open '+self.rod[page].file_name
 		os.system(cmd)
 
 	def callback_wiki(self, widget, data=None):
 		page = notebook.get_current_page()
-		cmd = 'firefox http://www.opvdm.com/wiki/index.php?title='+rod[page].file_name
+		cmd = 'firefox http://www.roderickmackenzie.eu/wiki/index.php?title='+self.rod[page].file_name
 		os.system(cmd)
+
+	def callback_about_dialog(self, widget, data=None):
+		about_dialog_show()
 
 	def callback_help(self, widget, data=None):
-		cmd = 'firefox http://www.opvdm.com/opvdm_wiki.html'
+		cmd = 'firefox http://www.roderickmackenzie.eu/opvdm_wiki.html'
 		os.system(cmd)
-
-	def callback_about_dialog_show(self, widget, data=None):
-		about = gtk.AboutDialog()
-		about.set_program_name("opvdm V1.0")
-		about.set_version("")
-		about.set_copyright("Released under GPL v2, (c) Roderick MacKenzie")
-		about.set_comments("Organic photovoltaic device model")
-		about.set_website("http://www.opvdm.com")
-
-		image=find_data_file("gui/image.jpg")
-		about.set_logo(gtk.gdk.pixbuf_new_from_file(image))
-		about.run()
-		about.destroy()
 
 
 	def callback_on_line_help(self, widget, data=None):
-		cmd = 'firefox www.opvdm.com'
+		cmd = 'firefox www.opvdm.com &'
 		os.system(cmd)
+
+	def callback_new_window(self, widget, data=None):
+		if self.window2.get_property("visible")==True:
+			self.window2.hide()
+		else:
+			self.window2.show()
+
+	def callback_close_window2(self, widget, data=None):
+		self.window2.hide()
+		return True
+
+
+	def callback_close_window(self, widget, data=None):
+		self.win_list.update(self.window,"main_window")
+		print "quiting"
+		gtk.main_quit()
+
+
+	def callback_examine(self, widget, data=None):
+		mycmp=cmp_class()
+		ret=mycmp.init(self.exe_command)
+		if ret==False:
+			md = gtk.MessageDialog(None, gtk.DIALOG_DESTROY_WITH_PARENT, gtk.MESSAGE_WARNING,  gtk.BUTTONS_CLOSE, "Re-run the simulation with 'dump all slices' set to one to use this tool.")
+        		md.run()
+        		md.destroy()
+			return
+
+	def callback_edit_mesh(self, widget, data=None):
+		if self.electrical_mesh==None:
+			self.electrical_mesh=tab_electrical_mesh()
+			self.electrical_mesh.wow(self.exe_command)
+
+		if self.electrical_mesh.get_property("visible")==True:
+			self.electrical_mesh.hide_all()
+		else:
+			self.electrical_mesh.show_all()
+
+	def callback_undo(self, widget, data=None):
+		l=self.undo_list.get_list()
+		if len(l)>0:
+			#print l[len(l)-1][0]
+			#print l[len(l)-1][1]
+			value=l[len(l)-1][2]
+			w_type=l[len(l)-1][3]
+
+			if type(w_type)==gtk.Entry:
+				self.undo_list.disable()
+				w_type.set_text(value)
+				self.undo_list.enable()
+
+			l.pop()
+
+#		self.file_name, data, widget.get_text(),widget
+
+
+	def callback_optics_sim(self, widget, data=None):
+		if self.optics_window.get_property("visible")==True:
+			self.optics_window.hide()
+		else:
+			self.optics_window.show()
 
 	def callback_make(self, widget, data=None):
 		cmd = 'make clean'
@@ -385,119 +900,34 @@ class NotebookExample:
 		cmd = 'make'
 		os.system(cmd)
 
-	def callback_hpc_check_load(self, widget, data=None):
-		curdir=os.getcwd()
-		os.chdir(self.hpc_root_dir)
-		cmd = './hpc_check_load.sh'
-		os.system(cmd)
-		os.chdir(curdir)
-
-	def callback_hpc_get_data(self, widget, data=None):
-		curdir=os.getcwd()
-		os.chdir(self.hpc_root_dir)
-		cmd = './from_hpc.sh'
-		os.system(cmd)
-		os.chdir(curdir)
-
-	def callback_hpc_run_once(self, widget, data=None):
-		curdir=os.getcwd()
-		os.chdir(self.hpc_root_dir)
-		cmd = './autoonefit.sh'
-		os.system(cmd)
-		os.chdir(curdir)
-
-	def callback_hpc_make_images(self, widget, data=None):
-		curdir=os.getcwd()
-		os.chdir(self.hpc_root_dir)
-		cmd = './makeimages.sh'
-		os.system(cmd)
-		os.chdir(curdir)
-
-	def callback_hpc_view_images(self, widget, data=None):
-		cmd = 'gnome-open '+self.exe_dir+'../'
-		os.system(cmd)
-
-	def callback_hpc_build_job_local(self, widget, data=None):
-		curdir=os.getcwd()
-		os.chdir(self.hpc_root_dir)
-		try:
-			shutil.rmtree('./hpc')
-		except: 
-	  		print "No hpc dir to delete"
-
-		cmd = './buildforhpc.sh'
-		os.system(cmd)
-		os.chdir(curdir)
-		print "Build job"
-
-	def callback_hpc_send_to_hpc(self, widget, data=None):
-		curdir=os.getcwd()
-		os.chdir(self.hpc_root_dir)
-		print self.hpc_root_dir
-		cmd = './to_hpc.sh'
-		os.system(cmd)
-		os.chdir(curdir)
-
-	def callback_hpc_build_jobs(self, widget, data=None):
-		curdir=os.getcwd()
-		os.chdir(self.hpc_root_dir)
-		cmd = './hpc_make_sim.sh'
-		os.system(cmd)
-		os.chdir(curdir)
-
 	def call_back_sim_mode_changed(self, widget, data=None):
 		mode=self.sim_mode.get_active_text()
-		replace(find_data_file("sim.inp"), "#simmode", mode)
+		inp_update_token_value("sim.inp", "#simmode", mode)
 
 	def call_back_light_changed(self, widget, data=None):
 		light_power=self.light.get_active_text()
 		print light_power
-		replace(find_data_file("light.inp"), "#Psun", light_power)
+		inp_update_token_value("light.inp", "#Psun", light_power)
 
-
-	def callback_hpc_clean_nodes(self, widget, data=None):
-		curdir=os.getcwd()
-		os.chdir(self.hpc_root_dir)
-		cmd = './hpc_remove_from_nodes.sh'
-		os.system(cmd)
-		os.chdir(curdir)
-
-	def callback_hpc_copy_to_nodes(self, widget, data=None):
-		curdir=os.getcwd()
-		os.chdir(self.hpc_root_dir)
-		cmd = './hpc_copy_to_nodes.sh'
-		os.system(cmd)
-		os.chdir(curdir)
-
-	def callback_hpc_kill_jobs(self, widget, data=None):
-		curdir=os.getcwd()
-		os.chdir(self.hpc_root_dir)
-		cmd = './hpc_kill_jobs.sh'
-		os.system(cmd)
-		os.chdir(curdir)
-
-	def callback_hpc_run_jobs(self, widget, data=None):
-		curdir=os.getcwd()
-		os.chdir(self.hpc_root_dir)
-		cmd = './hpc_run_jobs.sh'
-		os.system(cmd)
-		os.chdir(curdir)
-
-	def callback_hpc_fitlog_plot(self, widget, data=None):
-		find_fit_log()
-		cmd = 'gnuplot -persist '+self.exe_dir+'plot/hpc_fitlog.plot'
-		os.system(cmd)
 
 	def get_main_menu(self, window):
+		logging.info('get_main_menu')
 		accel_group = gtk.AccelGroup()
 
 
 		item_factory = gtk.ItemFactory(gtk.MenuBar, "<main>", accel_group)
 
 		item_factory.create_items(self.menu_items)
+
+	        #import_image = gtk.Image()
+   		#import_image.set_from_file(find_data_file("gui/document-import-2.png"))
+		#myitem=item_factory.get_widget("/File/Import")
+		#myitem.set_image(import_image)
+
 		if os.path.exists("./server.inp")==False:
-			item_factory.delete_item("/HPC")
 			item_factory.delete_item("/Build")
+			item_factory.delete_item("/Plots/Fit")
+
 
 		window.add_accel_group(accel_group)
 
@@ -505,168 +935,293 @@ class NotebookExample:
 
 		return item_factory.get_widget("<main>")
 
+
+		#cmd = ['/bin/echo', 'File', ev.pathname, 'changed']
+	    #subprocess.Popen(cmd).communicate()
+		
+		print "one",ev.pathname
+
 	def __init__(self):
-		self.p_plot_fit=0
-		self.simulation_dir=os.path.dirname(os.path.abspath(__file__))+'/'
+		splash=splash_window()
+		splash.init()
+		self.undo_list=undo_list_class()
+		self.undo_list.init()
+		self.sim_dir=os.getcwd()+'/'
+		self.statusicon = gtk.StatusIcon()
+		self.statusicon.set_from_stock(gtk.STOCK_YES) 
+		#self.statusicon.connect("popup-menu", self.right_click_event)
+		self.statusicon.set_tooltip("opvdm")
+		self.statusicon.connect('popup-menu', self.on_status_icon_right_click)
+
+		logging.info('__init__')
+		self.check_list=[]
 		self.exe_dir= os.path.dirname(os.path.abspath(__file__))+'/'
 		self.hpc_root_dir= os.path.dirname(os.path.abspath(__file__))+'/../'
 
-		print "Running in "+self.exe_dir
-		print "Simulation directory "+self.simulation_dir
+		print "opvdm exe in "+self.exe_dir
+		print "current directory "+os.getcwd()
 
-		window = gtk.Window(gtk.WINDOW_TOPLEVEL)
-		window.set_border_width(10)
-		window.set_title("Organic Photovoltaic Device Model (www.opvdm.com)")
+		self.window = gtk.Window(gtk.WINDOW_TOPLEVEL)
+		self.window.set_border_width(10)
+		self.window.set_title("Organic Photovoltaic Device Model (www.opvdm.com)")
 
-		table = gtk.Table(3,6,False)
+		self.win_list=windows()
+		self.win_list.load()
 
-		image=gui_dir+"/image.jpg"
-		if os.path.isfile(image)==False:
-			image=self.exe_dir+"gui/image.jpg"
-		window.set_icon_from_file(image)
+		self.config=config()
+		#table = gtk.Table(3,6,False)
+
+		self.window.set_icon_from_file(find_data_file("gui/image.jpg"))
 
 		
-		notebook.set_tab_pos(gtk.POS_TOP)
-		table.attach(notebook, 0,6,0,1)
-		notebook.show()
+
 		self.show_tabs = True
 		self.show_border = True
-
-		notebook_load_pages()
-
-		self.status_bar = gtk.Statusbar()      
-
-		self.status_bar.show()
-
-		self.context_id = self.status_bar.get_context_id("Statusbar example")
-
-		table.attach(self.status_bar, 2,3,1,2)
-		self.status_bar.push(self.context_id, self.simulation_dir)
-
-		notebook.set_current_page(1)
-		table.show()
-		window.connect("destroy", gtk.main_quit)
 
 		self.menu_items = (
 		    ( "/_File",         None,         None, 0, "<Branch>" ),
 			("/File/_New", "<control>N", self.callback_new, 0, "<StockItem>", "gtk-new" ),
 			("/File/_Open", "<control>O", self.callback_open, 0, "<StockItem>", "gtk-open" ),
-		    ( "/File/_Save",     "<control>S", self.callback_save, 0, "<StockItem>", "gtk-save" ),
-		    ( "/File/Import",     None, self.callback_import, 0, None ),
+		    ( "/File/_Save...",     None, self.callback_export, 0, "<StockItem>", "gtk-save" ),
+		    ( "/File/Import",     None, self.callback_import, 0 , "<StockItem>", "gtk-harddisk"),
 		    ( "/File/Quit",     "<control>Q", gtk.main_quit, 0, "<StockItem>", "gtk-quit" ),
 		    ( "/_Edit/Edit file",   None,         self.callback_edit_file, 0, None ),
 		    ( "/_Simulate",      None,         None, 0, "<Branch>" ),
 		    ( "/Simulate/Run",  None,         self.callback_simulate, 0, "<StockItem>", "gtk-media-play" ),
 		    ( "/Simulate/Parameter scan",  None,         self.callback_scan , 0, None ),
+		    ( "/_View",      None,         None, 0, "<Branch>" ),
 		    ( "/_Plots",      None,         None, 0, "<Branch>" ),
-		    ( "/Plots/Doping",  None,          self.callback_plot_doping, 0, None ),
-		    ( "/Plots/Fit to exp",  None,         self.callback_plot_fit, 0, None ),
+		    ( "/Plots/Open plot file",  None,         self.callback_plot_select, 0, "<StockItem>", "gtk-open"),
 		    ( "/_Plots/",     None, None, 0, "<Separator>" ),
-		    ( "/Plots/JV Curve",  None,         None, 0, "<Branch>" ),
-		    ( "/Plots/JV Curve/J - V",  None,         self.callback_plot_jv, 0, None ),
-		    ( "/Plots/JV Curve/Charge density",  None,         self.callback_plot_charge, 0, None ),
 		    ( "/Plots/Numerics",  None,         None, 0, "<Branch>" ),
 		    ( "/Plots/Numerics/Converge",  None,         self.callback_plot_converge, 0, None ),
-		    ( "/Plots/CELIV",  None,         None, 0, "<Branch>" ),
-		    ( "/Plots/CELIV/i-time",  None,         self.callback_plot_i_time, 0, None ),
+		    ( "/Plots/Numerics/Matrix",  None,         self.callback_plot_matrix, 0, None ),
+		    ( "/Plots/Fit",      None,         None, 0, "<Branch>" ),
+		    ( "/Plots/Fit/Fit to exp",  None,         self.callback_plot_fit, 0, None ),
+		    ( "/Plots/Fit/Fit errors",  None,         self.callback_plot_fit_erros, 0, None ),
+		    ( "/_Plots/",     None, None, 0, "<Separator>" ),
 		    ( "/_Build",      None,         None, 0, "<Branch>" ),
 		    ( "/_Build/Rebuild model",     None, self.callback_make, 0, None ),
-		    ( "/_HPC",      None,         None, 0, "<Branch>" ),
-			( "/_HPC/Check load",     None, self.callback_hpc_check_load, 0, None ),
-			( "/_HPC/",     None, None, 0, "<Separator>" ),
-		    ( "/_HPC/Download",      None,         None, 0, "<Branch>" ),
-		    ( "/_HPC/Download/Get Data",     None, self.callback_hpc_get_data, 0, None ),
-		    ( "/_HPC/Download/Run all downloaded jobs",     None, self.callback_hpc_run_once, 0, None ),
-		    ( "/_HPC/Download/Make images",     None, self.callback_hpc_make_images, 0, None ),
-
-		    ( "/_HPC/Download/View images",     None, self.callback_hpc_view_images, 0, None ),
-		    ( "/_HPC/Download/Plot Convergence",     None, self.callback_hpc_fitlog_plot, 0, None ),
-		    ( "/_HPC/Upload",      None,         None, 0, "<Branch>" ),
-		    ( "/_HPC/Upload/Build job for HPC",     None, self.callback_hpc_build_job_local, 0, None ),
-
-		    ( "/_HPC/Upload/Send to HPC",     None, self.callback_hpc_send_to_hpc, 0, None ),
-		    ( "/_HPC/Upload/Clean nodes",     None, self.callback_hpc_clean_nodes, 0, None ),
-		    ( "/_HPC/Upload/Build Jobs on HPC",     None, self.callback_hpc_build_jobs, 0, None ),
-		    ( "/_HPC/Upload/Copy to nodes",     None, self.callback_hpc_copy_to_nodes, 0, None ),
-		    ( "/_HPC/Upload/Kill Jobs",     None, self.callback_hpc_kill_jobs, 0, None ),
-
-
-		    ( "/_HPC/Upload/Run on cluster",     None, self.callback_hpc_run_jobs, 0, None ),
 		    ( "/_Help",         None,         None, 0, "<LastBranch>" ),
 			( "/_Help/Help Index",   None,         self.callback_help, 0, "<StockItem>", "gtk-help"  ),
 		    ( "/_Help/Help about this tab",   None,         self.callback_wiki, 0, None  ),
 		    ( "/_Help/Web page",   None,         self.callback_on_line_help, 0, None ),
 			
 
-		    ( "/_Help/About",   None,         self.callback_about_dialog_show, 0, "<StockItem>", "gtk-about" ),
+		    ( "/_Help/About",   None, self.callback_about_dialog, 0, "<StockItem>", "gtk-about" ),
 		    )
+		pos=0
+
+		self.menubar = self.get_main_menu(self.window)
+
+		a = (( "/Plots/Plot after simulation",  None, self.callback_plot_after_run_toggle, 0, "<ToggleItem>" ),   )
+		self.item_factory.create_items( a, )
+
+
+		a = (( "/Plots/One plot window",  None, self.callback_set_plot_auto_close, 0, "<ToggleItem>" ),   )
+		self.item_factory.create_items( a, )
+
+		#table.show()
+		self.window.connect("destroy", gtk.main_quit)
+
+		self.tooltips = gtk.Tooltips()
+
 		#window = gtk.Window(gtk.WINDOW_TOPLEVEL)
 		#window.connect("destroy", lambda w: gtk.main_quit())
 		#window.set_title("Item Factory")
-		window.set_size_request(800, -1)
-
-		main_vbox = gtk.VBox(False, 4)
+		self.window.set_size_request(-1, -1)
+		main_vbox = gtk.VBox(False, 5)
 		main_vbox.set_border_width(1)
-		window.add(main_vbox)
+		self.window.add(main_vbox)
 		#window.add(table)
 		main_vbox.show()
 
+
 		toolbar = gtk.Toolbar()
 		toolbar.set_style(gtk.TOOLBAR_ICONS)
+		toolbar.set_size_request(-1, 50)
 
 		toolbar2 = gtk.Toolbar()
 		toolbar2.set_style(gtk.TOOLBAR_ICONS)
+		toolbar2.set_size_request(-1, 30)
 
 		#newtb = gtk.ToolButton(gtk.STOCK_NEW)
 		#opentb = gtk.ToolButton(gtk.STOCK_OPEN)
-		open_sim = gtk.ToolButton(gtk.STOCK_OPEN)
-		new_sim = gtk.ToolButton(gtk.STOCK_NEW)
-		play = gtk.ToolButton(gtk.STOCK_MEDIA_PLAY)
-		play_exp = gtk.ToolButton(gtk.STOCK_DND_MULTIPLE)
-		stop = gtk.ToolButton(gtk.STOCK_MEDIA_STOP)
-		help = gtk.ToolButton(gtk.STOCK_HELP)
 
-		plot = gtk.ToolButton(gtk.STOCK_PAGE_SETUP)
-		sep = gtk.SeparatorToolItem()
-		sep.set_draw(False)
-		sep.set_expand(True)
+		open_sim = gtk.ToolButton(gtk.STOCK_OPEN)
+		self.tooltips.set_tip(open_sim, "Open a simulation")
+		toolbar.insert(open_sim, pos)
+		pos=pos+1
+
+		save_sim = gtk.ToolButton(gtk.STOCK_SAVE)
+		self.tooltips.set_tip(save_sim, "Save a simulation")
+		toolbar.insert(save_sim, pos)
+		pos=pos+1
+
+		new_sim = gtk.ToolButton(gtk.STOCK_NEW)
+		self.tooltips.set_tip(new_sim, "Make a new simulation")
+		toolbar.insert(new_sim, pos)
+		pos=pos+1
 
 		sep_lhs = gtk.SeparatorToolItem()
 		sep_lhs.set_draw(True)
 		sep_lhs.set_expand(False)
-
-		quittb = gtk.ToolButton(gtk.STOCK_QUIT)
-		
-		pos=0
-		toolbar.insert(open_sim, pos)
-		pos=pos+1
-		toolbar.insert(new_sim, pos)
-		pos=pos+1
 		toolbar.insert(sep_lhs, pos)
 		pos=pos+1
-		toolbar.insert(play, pos)
+
+		undo = gtk.ToolButton(gtk.STOCK_UNDO)
+		self.tooltips.set_tip(undo, "Undo")
+		toolbar.insert(undo, pos)
+		undo.connect("clicked", self.callback_undo)
 		pos=pos+1
-		toolbar.insert(play_exp, pos)
+
+		sep_lhs = gtk.SeparatorToolItem()
+		sep_lhs.set_draw(True)
+		sep_lhs.set_expand(False)
+		toolbar.insert(sep_lhs, pos)
 		pos=pos+1
-		toolbar.insert(stop, pos)
+
+	        image = gtk.Image()
+   		image.set_from_file(find_data_file("gui/play.png"))
+		self.play = gtk.ToolButton(image)
+		self.tooltips.set_tip(self.play, "Run the simulation")
+		toolbar.insert(self.play, pos)
+		self.play.connect("clicked", self.callback_simulate)
 		pos=pos+1
-		toolbar.insert(plot, pos)
+
+	        image = gtk.Image()
+   		image.set_from_file(find_data_file("gui/pause.png"))
+		self.stop = gtk.ToolButton(image )
+		self.tooltips.set_tip(self.stop, "Stop the simulation")
+		self.stop.connect("clicked", self.callback_simulate_stop)
+		toolbar.insert(self.stop, pos)
 		pos=pos+1
-		toolbar.insert(help, pos)
-		pos=pos+1
+
+
+
+		sep = gtk.SeparatorToolItem()
+		sep.set_draw(True)
+		sep.set_expand(False)
 		toolbar.insert(sep, pos)
 		pos=pos+1
+
+	        image = gtk.Image()
+   		image.set_from_file(self.icon_theme.lookup_icon("applications-science", 32, 0).get_filename())
+		self.param_scan = gtk.ToolButton(image)
+		self.param_scan.connect("clicked", self.callback_scan)
+		self.tooltips.set_tip(self.param_scan, "Parameter scan")
+		toolbar.insert(self.param_scan, pos)
+		pos=pos+1
+
+		if os.path.isfile("fit.inp"):
+			image = gtk.Image()
+	   		image.set_from_file(find_data_file("gui/forward.png"))
+			play_exp = gtk.ToolButton(image)
+			play_exp.connect("clicked", self.callback_simulate_all_exp)
+			self.tooltips.set_tip(play_exp, "Compare to experimental data")
+			toolbar.insert(play_exp, pos)
+			pos=pos+1
+
+		sep = gtk.SeparatorToolItem()
+		sep.set_draw(True)
+		sep.set_expand(False)
+		toolbar.insert(sep, pos)
+		pos=pos+1
+
+	        image = gtk.Image()
+   		image.set_from_file(find_data_file("gui/plot.png"))
+		self.plot_select = gtk.MenuToolButton(image,"hello")
+		self.tooltips.set_tip(self.plot_select, "Find a file to plot")
+		self.plotted_graphs = used_files_menu()
+		self.plot_select.set_menu(self.plotted_graphs.menu)
+		toolbar.insert(self.plot_select, pos)
+		self.plot_select.connect("clicked", self.callback_plot_select)
+		self.plot_select.set_sensitive(False)
+		pos=pos+1
+
+	        image = gtk.Image()
+   		image.set_from_file(self.icon_theme.lookup_icon("view-refresh", 32, 0).get_filename())
+		self.plot_open = gtk.ToolButton(image)
+		self.tooltips.set_tip(self.plot_open, "Replot the graph")
+		toolbar.insert(self.plot_open, pos)
+		self.plot_open.set_sensitive(False)
+		pos=pos+1
+
+	        image = gtk.Image()
+   		image.set_from_file(find_data_file("gui/plot_time.png"))
+		self.examine = gtk.ToolButton(image)
+		self.tooltips.set_tip(self.examine, "Examine results in detail")
+		self.examine.connect("clicked", self.callback_examine)
+		toolbar.insert(self.examine, pos)
+		pos=pos+1
+
+		sep = gtk.SeparatorToolItem()
+		sep.set_draw(True)
+		sep.set_expand(False)
+		toolbar.insert(sep, pos)
+		pos=pos+1
+
+	        image = gtk.Image()
+   		image.set_from_file(find_data_file("gui/mesh.png"))
+		self.mesh = gtk.ToolButton(image)
+		self.tooltips.set_tip(self.mesh, "Edit the electrical mesh")
+		self.mesh.connect("clicked", self.callback_edit_mesh)
+		toolbar.insert(self.mesh, pos)
+		pos=pos+1
+
+		logging.info('__init__4')
+		if os.path.isfile(find_data_file("optics_epitaxy.inp")):
+			image = gtk.Image()
+	   		image.set_from_file(find_data_file("gui/optics.png"))
+			self.optics_button = gtk.ToolButton(image)
+			self.tooltips.set_tip(self.optics_button, "Optical simulation")
+			self.optics_button.connect("clicked", self.callback_optics_sim)
+			toolbar.insert(self.optics_button, pos)
+			pos=pos+1
+
+
+		if os.path.isfile("fit.inp"):
+			plot = gtk.ToolButton(gtk.STOCK_PAGE_SETUP)
+			toolbar.insert(plot, pos)
+			plot.connect("clicked", self.callback_plot_fit)
+			pos=pos+1
+
+		if os.path.isfile("server.inp"):
+			image = gtk.Image()
+	   		image.set_from_file(find_data_file("gui/server.png"))
+			cluster = gtk.ToolButton(image)
+			cluster.connect("clicked", self.callback_cluster)
+			self.tooltips.set_tip(cluster, "Configure cluster")
+			toolbar.insert(cluster, pos)
+			cluster.show()
+			pos=pos+1
+
+
+		sep2 = gtk.SeparatorToolItem()
+		sep2.set_draw(False)
+		sep2.set_expand(True)
+		toolbar.insert(sep2, pos)
+		pos=pos+1
+
+
+		help = gtk.ToolButton(gtk.STOCK_HELP)
+		self.tooltips.set_tip(help, "Help")
+		help.connect("clicked", self.callback_help)
+		toolbar.insert(help, pos)
+		pos=pos+1
+
+
+		quittb = gtk.ToolButton(gtk.STOCK_QUIT)
+		self.tooltips.set_tip(quittb, "Quit")
 		toolbar.insert(quittb, pos)
+		quittb.connect("clicked", gtk.main_quit)
 		pos=pos+1
 
 		new_sim.connect("clicked", self.callback_new)
 		open_sim.connect("clicked", self.callback_open)
-		play.connect("clicked", self.callback_simulate)
-		play_exp.connect("clicked", self.callback_simulate_all_exp)
-		plot.connect("clicked", self.callback_plot_fit)
-		stop.connect("clicked", self.callback_simulate_stop)
-		help.connect("clicked", self.callback_help)
-		quittb.connect("clicked", gtk.main_quit)
+		save_sim.connect("clicked", self.callback_export)
+
+		self.plot_open.connect("clicked", self.callback_plot_open)
 
 		self.sim_mode = gtk.combo_box_entry_new_text()
 
@@ -678,92 +1233,179 @@ class NotebookExample:
 			self.sim_mode.append_text(lines[i].rstrip())
 
 		self.sim_mode.child.connect('changed', self.call_back_sim_mode_changed)
-		set_active_name(self.sim_mode, get_token_value(find_data_file("sim.inp"), "#simmode"))
+		set_active_name(self.sim_mode, inp_get_token_value("sim.inp", "#simmode"))
 
 		lable=gtk.Label("Simulation mode:")
 		#lable.set_width_chars(15)
 		lable.show
 	        hbox = gtk.HBox(False, 2)
-        
+        	
 	        hbox.pack_start(lable, False, False, 0)
 	        hbox.pack_start(self.sim_mode, False, False, 0)
-	        #hbox.add(self.)
+
 		tb_comboitem = gtk.ToolItem();
 		tb_comboitem.add(hbox);
+		tb_comboitem.show_all()
 		toolbar2.insert(tb_comboitem, 0)
-
+		logging.info('__init__5')
 
 		self.light = gtk.combo_box_entry_new_text()
-		self.light.append_text('0.0')
-		self.light.append_text('1.0')
-		self.light.append_text('10.0')
-		self.light.append_text('100.0')
-		self.light.append_text('1000.0')
+		sun_values=["0.0","0.01","0.1","1.0","10"]
+		token=inp_get_token_value("light.inp", "#Psun")
+		if sun_values.count(token)==0:
+			sun_values.append(token)
+
+		for i in range(0,len(sun_values)):
+			self.light.append_text(sun_values[i])
+
 		self.light.child.connect('changed', self.call_back_light_changed)
-		set_active_name(self.light, get_token_value(find_data_file("light.inp"), "#Psun"))
+		set_active_name(self.light, token)
 
 		ti_light = gtk.ToolItem();
 		lable=gtk.Label("Light intensity:")
 		lable.show
 	        hbox = gtk.HBox(False, 2)
-        
 	        hbox.pack_start(lable, False, False, 0)
 	        hbox.pack_start(self.light, False, False, 0)
 
-		ti_light.add(hbox);
+		ti_light.add(hbox)
+		ti_light.show_all()
 		toolbar2.insert(ti_light, 1)
 
+		sep = gtk.SeparatorToolItem()
+		sep.set_draw(False)
+		sep.set_expand(True)
+		sep.show_all()
+		toolbar2.insert(sep, 2)
 
+		ti_progress = gtk.ToolItem()
+		hbox = gtk.HBox(False, 2)
+
+		logging.info('__init__6')
+		#hbox.set_child_packing(self.progress, False, False, 0, 0)
+
+		self.spin=gtk.Spinner()
+		self.spin.set_size_request(32, 32)
+		self.spin.show()
+		self.spin.stop()
+
+		logging.info('__init__6.1')
+		gap=gtk.Label(" ")
+		hbox.add(gap)
+		hbox.add(self.spin)	
+		#hbox.set_child_packing(self.spin, False, False, 0, 0)
+
+
+
+		gap.show()
+		hbox.show()
+		logging.info('__init__6.2')
+		ti_progress.add(hbox)
+		toolbar2.insert(ti_progress, 3)
+		ti_progress.show()
 
 
 		toolbar.show_all()
-		toolbar2.show_all()
+		toolbar2.show()
+
+
+		main_vbox.pack_start(self.menubar, False, True, 0)
+		handlebox = gtk.HandleBox()
+		handlebox.set_snap_edge(gtk.POS_LEFT)
+		handlebox.show()
+
+		toolbar.set_size_request(1000, -1)
+		toolbar2.set_size_request(900, -1)
+		tb_vbox=gtk.VBox()
+		tb_vbox.add(toolbar)
+		tb_vbox.add(toolbar2)
+		tb_vbox.show()
 
 
 
-		menubar = self.get_main_menu(window)
+		handlebox.add(tb_vbox)
 
-		main_vbox.pack_start(menubar, False, True, 0)
-		main_vbox.add(toolbar)
-		main_vbox.add(toolbar2)
-		main_vbox.add(table)
-		menubar.show()
+		main_vbox.pack_start(handlebox, False, False, 0)
+		self.progress = gtk.ProgressBar(adjustment=None)
+
+		self.progress.hide()
+
+		main_vbox.pack_start(self.progress, False, False, 0)#add(self.progress)
 
 
-		window.show()
+
+
+
+		self.window.connect("delete-event", self.callback_close_window) 
+
+		logging.info('__init__7')
+		self.win_list.set_window(self.window,"main_window")
+
+
+
+		self.menubar.show()
+
+		self.make_window2(main_vbox)
+
+		self.window.show()
+
+		process_events()		
+
+
+		logging.info('__init__6.5')
+		self.thread = _FooThread()
+		self.thread.connect("file_changed", self.user_callback)
+		self.thread.daemon = True
+		self.thread.start()
+		logging.info('__init__6.6')
+
+
+	def make_window2(self,main_vbox):
+		notebook.set_tab_pos(gtk.POS_TOP)
+		notebook.show()
+		notebook.set_current_page(1)
+
+		box=gtk.HBox()
+		self.status_bar = gtk.Statusbar()      
+		self.context_id = self.status_bar.get_context_id("Statusbar example")
+		self.status_bar.push(self.context_id, os.getcwd()+"/")
+
+		box.add(self.status_bar)
+
+		self.window2_box=gtk.VBox()
+		self.window2_box.add(notebook)
+		self.window2_box.add(box)
+		self.window2_box.set_child_packing(box, False, False, 0, 0)
+		self.window2_box.set_size_request(-1, 550)
+		self.window2 = gtk.Window(gtk.WINDOW_TOPLEVEL)
+		self.window2.set_border_width(10)
+
+		self.window2.set_title("Organic Photovoltaic Device Model (www.opvdm.com)")
+		self.window2.connect("delete-event", self.callback_close_window2)
+
+		self.window2.set_icon_from_file(find_data_file("gui/image.jpg"))
+		if main_vbox==None:
+			self.window2.add(self.window2_box)
+		else:
+			main_vbox.add(self.window2_box)			
+
+
+
+		box.show()
+		self.status_bar.show()
+		self.window2_box.show()
+
+		self.change_dir_and_refresh_interface(os.getcwd()+"/")
+		if main_vbox==None:
+			self.window2.show()
 
 def main():
-
-
-	set_exe_command()
 	gtk.main()
 	return 0
 
 if __name__ == "__main__":
-	argc = len(sys.argv)
-	if argc==2:
-		if sys.argv[1]=="--help":
-			print "opvdm - The GUI for Organic Photovoltaic Device Model"
-			print "Copyright Roderick MacKenzie 2012, released under GPLv2"
-			print ""
-			print "Usage: opvdm [options]"
-			print ""
-			print "Options:"
-			print "\t--version\tdisplays the current version"
-			print "\t--help\t\tdisplays the help"
-			print ""
-			print "Additional information about opvdm is available at http://www.opvdm.com."
-			print ""
-			print "Report bugs to: roderick.mackenzie@nottingham.ac.uk"
-			sys.exit(0)
-		if sys.argv[1]=="--version":
-			print "opvdm, Version 1.0"
-			print "Copyright and written by Roderick MacKenzie 2012, Releced under GPLv2"
-			print ""
-			print "This is free software; see the source code for copying conditions."
-			print "There is ABSOLUTELY NO WARRANTY; not even for MERCHANTABILITY or"
-			print "FITNESS FOR A PARTICULAR PURPOSE."
-			sys.exit(0)
+
+	command_args(len(sys.argv),sys.argv)
 	NotebookExample()
 	main()
 
