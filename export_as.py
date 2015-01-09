@@ -4,8 +4,8 @@
 #    Copyright (C) 2012 Roderick C. I. MacKenzie
 #
 #	roderick.mackenzie@nottingham.ac.uk
-#	www.roderickmackenzie.eu
-#	Room B86 Coats, University Park, Nottingham, NG7 2RD, UK
+#	www.opvdm.com
+#	Room B86 Coates, University Park, Nottingham, NG7 2RD, UK
 #
 #    This program is free software; you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License as published by
