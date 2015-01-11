@@ -8,8 +8,7 @@
 #
 #    This program is free software; you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License as published by
-#    the Free Software Foundation; either version 2 of the License, or
-#    (at your option) any later version.
+#    the Free Software Foundation, version 2.
 #
 #    This program is distributed in the hope that it will be useful,
 #    but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -26,7 +25,6 @@ import gtk
 import sys
 import os
 import shutil
-from search import return_file_list
 from plot import plot_data
 from plot_gen import plot_gen
 from plot import plot_info
@@ -35,27 +33,24 @@ from about import about_dialog_show
 from used_files_menu import used_files_menu
 from server import server
 from scan_tab import scan_vbox
-from util import dlg_get_text
+from gui_util import dlg_get_text
 import threading
 import gobject
-import pyinotify
 import multiprocessing
 import time
 import glob
-
-def get_scan_dirs(scan_dirs,sim_dir):
-	ls=os.listdir(sim_dir)
-
-	for i in range(0, len(ls)):
-		dir_name=sim_dir+ls[i]
-		full_name=sim_dir+ls[i]+"/opvdm_gui_config.inp"
-		if os.path.isfile(full_name):
-			scan_dirs.append(dir_name)
+from window_list import windows
+from util import delete_link_tree
+from util import delete_second_level_link_tree
+from util import copy_scan_dir
+from search import return_file_list
+from win_lin import running_on_linux
+import webbrowser
+from util import find_data_file
+from search import find_fit_log
+from util import get_scan_dirs
 
 class scan_class(gtk.Window):
-	param_list=[]
-
-	icon_theme = gtk.icon_theme_get_default()
 
 	def get_main_menu(self, window):
 		accel_group = gtk.AccelGroup()
@@ -74,18 +69,47 @@ class scan_class(gtk.Window):
 		return item_factory.get_widget("<main>")
 
 	def callback_close(self, widget, data=None):
+		self.win_list.update(self,"scan_window")
 		self.hide()
 		return True
 
+	def callback_change_dir(self, widget, data=None):
+		dialog = gtk.FileChooserDialog("Change directory",
+                               None,
+                               gtk.FILE_CHOOSER_ACTION_OPEN,
+                               (gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL,
+                                gtk.STOCK_OK, gtk.RESPONSE_OK))
+		dialog.set_default_response(gtk.RESPONSE_OK)
+		dialog.set_action(gtk.FILE_CHOOSER_ACTION_CREATE_FOLDER)
+
+		filter = gtk.FileFilter()
+		filter.set_name("All files")
+		filter.add_pattern("*")
+		dialog.add_filter(filter)
+
+
+		response = dialog.run()
+		if response == gtk.RESPONSE_OK:
+			self.sim_dir=dialog.get_filename()
+
+	 		a = open("scan_window.inp", "w")
+			a.write(self.sim_dir)
+			a.close()
+
+			self.clear_pages()
+			self.load_tabs()
+			dialog.destroy()
+
+		return True
+
 	def callback_help(self, widget, data=None):
-		cmd = 'firefox http://www.roderickmackenzie.eu/wiki/index.php?title=parameter_scan &'
-		os.system(cmd)
+		webbrowser.open('firefox http://www.roderickmackenzie.eu/wiki/index.php?title=parameter_scan')
 
 	def callback_add_page(self, widget, data=None):
 		new_sim_name=dlg_get_text( "New simulation name:", "Simulation "+str(self.number_of_tabs+1))
 
 		if new_sim_name!=None:
-			name=os.getcwd()+'/'+new_sim_name+'/'
+			name=os.path.join(os.getcwd(),new_sim_name)
 			self.add_page(name)
 
 	def callback_remove_page(self,widget,name):
@@ -93,35 +117,57 @@ class scan_class(gtk.Window):
 		tab = self.notebook.get_nth_page(pageNum)
 		self.toggle_tab_visible(tab.tab_name)
 
+	def callback_cluster_sleep(self,widget,data):
+		self.myserver.sleep()
+
+	def callback_cluster_poweroff(self,widget,data):
+		self.myserver.poweroff()
+
+	def callback_cluster_get_data(self,widget):
+		self.myserver.get_data()
+
+	def callback_cluster_print_jobs(self,widget):
+		self.myserver.print_jobs()
+
+	def callback_cluster_fit_log(self,widget):
+		pageNum = self.notebook.get_current_page()
+		tab = self.notebook.get_nth_page(pageNum)
+		name=tab.tab_name
+		path=os.path.join(self.sim_dir,name)
+		find_fit_log("./fit.dat",path)
+		os.system("gnuplot -persist ./fit.dat &\n")
+
+
 	def callback_copy_page(self,widget,data):
 		pageNum = self.notebook.get_current_page()
 		tab = self.notebook.get_nth_page(pageNum)
 		name=tab.tab_name
-		old_dir=self.sim_dir+'/'+name
-		new_sim_name=dlg_get_text( "Clone the current simulation to a new simulation called:", "New simulation")
+		old_dir=os.path.join(self.sim_dir,name)
+		new_sim_name=dlg_get_text( "Clone the current simulation to a new simulation called:", name)
 		if new_sim_name!=None:
-			new_dir=self.sim_dir+'/'+new_sim_name
-			print "I will copy ",old_dir,new_dir
-			shutil.copytree(old_dir, new_dir)
+			new_dir=os.path.join(self.sim_dir,new_sim_name)
+
+			copy_scan_dir(new_dir,old_dir)
+			print "I want to copy",new_dir,old_dir
 			self.add_page(new_sim_name)
 
 	def callback_rename_page(self,widget,data):
 		pageNum = self.notebook.get_current_page()
 		tab = self.notebook.get_nth_page(pageNum)
 		name=tab.tab_name
-		old_dir=self.sim_dir+'/'+name
-		new_sim_name=dlg_get_text( "Rename the simulation to be called:", "New simulation")
+		old_dir=os.path.join(self.sim_dir,name)
+		new_sim_name=dlg_get_text( "Rename the simulation to be called:", name)
 
 		if new_sim_name!=None:
-			new_dir=self.sim_dir+'/'+new_sim_name
+			new_dir=os.path.join(self.sim_dir,new_sim_name)
 			shutil.move(old_dir, new_dir)
-			tab.rename(new_sim_name)
+			tab.rename(new_dir)
 
 	def callback_delete_page(self,widget,data):
 		pageNum = self.notebook.get_current_page()
 		tab = self.notebook.get_nth_page(pageNum)
 		name=tab.tab_name
-		dir_to_del=self.sim_dir+'/'+name
+		dir_to_del=os.path.join(self.sim_dir,name)
 
 		md = gtk.MessageDialog(None, 0, gtk.MESSAGE_QUESTION,  gtk.BUTTONS_YES_NO, "Should I remove the simulation directory "+dir_to_del)
 
@@ -140,7 +186,7 @@ class scan_class(gtk.Window):
 
 
 			print "I am going to delete file",dir_to_del
-			shutil.rmtree(dir_to_del)
+			delete_second_level_link_tree(dir_to_del)
 			self.number_of_tabs=self.number_of_tabs-1
 		elif response == gtk.RESPONSE_NO:
 			print "Not deleting"
@@ -176,8 +222,47 @@ class scan_class(gtk.Window):
 	def callback_view_toggle_tab(self, widget, data):
 		self.toggle_tab_visible(data)
 
+	def callback_run_all_simulations(self,widget):
+		for i in range(0,self.notebook.get_n_pages()):
+			tab = self.notebook.get_nth_page(i)
+			tab.simulate()
+
+	def callback_run_simulation(self,widget):
+		pageNum = self.notebook.get_current_page()
+		tab = self.notebook.get_nth_page(pageNum)
+		tab.simulate()
+
+	def callback_stop_simulation(self,widget):
+		pageNum = self.notebook.get_current_page()
+		tab = self.notebook.get_nth_page(pageNum)
+		tab.stop_simulation()
+
+	def load_tabs(self):
+		sim_dirs=[]
+
+		get_scan_dirs(sim_dirs,self.sim_dir)
+
+		
+		if len(sim_dirs)==0:
+			sim_dirs.append("scan1")
+		else:
+			for i in range(0,len(sim_dirs)):
+				sim_dirs[i]=sim_dirs[i]
+
+		for i in range(0,len(sim_dirs)):
+			self.add_page(sim_dirs[i])
+
+	def clear_pages(self):
+		for items in self.tab_menu.get_children():
+			self.tab_menu.remove(items)
+
+		for child in self.notebook.get_children():
+    			self.notebook.remove(child)
+
+		self.rod=[]
 
 	def add_page(self,name):
+
 		hbox=gtk.HBox()
 
 		hbox.set_size_request(-1, 25)
@@ -185,13 +270,13 @@ class scan_class(gtk.Window):
 		sim_name=os.path.basename(os.path.normpath(name))
 		print "Looking for",sim_name,name
 		self.rod.append(scan_vbox())
-		self.rod[len(self.rod)-1].init(self.myserver,self.tooltips,self.status_bar,self.context_id,self.param_list,self.exe_command,label,sim_name)
+		self.rod[len(self.rod)-1].init(self.myserver,self.tooltips,self.status_bar,self.context_id,self.exe_command,label,self.sim_dir,sim_name)
 		label.set_justify(gtk.JUSTIFY_LEFT)
 		hbox.pack_start(label, False, True, 0)
 
 		button = gtk.Button()
 		close_image = gtk.Image()
-   		close_image.set_from_file(self.icon_theme.lookup_icon("window-close", 16, 0).get_filename())
+   		close_image.set_from_file(find_data_file("gui/close.png"))
 		close_image.show()
 		button.add(close_image)
 		button.props.relief = gtk.RELIEF_NONE
@@ -202,6 +287,7 @@ class scan_class(gtk.Window):
 		hbox.pack_end(button, False, False, 0)
 		hbox.show_all()
 		self.notebook.append_page(self.rod[len(self.rod)-1],hbox)
+		self.notebook.set_tab_reorderable(self.rod[len(self.rod)-1],True)
 
 		menu_item = gtk.CheckMenuItem(sim_name)		   
 		menu_item.set_active(True)
@@ -216,14 +302,40 @@ class scan_class(gtk.Window):
 	def callback_last_menu_click(self, widget, data):
 		print [data]
 
-	def init(self,param_list,exe_name,exe_command,progress,gui_sim_start,gui_sim_stop,terminal):
+	def callback_remove_all_results(self, widget, data):
+		results=[]
+		return_file_list(results,self.sim_dir,"scan.inp")
+		for i in range(0,len(results)):
+			dir_name=os.path.dirname(results[i])
+			if os.path.isdir(dir_name):
+				print "delete:",dir_name
+				#delete_link_tree(dir_name)
+
+	def callback_wol(self, widget, data):
+		self.myserver.wake_nodes()
+
+	def init(self,exe_name,exe_command,progress,gui_sim_start,gui_sim_stop,terminal):
+		self.win_list=windows()
+		self.win_list.load()
+		self.win_list.set_window(self,"scan_window")
 		self.exe_name=exe_name
-		self.param_list=param_list
 		self.exe_command=exe_command
 		print "constructur"
 
 		self.rod=[]
-		self.sim_dir=os.getcwd()+'/'
+		if os.path.isfile("scan_window.inp"):
+			f = open("scan_window.inp")
+			lines = f.readlines()
+			f.close()
+
+			path=lines[0].strip()
+			if path.startswith(os.getcwd()):
+				self.sim_dir=path
+			else:
+				self.sim_dir=os.getcwd()
+		else:
+			self.sim_dir=os.getcwd()
+
 		self.tooltips = gtk.Tooltips()
 
 		self.set_border_width(2)
@@ -253,22 +365,28 @@ class scan_class(gtk.Window):
 
 		self.menu_items = (
 		    ( "/_File",         None,         None, 0, "<Branch>" ),
+		    ( "/File/Change dir",     None, self.callback_change_dir, 0, None ),
 		    ( "/File/Close",     None, self.callback_close, 0, None ),
 		    ( "/Simulations/_New",     None, self.callback_add_page, 0, "<StockItem>", "gtk-new" ),
 		    ( "/Simulations/_Delete",     None, self.callback_delete_page, 0, "<StockItem>", "gtk-clear" ),
 		    ( "/Simulations/_Rename",     None, self.callback_rename_page, 0, "<StockItem>", "gtk-edit" ),
 		    ( "/Simulations/_Clone",     None, self.callback_copy_page, 0, "<StockItem>", "gtk-copy" ),
+		    ( "/Cluster/_Cluster sleep",     None, self.callback_cluster_sleep, 0, "<StockItem>", "gtk-copy" ),
+		    ( "/Cluster/_Cluster poweroff",     None, self.callback_cluster_poweroff, 0, "<StockItem>", "gtk-copy" ),
+		    ( "/Cluster/_Cluster wake",     None, self.callback_wol, 0, "<StockItem>", "gtk-copy" ),
 
+		    ( "/Cluster/_Remove all results",     None, self.callback_remove_all_results, 0, "<StockItem>", "gtk-copy" ),
 		    ( "/_Help",         None,         None, 0, "<LastBranch>" ),
 		    ( "/_Help/Help",   None,         self.callback_help, 0, None ),
 		    ( "/_Help/About",   None,         about_dialog_show, 0, "<StockItem>", "gtk-about" ),
 		    )
 
+
+		
 		main_vbox = gtk.VBox(False, 3)
 
 		menubar = self.get_main_menu(self)
-
-		main_vbox.add(menubar)
+		main_vbox.pack_start(menubar, False, False, 0)
 		menubar.show()
 
 		toolbar = gtk.Toolbar()
@@ -285,7 +403,17 @@ class scan_class(gtk.Window):
 		self.tab_menu=gtk.Menu()
 		tb_new_scan.set_menu(self.tab_menu)
 
+		myitem=self.item_factory.get_item("/Cluster")
+		if os.path.isfile("fit.inp")==False:
+			myitem.hide()
+
 		toolbar.insert(tb_new_scan, pos)
+		pos=pos+1
+
+		sep = gtk.SeparatorToolItem()
+		sep.set_draw(True)
+		sep.set_expand(False)
+		toolbar.insert(sep, pos)
 		pos=pos+1
 
 		delete = gtk.ToolButton(gtk.STOCK_CLEAR)
@@ -308,6 +436,46 @@ class scan_class(gtk.Window):
 		pos=pos+1
 
 		sep = gtk.SeparatorToolItem()
+		sep.set_draw(True)
+		sep.set_expand(False)
+		toolbar.insert(sep, pos)
+		pos=pos+1
+
+		image = gtk.Image()
+		image.set_from_file(find_data_file("gui/forward2.png"))
+		tb_simulate = gtk.ToolButton(image)
+		tb_simulate.connect("clicked", self.callback_run_all_simulations)
+		self.tooltips.set_tip(tb_simulate, "Run all simulation")
+		toolbar.insert(tb_simulate, pos)
+		pos=pos+1
+
+		if os.path.isfile("fit.inp"):
+			sep = gtk.SeparatorToolItem()
+			sep.set_draw(True)
+			sep.set_expand(False)
+			toolbar.insert(sep, pos)
+			pos=pos+1
+
+			tb_help = gtk.ToolButton(gtk.STOCK_HARDDISK)
+			tb_help.connect("clicked", self.callback_cluster_get_data)
+			self.tooltips.set_tip(tb_help, "Get data from cluster")
+			toolbar.insert(tb_help, pos)
+			pos=pos+1
+
+			tb_help = gtk.ToolButton(gtk.STOCK_FIND)
+			tb_help.connect("clicked", self.callback_cluster_print_jobs)
+			self.tooltips.set_tip(tb_help, "Get data from cluster")
+			toolbar.insert(tb_help, pos)
+			pos=pos+1
+
+			tb_help = gtk.ToolButton(gtk.STOCK_FIND)
+			tb_help.connect("clicked", self.callback_cluster_fit_log)
+			self.tooltips.set_tip(tb_help, "Show fitlog")
+			toolbar.insert(tb_help, pos)
+			pos=pos+1
+
+
+		sep = gtk.SeparatorToolItem()
 		sep.set_draw(False)
 		sep.set_expand(True)
 		toolbar.insert(sep, pos)
@@ -319,14 +487,17 @@ class scan_class(gtk.Window):
 		toolbar.insert(tb_help, pos)
 		pos=pos+1
 
+
 		toolbar.show_all()
-		main_vbox.add(toolbar)
+		main_vbox.pack_start(toolbar, False, False, 0)
+		#main_vbox.add(toolbar)
 
 		main_vbox.set_border_width(1)
 		self.add(main_vbox)
 		main_vbox.show()
 		self.myserver=server()
-		self.myserver.setup_gui(self.progress,self.gui_sim_start,self.gui_sim_stop)
+		self.myserver.init(self.sim_dir)
+		self.myserver.setup_gui(self.gui_sim_start,self.gui_sim_stop)
 		self.myserver.set_terminal(terminal)
 
 		
@@ -335,25 +506,9 @@ class scan_class(gtk.Window):
 		self.notebook.show()
 		self.notebook.set_tab_pos(gtk.POS_LEFT)
 
-		sim_dirs=[]
-
-		get_scan_dirs(sim_dirs,self.sim_dir)
-
-		
-		if len(sim_dirs)==0:
-			sim_dirs.append("scan1")
-		else:
-			for i in range(0,len(sim_dirs)):
-				sim_dirs[i]=sim_dirs[i]+"/"
-
-		for i in range(0,len(sim_dirs)):
-			self.add_page(sim_dirs[i])
-
-		main_vbox.add(self.notebook)
-
-
-
-		main_vbox.add(box)
+		self.load_tabs()
+		main_vbox.pack_start(self.notebook, True, True, 0)
+		main_vbox.pack_start(box, False, False, 0)
 
 		self.connect("delete-event", self.callback_close)
 
