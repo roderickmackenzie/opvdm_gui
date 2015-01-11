@@ -57,6 +57,7 @@ from scan_item import scan_items_get_list
 from win_lin import running_on_linux
 from scan_util import tree_gen
 from scan_util import tree_load_program
+from scan_item import scan_item_save
 
 class scan_vbox(gtk.VBox):
 
@@ -249,12 +250,10 @@ class scan_vbox(gtk.VBox):
 
 
 		if run==True:
-			program_list=[[],[],[]]
+			program_list=[]
 			for i in range(0,len(self.liststore_combobox)):
-				program_list[0].append(self.liststore_combobox[i][0])
-				program_list[1].append(self.liststore_combobox[i][1])
-				program_list[2].append(self.liststore_combobox[i][2])
-
+				program_list.append([self.liststore_combobox[i][0],self.liststore_combobox[i][1],self.liststore_combobox[i][2]])
+			print "Feeding,",base_dir,self.sim_dir
 			commands=tree_gen(program_list,base_dir,self.sim_dir)
 
 			self.myserver.init(self.sim_dir)
@@ -528,6 +527,7 @@ class scan_vbox(gtk.VBox):
 		
 		a.close()
 
+		scan_item_save(os.path.join(self.sim_dir,"scan_items.inp"))
 
 	def combo_changed(self, widget, path, text, model):
 		model[path][0] = text

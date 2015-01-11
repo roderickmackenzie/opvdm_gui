@@ -19,10 +19,7 @@
 #    with this program; if not, write to the Free Software Foundation, Inc.,
 #    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
-import pygtk
-pygtk.require('2.0')
 import gc
-import gtk
 import sys
 import os
 import shutil
@@ -54,14 +51,16 @@ def tree_load_program(program_list,sim_dir):
 
 def tree_gen(program_list,base_dir,sim_dir):
 	commands=[]
+	print "here",program_list
 	tree_items=[[],[],[]]
-	for i in range(0,len(self.liststore_combobox)):
-
-		if self.liststore_combobox[i][2]=="scan":
+	for i in range(0,len(program_list)):
+		print i,program_list[i][0],program_list[i][1],program_list[i][2]
+		if program_list[i][2]=="scan":
 			tree_items[0].append(program_list[i][0])
 			tree_items[1].append(program_list[i][1])
 			tree_items[2].append(program_list[i][2])
 
+	print "tree items=",tree_items
 	tree(program_list,tree_items,commands,base_dir,0,sim_dir,"","")
 	return commands
 
