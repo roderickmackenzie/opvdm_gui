@@ -8,8 +8,7 @@
 #
 #    This program is free software; you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License as published by
-#    the Free Software Foundation; either version 2 of the License, or
-#    (at your option) any later version.
+#    the Free Software Foundation, version 2.
 #
 #    This program is distributed in the hope that it will be useful,
 #    but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -19,6 +18,7 @@
 #    You should have received a copy of the GNU General Public License along
 #    with this program; if not, write to the Free Software Foundation, Inc.,
 #    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+
 
 import pygtk
 pygtk.require('2.0')
@@ -42,27 +42,33 @@ from plot_gen import plot_gen
 from plot_command import plot_command_class
 import threading
 import gobject
-import pyinotify
+#import pyinotify
 import multiprocessing
 import time
-import glob
+from util import get_cache_path
+from cmp_class import cmp_class
 from scan_select import select_param
 from config import config
+import hashlib
+from os.path import expanduser
+from token_lib import tokens
+from util import delete_link_tree
+from scan_item import scan_items_get_list
+from win_lin import running_on_linux
+from scan_util import tree
 
 class scan_vbox(gtk.VBox):
 
 	icon_theme = gtk.icon_theme_get_default()
 
 	def rename(self,new_name):
-		self.sim_name=new_name
-		whole_path=os.getcwd()+'/'+self.sim_name
-		self.sim_dir=whole_path+'/'
+		self.sim_name=os.path.basename(new_name)
+		self.sim_dir=new_name
 		self.status_bar.push(self.context_id, self.sim_dir)
-		self.set_tab_caption(os.path.basename(new_name))
+		self.set_tab_caption(self.sim_name)
 		#self.tab_label.set_text(os.path.basename(new_name))
 		self.reload_liststore()
-		self.plotted_graphs.init(self.sim_dir+'opvdm_last_menu.inp',self.callback_last_menu_click)
-		self.plotted_graphs.reload_list()
+		self.plotted_graphs.init(self.sim_dir,self.callback_last_menu_click)
 		
 
 	def callback_move_down(self, widget, data=None):
@@ -125,73 +131,22 @@ class scan_vbox(gtk.VBox):
 
 		self.rebuild_liststore_op_type()
 
-	def apply_constant(self):
-		for i in range(0, len(self.liststore_combobox)):
-			if self.liststore_combobox[i][2]=="constant":
-				pos_mirror_dest=self.combo_box_list.index(self.liststore_combobox[i][0])
-				inp_update_token_value(self.param_list[pos_mirror_dest].filename, self.param_list[pos_mirror_dest].token, self.liststore_combobox[i][1])
-				print os.getcwd()
-				print "Replace",self.param_list[pos_mirror_dest].filename,self.param_list[pos_mirror_dest].token,self.liststore_combobox[i][1]
 
-	def apply_mirror(self):
-		for i in range(0, len(self.liststore_combobox)):
-			for ii in range(0, len(self.liststore_combobox)):
-				if self.liststore_combobox[i][2]==self.liststore_combobox[ii][0]:
-					#I have found two matching IDs
-					pos_mirror_src=self.combo_box_list.index(self.liststore_combobox[i][2])
-					pos_mirror_dest=self.combo_box_list.index(self.liststore_combobox[i][0])
-					src_value=inp_get_token_value(self.param_list[pos_mirror_src].filename, self.param_list[pos_mirror_src].token)
-					#pull out of the file the value
-					if self.liststore_combobox[i][1]!="mirror":
-						#find value in list
-						orig_list=self.liststore_combobox[i][1].split()
-						look_up=self.liststore_combobox[ii][1].split()
-						src_value=orig_list[look_up.index(src_value.rstrip())]
+	def get_units(self):
+		token=""
+		for i in range(0,len(self.liststore_combobox)):
+			if self.liststore_combobox[i][2]=="scan":
+				for ii in range(0,len(self.param_list)):
+					if self.liststore_combobox[i][0]==self.param_list[ii].name:
+						token=self.param_list[ii].token
+				break
+		if token!="":
+			found_token=self.tokens.find(token)
+			if type(found_token)!=bool:
+				return found_token.units
 
-					inp_update_token_value(self.param_list[pos_mirror_dest].filename, self.param_list[pos_mirror_dest].token, src_value)	
+		return ""
 
-	def tree(self,tree_items,commands,base_dir,level,path,var_to_change,value_to_change):
-			print level,tree_items
-			i=tree_items[1][level]
-			words=i.split()
-			pass_var_to_change=var_to_change+" "+str(self.combo_box_list.index(tree_items[0][level]))
-			print pass_var_to_change
-			for ii in words:
-				cur_dir=path+"/"+ii
-
-				if not os.path.exists(cur_dir):
-					os.makedirs(cur_dir)
-					if level==0:
-						f = open(cur_dir+'/scan.inp','w')
-						f.write("data")
-						f.close()
-
-				pass_value_to_change=value_to_change+" "+ii
-
-				if ((level+1)<len(tree_items[0])):
-						self.tree(tree_items,commands,base_dir,level+1,cur_dir,pass_var_to_change,pass_value_to_change)
-				else:
-					new_values=pass_value_to_change.split()
-					pos=pass_var_to_change.split()
-					
-					f_list=glob.iglob(os.path.join(base_dir, "*.inp"))
-					for inpfile in f_list:
-                         			shutil.copy(inpfile, cur_dir)
-
-					shutil.copy(os.path.join(base_dir, "sim.opvdm"), cur_dir)
-
-					os.chdir(cur_dir)
-					
-					for i in range(0, len(pos)):
-						inp_update_token_value(self.param_list[int(pos[i])].filename, self.param_list[int(pos[i])].token, new_values[i])
-					
-					self.apply_mirror()
-					self.apply_constant()	
-					
-					inp_update_token_value("physdir.inp", "#physdir", base_dir+"/phys/")
-					inp_update_token_value("dump.inp", "#plot", "0")
-
-					commands.append(os.getcwd())
 
 
 	def make_sim_dir(self):
@@ -199,12 +154,25 @@ class scan_vbox(gtk.VBox):
 			os.makedirs(self.sim_dir)
 
 
-	def callback_stop(self, widget, data=None):
-		self.myserver.stop()
-		cmd = 'killall '+self.exe_name
-		ret= os.system(cmd)
+	def stop_simulation(self):
+		self.myserver.killall()
 
-	def callback_simulate(self, widget, data=None):
+
+
+	def delete_simulations(self,dirs_to_del):
+		for i in range(0, len(dirs_to_del)):
+			delete_link_tree(dirs_to_del[i])
+
+	def list_simulations(self,dirs_to_del):
+		ls=os.listdir(self.sim_dir)
+		print ls
+		for i in range(0, len(ls)):
+			full_name=os.path.join(self.sim_dir,ls[i])
+			if os.path.isdir(full_name):
+				if os.path.isfile(os.path.join(full_name,'scan.inp')):
+					dirs_to_del.append(full_name)
+
+	def simulate(self):
 
 		base_dir=os.getcwd()
 		run=True
@@ -226,13 +194,7 @@ class scan_vbox(gtk.VBox):
 
 		self.make_sim_dir()
 		dirs_to_del=[]
-		ls=os.listdir(self.sim_dir)
-		print ls
-		for i in range(0, len(ls)):
-			full_name=self.sim_dir+ls[i]
-			if os.path.isdir(full_name):
-				if os.path.isfile(full_name+'/scan.inp'):
-					dirs_to_del.append(full_name)
+		self.list_simulations(dirs_to_del)
 
 		if (len(dirs_to_del)!=0):
 
@@ -258,9 +220,7 @@ class scan_vbox(gtk.VBox):
 			response = dialog.run()
 			
 			if response == gtk.RESPONSE_YES:
-				for i in range(0, len(dirs_to_del)):
-					print "Deleting:",dirs_to_del[i]
-					shutil.rmtree(dirs_to_del[i])
+					self.delete_simulations(dirs_to_del)
 			elif response == gtk.RESPONSE_NO:
 				print "Not deleting"
 			elif response == gtk.RESPONSE_CANCEL:
@@ -290,25 +250,37 @@ class scan_vbox(gtk.VBox):
 		if run==True:
 			commands=[]
 			tree_items=[[],[],[]]
+			program_list=[[],[],[]]
 			for i in range(0,len(self.liststore_combobox)):
+
 				if self.liststore_combobox[i][2]=="scan":
 					tree_items[0].append(self.liststore_combobox[i][0])
 					tree_items[1].append(self.liststore_combobox[i][1])
 					tree_items[2].append(self.liststore_combobox[i][2])
 
-
-			self.tree(tree_items,commands,base_dir,0,self.sim_dir,"","")
-		
-			self.myserver.init()
-			for i in range(0, len(commands)):
-				self.myserver.add_job(commands[i])
+				program_list[0].append(self.liststore_combobox[i][0])
+				program_list[1].append(self.liststore_combobox[i][1])
+				program_list[2].append(self.liststore_combobox[i][2])
 
 
-			self.myserver.start(self.sim_dir,self.exe_command)
+			tree(program_list,tree_items,commands,base_dir,0,self.sim_dir,"","")
 
+			self.myserver.init(self.sim_dir)
 
-			self.save_combo()
+			if self.myserver.start_threads()==0:
+				self.myserver.clear_cache()
+				for i in range(0, len(commands)):
+					self.myserver.add_job(commands[i])
+					print "Adding job"+commands[i]
 
+				self.myserver.start(self.exe_command)
+
+				self.save_combo()
+			else:
+				message = gtk.MessageDialog(type=gtk.MESSAGE_ERROR, buttons=gtk.BUTTONS_OK)
+				message.set_markup("I can't connect to the server")
+				message.run()
+				message.destroy()
 		os.chdir(base_dir)
 		gc.collect()
 
@@ -329,8 +301,8 @@ class scan_vbox(gtk.VBox):
 			plot_now=plot_xy_window.my_run(plot_data)
 
 			if plot_now==True:
-				self.plotted_graphs.append(plot_data,True)
 				self.plot_results(plot_data)
+				self.plotted_graphs.refresh()
 
 	def callback_gen_plot_command(self, widget, data=None):
 		dialog = gtk.FileChooserDialog("File to plot",
@@ -380,9 +352,9 @@ class scan_vbox(gtk.VBox):
 				plot_now=True
 
 			if plot_now==True:
-				self.plotted_graphs.append(plot_data,True)
-
 				self.plot_results(plot_data)
+
+				self.plotted_graphs.refresh()
 
 		else:
 			print 'Closed, no files selected'
@@ -390,14 +362,17 @@ class scan_vbox(gtk.VBox):
 
 	def gen_plot_line(self,dirname,plot_tokens):
 		if plot_tokens.file1=="":
-			f = open(dirname+"/"+plot_tokens.file0,'r')
+			f = open(os.path.join(dirname,plot_tokens.file0),'r')
 			values=f.readline()
 			f.close()
 			return values
 		else:
-			v0=inp_get_token_value(dirname+"/"+plot_tokens.file0, plot_tokens.tag0)
-			v1=inp_get_token_value(dirname+"/"+plot_tokens.file1, plot_tokens.tag1)
-			values=v0+" "+v1+"\n"
+			v0=inp_get_token_value(os.path.join(dirname,plot_tokens.file0), plot_tokens.tag0)
+			v1=inp_get_token_value(os.path.join(dirname,plot_tokens.file1), plot_tokens.tag1)
+			v2=""
+			if plot_tokens.file2!="":
+				v2=inp_get_token_value(os.path.join(dirname,plot_tokens.file2), plot_tokens.tag2)
+			values=v0+" "+v1+" "+v2+"\n"
 			return values
 
 	def gen_infofile_plot(self,result_in,path,plot_tokens):
@@ -407,25 +382,40 @@ class scan_vbox(gtk.VBox):
 
 		#only allow files from real simulations in the list
 		for i in range(0,len(result_in)):
-			test_name=os.path.dirname(result_in[i])+'/sim.opvdm'
+			test_name=os.path.join(os.path.dirname(result_in[i]),'sim.opvdm')
 			if os.path.isfile(test_name):
 				result.append(result_in[i])
 
+
+		if len(result)==0:
+			print "No files found"
+			return
+
 		#pull out first item
 		ittr_path=os.path.dirname(result[0])
-		ittr_path=ittr_path[len(self.sim_dir):]
+		start_of_sim_dir_path_pos=len(self.sim_dir)+1
+		ittr_path=ittr_path[start_of_sim_dir_path_pos:]
 		#check it's depth
-		depth=ittr_path.count('/')
+		if running_on_linux():
+			depth=ittr_path.count('/')
+		else:
+			depth=ittr_path.count('\\')
+			
+		#print "DEPTHDEPTHDEPTHDEPTH:"
+		#print result
+		#print ittr_path
+		#print str(depth)
 
-
+		#Remove the first part of the path name just leaving what is in the simulation dir
 		if depth==0:
 			mydirs=[""]
 		else:
 			mydirs=[]
 			for i in result:
 				ittr_path=os.path.dirname(i)
-				ittr_path=ittr_path[len(self.sim_dir):]
-				ittr_path=ittr_path.split('/')
+				ittr_path=ittr_path[start_of_sim_dir_path_pos:]
+				ittr_path=os.path.split(ittr_path)
+				#print ittr_path
 				if mydirs.count(ittr_path[0])==0:
 					mydirs.append(ittr_path[0])
 
@@ -433,48 +423,55 @@ class scan_vbox(gtk.VBox):
 
 		data=["" for x in range(len(mydirs))]
 
+		#for each directory save the data into an array element?
 		for i in range(0, len(result)):
-			cur_sim_path=os.path.dirname(result[i])+'/'
+			cur_sim_path=os.path.dirname(result[i])
 			if cur_sim_path!=path:
-				print result[i],cur_sim_path
+				#print result[i],cur_sim_path
+				
 				values=self.gen_plot_line(cur_sim_path,plot_tokens)
 
 				if depth==0:
 					pos=0
 				else:
 					ittr_path=os.path.dirname(result[i])
-					ittr_path=ittr_path[len(self.sim_dir):]
-					ittr_path=ittr_path.split('/')
+					ittr_path=ittr_path[start_of_sim_dir_path_pos:]
+					ittr_path=os.path.split(ittr_path)
 					pos=mydirs.index(ittr_path[0])
 
-				print pos
+				#print pos
+				
 				data[pos]=data[pos]+values
-				print data[pos]
+				#print data[pos]
 		plot_files=[]
 		plot_labels=[]
+
+		#Dump the array elements to disk
 		for i in range(0,len(mydirs)):
-			newplotfile=path+'/'+mydirs[i]+'/'+file_name
+			newplotfile=os.path.join(path,mydirs[i],file_name)
 			plot_files.append(newplotfile)
 			plot_labels.append(os.path.basename(mydirs[i]))
 			f = open(newplotfile,'w')
 			f.write(data[i])
 			f.close()
 
-		plot_gen(plot_files,plot_labels,plot_tokens)
+		save=os.path.join(self.sim_dir,os.path.splitext(file_name)[0])+".oplot"
+		print "save path",save,plot_files
+		plot_gen(plot_files,plot_labels,plot_tokens,save,self.get_units())
 
 
 	def plot_results(self,plot_tokens):
-		path=plot_tokens.path
+		ret=""
 		file_name=plot_tokens.file0
 		result=[]
 
 		#search for the files
-		return_file_list(result,path,file_name)
+		return_file_list(result,self.sim_dir,file_name)
 
 		num_list=[]
 
 		#remove the file name in the base_dir
-		test_file=path+file_name
+		test_file=os.path.join(self.sim_dir,file_name)
 		if test_file in result:
 		    result.remove(test_file)
 
@@ -493,7 +490,8 @@ class scan_vbox(gtk.VBox):
 		#if it is an info file then deal with it
 		print check_info_file(file_name),file_name,plot_tokens.file0,plot_tokens.file1,plot_tokens.tag0,plot_tokens.tag1
 		if (check_info_file(file_name)==True):
-			self.gen_infofile_plot(result,path,plot_tokens)
+			#print "Rod",result,self.sim_dir
+			self.gen_infofile_plot(result,self.sim_dir,plot_tokens)
 		else:
 			mygraph=plot_data()
 			ret=mygraph.find_file(result[0],None)
@@ -507,19 +505,25 @@ class scan_vbox(gtk.VBox):
 			#build plot labels
 			for i in range(0,len(result)):
 				text=result[i][len(self.sim_dir):len(result[i])-1-len(os.path.basename(result[i]))]
-				if text.endswith("/dynamic"):
-					text=text[:-8]
-				plot_labels.append(text)
+				if text.endswith("dynamic"):
+					text=text[:-7]
 
-			plot_gen(result,plot_labels,None)
+				if text.endswith("light_dump"):
+					text=text[:-10]
+
+				plot_labels.append(str(text))
+
+			ret=os.path.join(self.sim_dir,os.path.splitext(os.path.basename(result[0]))[0])+".oplot"
+			plot_gen(result,plot_labels,plot_tokens,ret,self.get_units())
 			print result
 		self.plot_open.set_sensitive(True)
 
 		self.last_plot_data=plot_tokens
+		return ret
 
 	def save_combo(self):
 		self.make_sim_dir()
-		a = open(self.sim_dir+"/opvdm_gui_config.inp", "w")
+		a = open(os.path.join(self.sim_dir,"opvdm_gui_config.inp"), "w")
 		a.write(str(len(self.liststore_combobox))+"\n")
 
 
@@ -552,7 +556,7 @@ class scan_vbox(gtk.VBox):
 	def reload_liststore(self):
 		self.liststore_combobox.clear()
 
-		file_name=self.sim_dir+'opvdm_gui_config.inp'
+		file_name=os.path.join(self.sim_dir,'opvdm_gui_config.inp')
 
 		if os.path.isfile(file_name)==True:
 			f=open(file_name)
@@ -603,8 +607,24 @@ class scan_vbox(gtk.VBox):
 			self.config.set_value("#visible",False)
 			self.hide()
 
-	def init(self,myserver,tooltips,status_bar,context_id,param_list,exe_command,tab_label,sim_name):
+	def callback_run_simulation(self,widget):
+		self.simulate()
 
+	def callback_stop_simulation(self,widget):
+		self.stop_simulation()
+
+	def callback_examine(self, widget, data=None):
+		mycmp=cmp_class()
+		ret=mycmp.init(self.sim_dir,self.exe_command)
+		if ret==False:
+			md = gtk.MessageDialog(None, gtk.DIALOG_DESTROY_WITH_PARENT, gtk.MESSAGE_WARNING,  gtk.BUTTONS_CLOSE, "Re-run the simulation with 'dump all slices' set to one to use this tool.")
+        		md.run()
+        		md.destroy()
+			return
+
+	def init(self,myserver,tooltips,status_bar,context_id,exe_command,tab_label,scan_root_dir,sim_name):
+
+		self.tokens=tokens()
 		self.config=config()
 		self.sim_name=sim_name
 		self.clipboard = gtk.clipboard_get(gtk.gdk.SELECTION_CLIPBOARD)
@@ -626,35 +646,36 @@ class scan_vbox(gtk.VBox):
 		self.tooltips=tooltips
 		self.status_bar=status_bar
 		self.context_id=context_id
-		self.param_list=param_list
+		self.param_list=scan_items_get_list()
 		self.exe_command=exe_command
 		self.tab_label=tab_label
 		self.liststore_op_type = gtk.ListStore(str)
 
 
-		self.sim_dir=os.getcwd()+'/'+sim_name+'/'
+		self.sim_dir=os.path.join(scan_root_dir,sim_name)
 		self.tab_name=os.path.basename(os.path.normpath(self.sim_dir))
 
 		self.status_bar.push(self.context_id, self.sim_dir)
 		self.set_tab_caption(self.tab_name)
+
 		toolbar = gtk.Toolbar()
 		toolbar.set_style(gtk.TOOLBAR_ICONS)
 		toolbar.set_size_request(-1, 50)
 		pos=0
 
-		#image = gtk.Image()
-		#image.set_from_file(find_data_file("gui/arrow-right.png"))
-		open_plot = gtk.ToolButton(gtk.STOCK_MEDIA_PLAY)
-		open_plot.connect("clicked", self.callback_simulate)
-		self.tooltips.set_tip(open_plot, "Parameter scan")
-		toolbar.insert(open_plot, pos)
+		image = gtk.Image()
+		image.set_from_file(find_data_file("gui/forward.png"))
+		tb_simulate = gtk.ToolButton(image)
+		tb_simulate.connect("clicked", self.callback_run_simulation)
+		self.tooltips.set_tip(tb_simulate, "Run simulation")
+		toolbar.insert(tb_simulate, pos)
 		pos=pos+1
 
-	        #image = gtk.Image()
-   		#image.set_from_file(find_data_file("gui/media-playback-pause-7.png"))
-		self.stop = gtk.ToolButton(gtk.STOCK_MEDIA_PAUSE)
+	        image = gtk.Image()
+   		image.set_from_file(find_data_file("gui/pause.png"))
+		self.stop = gtk.ToolButton(image)
 		self.tooltips.set_tip(self.stop, "Stop the simulation")
-		self.stop.connect("clicked", self.callback_stop)
+		self.stop.connect("clicked", self.callback_stop_simulation)
 		toolbar.insert(self.stop, pos)
 		pos=pos+1
 
@@ -671,8 +692,7 @@ class scan_vbox(gtk.VBox):
 		self.tooltips.set_tip(plot_select, "Find a file to plot")
 
 		self.plotted_graphs = used_files_menu()
-		self.plotted_graphs.init(self.sim_dir+'gui_last_menu.inp',self.callback_last_menu_click)
-		self.plotted_graphs.reload_list()
+		self.plotted_graphs.init(self.sim_dir,self.callback_last_menu_click)
 		plot_select.set_menu(self.plotted_graphs.menu)
 		toolbar.insert(plot_select, pos)
 
@@ -685,6 +705,14 @@ class scan_vbox(gtk.VBox):
 		self.plot_open.set_sensitive(False)
 		self.tooltips.set_tip(self.plot_open, "Replot the graph")
 		toolbar.insert(self.plot_open, pos)
+		pos=pos+1
+
+	        image = gtk.Image()
+   		image.set_from_file(find_data_file("gui/plot_time.png"))
+		self.examine = gtk.ToolButton(image)
+		self.tooltips.set_tip(self.examine, "Examine results in time domain")
+		self.examine.connect("clicked", self.callback_examine)
+		toolbar.insert(self.examine, pos)
 		pos=pos+1
 
 		sep = gtk.SeparatorToolItem()
@@ -733,14 +761,9 @@ class scan_vbox(gtk.VBox):
 		toolbar.show_all()
 		self.pack_start(toolbar, False, False, 0)#.add()
 
-
-		self.combo_box_list = []
-		for item in range(0, len(self.param_list)):
-			self.combo_box_list.append(self.param_list[item].name)
-
 		liststore_manufacturers = gtk.ListStore(str)
-		for item in self.combo_box_list:
-		    liststore_manufacturers.append([item])
+		for i in range(0,len(self.param_list)):
+		    liststore_manufacturers.append([self.param_list[i].name])
 
 		self.liststore_combobox = gtk.ListStore(str, str, str)
 
@@ -751,14 +774,14 @@ class scan_vbox(gtk.VBox):
 
 		self.treeview = gtk.TreeView(self.liststore_combobox)
 		self.treeview.connect("button-press-event", self.on_treeview_button_press_event)
-		self.treeview.set_size_request(-1, 400)
+
 
 		self.select_param_window=select_param()
-		self.select_param_window.init(self.liststore_combobox,self.treeview,param_list)
+		self.select_param_window.init(self.liststore_combobox,self.treeview)
 
 		column_text = gtk.TreeViewColumn("Values")
 		column_combo = gtk.TreeViewColumn("Parameter to change")
-		column_mirror = gtk.TreeViewColumn("Mirror")
+		column_mirror = gtk.TreeViewColumn("Opperation")
 		self.treeview.append_column(column_combo)
 		self.treeview.append_column(column_text)
 		self.treeview.append_column(column_mirror)
@@ -796,10 +819,16 @@ class scan_vbox(gtk.VBox):
 
 
 		#window.connect("destroy", lambda w: gtk.main_quit())
+		scrolled_window = gtk.ScrolledWindow()
+		scrolled_window.set_policy(gtk.POLICY_AUTOMATIC, gtk.POLICY_ALWAYS)
+		scrolled_window.add(self.treeview)
+		scrolled_window.set_size_request(1000, 500)
+		#scrolled_window.set_min_content_height(200)
 
-		self.pack_start(self.treeview, False, True, 0)
+		self.pack_start(scrolled_window, True, True, 0)
 		self.treeview.show()
 		self.show_all()
+
 		if self.visible==False:
 			self.hide()
 
