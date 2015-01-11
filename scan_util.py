@@ -34,7 +34,38 @@ from scan_item import scan_items_index_item
 from inp import inp_get_token_value
 from inp import inp_get_token_array
 
-def apply_mirror(program_list):
+def tree_load_program(program_list,sim_dir):
+	file_name=os.path.join(sim_dir,'opvdm_gui_config.inp')
+
+	if os.path.isfile(file_name)==True:
+		f=open(file_name)
+		config = f.readlines()
+		f.close()
+
+		for ii in range(0, len(config)):
+			config[ii]=config[ii].rstrip()
+
+		pos=0
+		mylen=int(config[0])
+		pos=pos+1
+		for i in range(0, mylen):
+			program_list.append([config[pos], config[pos+1], config[pos+2]])
+			pos=pos+3
+
+def tree_gen(program_list,base_dir,sim_dir):
+	commands=[]
+	tree_items=[[],[],[]]
+	for i in range(0,len(self.liststore_combobox)):
+
+		if self.liststore_combobox[i][2]=="scan":
+			tree_items[0].append(program_list[i][0])
+			tree_items[1].append(program_list[i][1])
+			tree_items[2].append(program_list[i][2])
+
+	tree(program_list,tree_items,commands,base_dir,0,sim_dir,"","")
+	return commands
+
+def tree_apply_mirror(program_list):
 	param_list=scan_items_get_list()
 	for i in range(0, len(program_list)):
 		for ii in range(0, len(program_list)):
@@ -52,7 +83,7 @@ def apply_mirror(program_list):
 
 				inp_update_token_value(param_list[pos_mirror_dest].filename, param_list[pos_mirror_dest].token, src_value,param_list[pos_mirror_dest].line)
 
-def apply_constant(program_list):
+def tree_apply_constant(program_list):
 	param_list=scan_items_get_list()
 	for i in range(0, len(program_list)):
 		if program_list[i][2]=="constant":
@@ -130,8 +161,8 @@ def tree(program_list,tree_items,commands,base_dir,level,path,var_to_change,valu
 				for i in range(0, len(pos)):
 					inp_update_token_value(param_list[int(pos[i])].filename, param_list[int(pos[i])].token, new_values[i],param_list[int(pos[i])].line)
 				
-				apply_constant(program_list)
-				apply_mirror(program_list)
+				tree_apply_constant(program_list)
+				tree_apply_mirror(program_list)
 
 				
 				inp_update_token_value("physdir.inp", "#physdir", os.path.join(base_dir,"phys"),1)

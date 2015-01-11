@@ -55,7 +55,8 @@ from token_lib import tokens
 from util import delete_link_tree
 from scan_item import scan_items_get_list
 from win_lin import running_on_linux
-from scan_util import tree
+from scan_util import tree_gen
+from scan_util import tree_load_program
 
 class scan_vbox(gtk.VBox):
 
@@ -248,22 +249,13 @@ class scan_vbox(gtk.VBox):
 
 
 		if run==True:
-			commands=[]
-			tree_items=[[],[],[]]
 			program_list=[[],[],[]]
 			for i in range(0,len(self.liststore_combobox)):
-
-				if self.liststore_combobox[i][2]=="scan":
-					tree_items[0].append(self.liststore_combobox[i][0])
-					tree_items[1].append(self.liststore_combobox[i][1])
-					tree_items[2].append(self.liststore_combobox[i][2])
-
 				program_list[0].append(self.liststore_combobox[i][0])
 				program_list[1].append(self.liststore_combobox[i][1])
 				program_list[2].append(self.liststore_combobox[i][2])
 
-
-			tree(program_list,tree_items,commands,base_dir,0,self.sim_dir,"","")
+			commands=tree_gen(program_list,base_dir,self.sim_dir)
 
 			self.myserver.init(self.sim_dir)
 
@@ -275,12 +267,14 @@ class scan_vbox(gtk.VBox):
 
 				self.myserver.start(self.exe_command)
 
-				self.save_combo()
+
 			else:
 				message = gtk.MessageDialog(type=gtk.MESSAGE_ERROR, buttons=gtk.BUTTONS_OK)
 				message.set_markup("I can't connect to the server")
 				message.run()
 				message.destroy()
+
+		self.save_combo()
 		os.chdir(base_dir)
 		gc.collect()
 
@@ -555,23 +549,8 @@ class scan_vbox(gtk.VBox):
 
 	def reload_liststore(self):
 		self.liststore_combobox.clear()
+		tree_load_program(self.liststore_combobox,self.sim_dir)
 
-		file_name=os.path.join(self.sim_dir,'opvdm_gui_config.inp')
-
-		if os.path.isfile(file_name)==True:
-			f=open(file_name)
-			config = f.readlines()
-			f.close()
-
-			for ii in range(0, len(config)):
-				config[ii]=config[ii].rstrip()
-
-			pos=0
-			mylen=int(config[0])
-			pos=pos+1
-			for i in range(0, mylen):
-				self.liststore_combobox.append([config[pos], config[pos+1], config[pos+2]])
-				pos=pos+3
 
 
 	def on_treeview_button_press_event(self, treeview, event):
