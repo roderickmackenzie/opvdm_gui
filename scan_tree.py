@@ -50,6 +50,7 @@ def tree_load_program(program_list,sim_dir):
 			pos=pos+3
 
 def tree_gen(program_list,base_dir,sim_dir):
+	sim_dir=os.path.abspath(sim_dir)	# we are about to traverse the directory structure better to have the abs path
 	commands=[]
 	print "here",program_list
 	tree_items=[[],[],[]]

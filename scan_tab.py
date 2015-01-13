@@ -58,7 +58,7 @@ from win_lin import running_on_linux
 from scan_tree import tree_gen
 from scan_tree import tree_load_program
 from scan_item import scan_item_save
-from scan_plot import plot_results
+from scan_plot import scan_gen_plot_data
 class scan_vbox(gtk.VBox):
 
 	icon_theme = gtk.icon_theme_get_default()
@@ -134,8 +134,8 @@ class scan_vbox(gtk.VBox):
 		self.rebuild_liststore_op_type()
 
 	def plot_results(self,plot_tokens):
-		plot_files, plot_labels, save_file = plot_results(plot_tokens,self.sim_dir)
-		units=self.get_units
+		plot_files, plot_labels, save_file = scan_gen_plot_data(plot_tokens,self.sim_dir)
+		units=self.get_units()
 		plot_gen(plot_files,plot_labels,plot_tokens,save_file,units)
 		self.plot_open.set_sensitive(True)
 

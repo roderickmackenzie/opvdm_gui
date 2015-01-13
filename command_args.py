@@ -38,13 +38,17 @@ from import_archive import import_scan_dirs
 from udp_server import udp_server
 from udp_client import udp_client
 from make_man import make_man
-from scan_util import tree_load_program
-from scan_util import tree_gen
+from scan_tree import tree_load_program
+from scan_tree import tree_gen
 from scan_item import scan_item_load
 from scan_item import scan_items_index_item
 from server import server
 from util import set_exe_command
-import gtk 
+import gtk
+from plot_command import plot_command_class
+from plot_gen import plot_load_token
+from scan_plot import scan_gen_plot_data
+
 def command_args(argc,argv):
 	if argc>=2:
 		if argv[1]=="--help":
@@ -142,14 +146,20 @@ def command_args(argc,argv):
 			sys.exit(0)
 
 		if argv[1]=="--run-scan":
+			scan_dir_path=argv[2]
 			program_list=[]
+			pwd=os.getcwd()
 			exe_command , exe_name  =  set_exe_command()
-			print scan_items_index_item("imps/Modulation frequency")
-			scan_item_load("./suns/scan_items.inp")
-			tree_load_program(program_list,"./suns/")
-			print program_list
-			watch_dir=os.path.join(os.getcwd())+"/suns/"
-			commands=tree_gen(program_list,os.getcwd(),os.path.join(os.getcwd(),"suns"))
+			scan_item_load(os.path.join(scan_dir_path,"scan_items.inp"))
+			tree_load_program(program_list,scan_dir_path)
+
+			watch_dir=os.path.join(os.getcwd(),scan_dir_path)
+			#print program_list,pwd,scan_dir_path
+			#sys.exit(0)
+			print pwd,scan_dir_path
+			print os.getcwd(),os.path.join(scan_dir_path)
+			#commands=tree_gen(program_list,os.getcwd(),os.path.join(os.getcwd(),"suns"))
+			commands=tree_gen(program_list,pwd,scan_dir_path)
 			myserver=server()
 			myserver.init(watch_dir)
 			myserver.clear_cache()
@@ -159,4 +169,12 @@ def command_args(argc,argv):
 			myserver.simple_run(exe_command)
 
 			sys.exit(0)
+		if argv[1]=="--scan-plot":
+			plot_token=plot_command_class()
+			oplot_file=argv[2]
+			if plot_load_token(plot_token,oplot_file)==True:
+				plot_files, plot_labels, save_file = scan_gen_plot_data(plot_token,os.path.dirname(oplot_file))
+				print "written data to",save_file
+			sys.exit(0)
+
 
