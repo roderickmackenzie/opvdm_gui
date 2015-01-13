@@ -55,8 +55,8 @@ from token_lib import tokens
 from util import delete_link_tree
 from scan_item import scan_items_get_list
 from win_lin import running_on_linux
-from scan_util import tree_gen
-from scan_util import tree_load_program
+from scan_tree import tree_gen
+from scan_tree import tree_load_program
 from scan_item import scan_item_save
 from scan_plot import plot_results
 class scan_vbox(gtk.VBox):
@@ -134,7 +134,14 @@ class scan_vbox(gtk.VBox):
 		self.rebuild_liststore_op_type()
 
 	def plot_results(self,plot_tokens):
-		plot_results(plot_tokens,self.sim_dir,self.get_units())
+		plot_files, plot_labels, save_file = plot_results(plot_tokens,self.sim_dir)
+		units=self.get_units
+		plot_gen(plot_files,plot_labels,plot_tokens,save_file,units)
+		self.plot_open.set_sensitive(True)
+
+		self.last_plot_data=plot_tokens
+
+		return 
 
 	def get_units(self):
 		token=""
