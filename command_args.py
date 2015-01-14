@@ -45,7 +45,7 @@ from scan_item import scan_items_index_item
 from server import server
 from util import set_exe_command
 import gtk
-from plot_command import plot_command_class
+from plot_state import plot_state
 from plot_gen import plot_load_token
 from scan_plot import scan_gen_plot_data
 
@@ -170,7 +170,7 @@ def command_args(argc,argv):
 
 			sys.exit(0)
 		if argv[1]=="--scan-plot":
-			plot_token=plot_command_class()
+			plot_token=plot_state()
 			oplot_file=argv[2]
 			if plot_load_token(plot_token,oplot_file)==True:
 				plot_files, plot_labels, save_file = scan_gen_plot_data(plot_token,os.path.dirname(oplot_file))

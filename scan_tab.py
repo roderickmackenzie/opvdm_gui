@@ -39,7 +39,7 @@ from used_files_menu import used_files_menu
 from server import server
 from plot_dlg import plot_dlg_class
 from plot_gen import plot_gen
-from plot_command import plot_command_class
+from plot_state import plot_state
 import threading
 import gobject
 #import pyinotify
@@ -296,7 +296,7 @@ class scan_vbox(gtk.VBox):
 
 		if len(self.plotted_graphs)>0:
 			pos=len(self.plotted_graphs)-1
-			plot_data=plot_command_class()
+			plot_data=plot_state()
 			plot_data.file0=self.plotted_graphs[pos].file0
 			plot_xy_window=plot_dlg_class(gtk.WINDOW_TOPLEVEL)
 			plot_xy_window.my_init(plot_data)
@@ -335,7 +335,7 @@ class scan_vbox(gtk.VBox):
 			#print full_file_name
 			file_name=os.path.basename(full_file_name)
 
-			plot_data=plot_command_class()
+			plot_data=plot_state()
 			plot_data.path=self.sim_dir
 			plot_data.example_file0=full_file_name
 			plot_data.example_file1=full_file_name

@@ -28,7 +28,7 @@ import shutil
 import copy
 import pdb
 import logging
-from plot_command import plot_command_class
+from plot_state import plot_state
 import glob
 from inp import inp_load_file
 from plot_gen import plot_load_token
@@ -62,7 +62,7 @@ class used_files_menu:
 
 	def append(self,file_name):
 		lines=[]
-		plot_token=plot_command_class()
+		plot_token=plot_state()
 		if plot_load_token(plot_token,file_name)==True:
 			menu_item = gtk.MenuItem(os.path.basename(file_name).split(".")[0])		   
 			self.menu.append(menu_item)
