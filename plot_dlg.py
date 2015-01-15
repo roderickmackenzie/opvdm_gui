@@ -7,9 +7,8 @@
 #	Room B86 Coates, University Park, Nottingham, NG7 2RD, UK
 #
 #    This program is free software; you can redistribute it and/or modify
-#    it under the terms of the GNU General Public License as published by
-#    the Free Software Foundation; either version 2 of the License, or
-#    (at your option) any later version.
+#    it under the terms of the GNU General Public License, version 2 as published by
+#    the Free Software Foundation
 #
 #    This program is distributed in the hope that it will be useful,
 #    but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -29,14 +28,13 @@ import shutil
 import signal
 import subprocess
 from tempfile import mkstemp
-from plot_command import plot_command_class
 
 
 class plot_dlg_class(gtk.Window):
 
 	def populate_combo_box_using_input_file(self,combobox,input_file):
 		try:
-			f = open(self.path+"/"+input_file)
+			f = open(os.path.join(self.path,input_file))
 			lines = f.readlines()
 			f.close()
 
@@ -57,12 +55,18 @@ class plot_dlg_class(gtk.Window):
 		print "Edit"
 		self.populate_combo_box_using_input_file(self.token1,self.file1.get_text())
 
+	def callback_edit2(self, widget):
+		print "Edit"
+		self.populate_combo_box_using_input_file(self.token2,self.file2.get_text())
+
 	def callback_click(self, widget,button,data):
 		if button == "ok":
 			data.file0=self.file0.get_text().decode('utf8')
 			data.tag0=self.token0.get_active_text().decode('utf8')
 			data.file1=self.file1.get_text().decode('utf8')
 			data.tag1=self.token1.get_active_text().decode('utf8')
+			data.file2=self.file2.get_text().decode('utf8')
+			data.tag2=self.token2.get_active_text().decode('utf8')
 			self.ret=True
 		else:
 			self.ret=False
@@ -74,6 +78,8 @@ class plot_dlg_class(gtk.Window):
 		self.ret=False
 		self.set_title("xy plot www.opvdm.com")
 		self.set_keep_above(True)
+
+		#x-axis
 		l=gtk.Label("x-axis:")
 		l.show()
 		vbox=gtk.VBox()
@@ -96,6 +102,7 @@ class plot_dlg_class(gtk.Window):
 		vbox.add(l)
 		vbox.add(hbox)
 
+		#y-axis
 		l=gtk.Label("y-axis:")
 		l.show()
 
@@ -115,6 +122,28 @@ class plot_dlg_class(gtk.Window):
 		hbox.show()
 		vbox.add(l)
 		vbox.add(hbox)
+
+		#label
+		l=gtk.Label("label:")
+		l.show()
+
+		hbox=gtk.HBox()
+		self.file2 = gtk.Entry()
+		self.file2.set_text(data.file0)
+		self.file2.connect("changed", self.callback_edit2)
+		self.file2.show()
+		hbox.add(self.file2)
+
+		self.token2 = gtk.combo_box_new_text()
+		self.token2.set_wrap_width(5)
+		self.populate_combo_box_using_input_file(self.token2,os.path.basename(data.example_file1))
+		self.token2.show()
+		hbox.add(self.token2)
+
+		hbox.show()
+		vbox.add(l)
+		vbox.add(hbox)
+
 		button_box=gtk.HBox()
 
 		button_cancel=gtk.Button(stock=gtk.STOCK_CANCEL)
