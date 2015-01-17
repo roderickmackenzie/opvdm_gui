@@ -7,9 +7,8 @@
 #	Room B86 Coates, University Park, Nottingham, NG7 2RD, UK
 #
 #    This program is free software; you can redistribute it and/or modify
-#    it under the terms of the GNU General Public License as published by
-#    the Free Software Foundation; either version 2 of the License, or
-#    (at your option) any later version.
+#    it under the terms of the GNU General Public License v2.0, as published by
+#    the Free Software Foundation.
 #
 #    This program is distributed in the hope that it will be useful,
 #    but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -33,7 +32,7 @@ def about_dialog_show():
 	about = gtk.AboutDialog()
 	about.set_program_name("opvdm")
 	about.set_version("")
-	#about.set_copyright("The GUI for opvdm, Copyright Roderick MacKenzie 2014")
+	about.set_copyright("Written by Roderick MacKenzie 2014, published under GPL v2.0")
 	about.set_comments(ver()+"\n"+notice())
 	about.set_website("http://www.opvdm.com")
 
