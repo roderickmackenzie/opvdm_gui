@@ -28,14 +28,14 @@ import sys
 import os
 import shutil
 from search import return_file_list
-from plot import plot_data
-from plot import plot_info
 from plot import check_info_file
 from util import find_data_file
 from plot_gen import plot_gen
 from token_lib import tokens
 from win_lin import running_on_linux
 from inp import inp_get_token_value
+from plot_state import plot_state
+from plot import plot_populate_plot_token
 
 def gen_plot_line(dirname,plot_token):
 	if plot_token.file1=="":
@@ -137,6 +137,7 @@ def gen_infofile_plot(result_in,base_dir,plot_token):
 	#print "save path",save,plot_files
 	#plot_gen(plot_files,plot_labels,plot_token,save_file)
 
+	plot_populate_plot_token(plot_token,None)
 
 	return plot_files, plot_labels, save_file
 
@@ -174,11 +175,11 @@ def scan_gen_plot_data(plot_token,base_path):
 	print check_info_file(file_name),file_name,plot_token.file0,plot_token.file1,plot_token.tag0,plot_token.tag1
 	if (check_info_file(file_name)==True):
 		#print "Rod",plot_files,self.sim_dir
+
 		print plot_files,"r",plot_labels,"r",save_file,"r",plot_files,"r",base_path,"r",plot_token
 		plot_files, plot_labels, save_file = gen_infofile_plot(plot_files,base_path,plot_token)
 	else:
-		mygraph=plot_data()
-		ret=mygraph.find_file(plot_files[0],None)
+		ret=plot_populate_plot_token(plot_token,plot_files[0])
 		if ret==False:
 			message = gtk.MessageDialog(type=gtk.MESSAGE_ERROR, buttons=gtk.BUTTONS_OK)
 			message.set_markup("This file "+file_name+" is not in the data base please file a bug report..")
@@ -198,6 +199,6 @@ def scan_gen_plot_data(plot_token,base_path):
 			plot_labels.append(str(text))
 
 		save_file=os.path.join(base_path,os.path.splitext(os.path.basename(plot_files[0]))[0])+".oplot"
-		plot_gen(plot_files,plot_labels,plot_token,save_file)
+		#plot_gen(plot_files,plot_labels,plot_token,save_file)
 
 	return plot_files, plot_labels, save_file

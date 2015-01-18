@@ -30,8 +30,6 @@ import shutil
 from inp import inp_update_token_value
 from inp import inp_get_token_value
 from search import return_file_list
-from plot import plot_data
-from plot import plot_info
 from plot import check_info_file
 from util import find_data_file
 from about import about_dialog_show
@@ -136,6 +134,7 @@ class scan_vbox(gtk.VBox):
 	def plot_results(self,plot_tokens):
 		plot_files, plot_labels, save_file = scan_gen_plot_data(plot_tokens,self.sim_dir)
 		units=self.get_units()
+
 		plot_gen(plot_files,plot_labels,plot_tokens,save_file,units)
 		self.plot_open.set_sensitive(True)
 

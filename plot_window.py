@@ -29,7 +29,6 @@ import shutil
 from token_lib import tokens
 from numpy import *
 from util import pango_to_gnuplot
-from plot import plot_data
 import matplotlib.pyplot as plt
 from matplotlib.widgets import Cursor
 from plot_export import plot_export 
@@ -38,7 +37,6 @@ from matplotlib.backends.backend_gtkagg import FigureCanvasGTKAgg as FigureCanva
 from matplotlib.backends.backend_gtkagg import NavigationToolbar2GTKAgg as NavigationToolbar
 #from matplotlib.backends.backend_gtk import FigureCanvasGTK as FigureCanvas
 from matplotlib.figure import Figure
-from plot_info import plot_info
 from plot_widget import plot_widget
 
 class plot_window():

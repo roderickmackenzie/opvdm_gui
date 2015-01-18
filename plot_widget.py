@@ -30,7 +30,6 @@ import shutil
 from token_lib import tokens
 from numpy import *
 from util import pango_to_gnuplot
-from plot import plot_data
 import matplotlib.pyplot as plt
 from matplotlib.widgets import Cursor
 from plot_export import plot_export 
@@ -38,7 +37,6 @@ from numpy import arange, sin, pi, zeros
 from matplotlib.backends.backend_gtkagg import FigureCanvasGTKAgg as FigureCanvas
 from matplotlib.backends.backend_gtkagg import NavigationToolbar2GTKAgg
 from matplotlib.figure import Figure
-from plot_info import plot_info
 from util import zip_get_data_file
 from util import read_xyz_data
 import matplotlib.ticker as ticker
@@ -52,7 +50,7 @@ from util import numbers_to_latex
 from util import pygtk_to_latex_subscript
 from util import fx_with_units
 from plot_state import plot_state
-
+from plot import plot_populate_plot_token
 class NavigationToolbar(NavigationToolbar2GTKAgg):
     # only display the buttons we need
     toolitems = [t for t in NavigationToolbar2GTKAgg.toolitems if
@@ -68,14 +66,14 @@ class plot_widget(gtk.VBox):
 			self.do_plot()
 
 		if keyname=="g":
-			if self.my_plot_state.grid==False:
+			if self.plot_token.grid==False:
 				for i in range(0,len(self.ax)):
 					self.ax[i].grid(True)
-				self.my_plot_state.grid=True
+				self.plot_token.grid=True
 			else:
 				for i in range(0,len(self.ax)):
 					self.ax[i].grid(False)
-				self.my_plot_state.grid=False
+				self.plot_token.grid=False
 		if keyname=="r":
 			if self.lx==None:
 				for i in range(0,len(self.ax)):
@@ -85,22 +83,22 @@ class plot_widget(gtk.VBox):
 			self.ly.set_xdata(self.xdata)
 
 		if keyname=="l":
-			if self.my_plot_state.logy==True:
-				self.my_plot_state.logy=False
+			if self.plot_token.logy==True:
+				self.plot_token.logy=False
 				for i in range(0,len(self.ax)):
 					self.ax[i].set_yscale("linear")
 			else:
-				self.my_plot_state.logy=True
+				self.plot_token.logy=True
 				for i in range(0,len(self.ax)):
 					self.ax[i].set_yscale("log")
 
 		if keyname=="L":
-			if self.my_plot_state.logx==True:
-				self.my_plot_state.logx=False
+			if self.plot_token.logx==True:
+				self.plot_token.logx=False
 				for i in range(0,len(self.ax)):
 					self.ax[i].set_xscale("linear")
 			else:
-				self.my_plot_state.logx=True
+				self.plot_token.logx=True
 				for i in range(0,len(self.ax)):
 					self.ax[i].set_xscale("log")
 
@@ -168,24 +166,24 @@ class plot_widget(gtk.VBox):
 				
 
 			for ii in range(0,len(t)):
-				t[ii]=t[ii]*self.my_plot_state.x_mul
-				s[ii]=s[ii]*self.my_plot_state.y_mul
+				t[ii]=t[ii]*self.plot_token.x_mul
+				s[ii]=s[ii]*self.plot_token.y_mul
 
-				if self.my_plot_state.invert_y==True:
+				if self.plot_token.invert_y==True:
 					s[ii]=-s[ii]					
 
-				if self.my_plot_state.subtract_first_point==True:
+				if self.plot_token.subtract_first_point==True:
 					if ii==0:
 						val=s[0]
 					s[ii]=s[ii]-val
 
 	
-			if self.my_plot_state.add_min==True:
+			if self.plot_token.add_min==True:
 				my_min=min(s)
 				for ii in range(0,len(t)):
 					s[ii]=s[ii]-my_min
 
-			if self.my_plot_state.normalize==True:
+			if self.plot_token.normalize==True:
 				local_max=max(s)
 				for ii in range(0,len(t)):
 					if s[ii]!=0:
@@ -196,8 +194,8 @@ class plot_widget(gtk.VBox):
 
 			plot_number=self.plot_id[index]
 			#print plot_number, number_of_plots,self.plot_id
-			if self.my_plot_state.ymax!=-1:
-				self.ax[plot_number].set_ylim((self.my_plot_state.ymin,self.my_plot_state.ymax))
+			if self.plot_token.ymax!=-1:
+				self.ax[plot_number].set_ylim((self.plot_token.ymin,self.plot_token.ymax))
 			return True
 		else:
 			return False
@@ -212,7 +210,7 @@ class plot_widget(gtk.VBox):
 		self.fig.subplots_adjust(left=0.1)
 		self.fig.subplots_adjust(hspace = .001)
 		if self.plot_title=="":
-			self.fig.suptitle(self.mygraph.read.title)
+			self.fig.suptitle(self.plot_token.title)
 		else:
 			self.fig.suptitle(self.plot_title)
 
@@ -230,25 +228,25 @@ class plot_widget(gtk.VBox):
 			self.ax.append(self.fig.add_subplot(number_of_plots,1,i+1, axisbg='white'))
 			#Only place label on bottom plot
 			if i==number_of_plots-1:
-				self.ax[i].set_xlabel(self.my_plot_state.x_label+" ("+self.my_plot_state.x_units+")")
+				self.ax[i].set_xlabel(self.plot_token.x_label+" ("+self.plot_token.x_units+")")
 
 			else:
 				self.ax[i].tick_params(axis='x', which='both', bottom='off', top='off',labelbottom='off') # labels along the bottom edge are off
 
 			#Only place y label on center plot
-			if self.my_plot_state.normalize==True or self.my_plot_state.norm_to_peak_of_all_data==True:
-				y_text="Normalized "+self.my_plot_state.y_label
+			if self.plot_token.normalize==True or self.plot_token.norm_to_peak_of_all_data==True:
+				y_text="Normalized "+self.plot_token.y_label
 				y_units="au"
 			else:
-				y_text=self.my_plot_state.y_label
-				y_units=self.my_plot_state.y_units
+				y_text=self.plot_token.y_label
+				y_units=self.plot_token.y_units
 			if i==math.trunc(number_of_plots/2):
 				self.ax[i].set_ylabel(y_text+" ("+y_units+")")
 
-			if self.my_plot_state.logx==True:
+			if self.plot_token.logx==True:
 				self.ax[i].set_xscale("log")
 
-			if self.my_plot_state.logy==True:
+			if self.plot_token.logy==True:
 				self.ax[i].set_yscale("log")
 
 
@@ -257,10 +255,10 @@ class plot_widget(gtk.VBox):
 
 		my_max=1.0
 
-		if self.mygraph.read.type=="xy":
+		if self.plot_token.type=="xy":
 
 			all_max=1.0
-			if self.my_plot_state.norm_to_peak_of_all_data==True:
+			if self.plot_token.norm_to_peak_of_all_data==True:
 				m=[]
 				my_max=-1e40
 				for i in range(0, len(self.input_files)):
@@ -286,7 +284,7 @@ class plot_widget(gtk.VBox):
 					Ec, = self.ax[plot_number].plot(t,s, linewidth=3 ,alpha=1.0,color=self.color[i],marker=self.marker[i])
 
 					#label data if required
-					if self.my_plot_state.label_data==True:
+					if self.plot_token.label_data==True:
 						for ii in range(0,len(t)):
 							if z[ii]!="":
 								self.ax[plot_number].annotate(fx_with_units(float(z[ii])),xy = (t[ii], s[ii]), xytext = (-20, 20),textcoords = 'offset points', ha = 'right', va = 'bottom',bbox = dict(boxstyle = 'round,pad=0.5', fc = 'yellow', alpha = 0.5),arrowprops = dict(arrowstyle = '->', connectionstyle = 'arc3,rad=0'))
@@ -297,15 +295,15 @@ class plot_widget(gtk.VBox):
 							self.ax[plot_number].yaxis.set_ticks(arange(min(s), max(s), (max(s)-min(s))/4.0 ))
 
 					if self.labels[i]!="":
-						files.append("$"+numbers_to_latex(str(self.labels[i]))+" "+self.my_plot_state.key_units+"$")
+						files.append("$"+numbers_to_latex(str(self.labels[i]))+" "+self.plot_token.key_units+"$")
 						lines.append(Ec)
 
 			self.lx = None
 			self.ly = None
-			if self.my_plot_state.legend_pos=="No key":
+			if self.plot_token.legend_pos=="No key":
 				self.ax[plot_number].legend_ = None
 			else:
-				legend=self.fig.legend(lines, files, self.my_plot_state.legend_pos)
+				legend=self.fig.legend(lines, files, self.plot_token.legend_pos)
 			
 		else:
 			x=[]
@@ -367,8 +365,8 @@ class plot_widget(gtk.VBox):
 
 		response = dialog.run()
 		if response == gtk.RESPONSE_OK:
-			print "Logscale x = ",self.mygraph.read.logscale_x
-			plot_export(dialog.get_filename(),self.input_files,self.my_plot_state,self.fig)
+			print "Logscale x = ",self.plot_token.logx
+			plot_export(dialog.get_filename(),self.input_files,self.plot_token,self.fig)
 
 		elif response == gtk.RESPONSE_CANCEL:
 		    print 'Closed, no dir selected'
@@ -376,6 +374,8 @@ class plot_widget(gtk.VBox):
 		dialog.destroy()
 
 	def load_data(self,input_files,plot_id,labels,plot_token,config_file,units):
+		self.plot_token=plot_token
+		print ">>>>>>>>>>>>>>>>>>>>sda>>>>>>>>>>>>>>>>>>>>sdads>",self.plot_token.x_label
 		self.config_file=config_file
 		self.output_file=os.path.splitext(config_file)[0]+".png"
 		self.labels=labels
@@ -383,85 +383,69 @@ class plot_widget(gtk.VBox):
 		if len(input_files)!=len(labels):
 			return
 		self.input_files=input_files
-		self.plot_token=plot_token
-		self.mygraph=plot_data()
-		ret=self.mygraph.find_file(self.input_files[0],self.plot_token)
-		if ret==True:
-			#print "Rod",input_files
-			title=self.mygraph.read.title
-			self.win.set_title(title+" - www.opvdm.com")
+		#ret=plot_populate_plot_token(plot_token,self.input_files[0])
+		print ">>>>>>>>>>>>>>>>>>>>sda>>>>>>>>>>>>>>>>>>>>sdads>",self.plot_token.x_label
+		#if ret==True:
+		#print "Rod",input_files
+		title=self.plot_token.title
+		self.win.set_title(title+" - www.opvdm.com")
 
-			if (self.mygraph.read.logscale_x==1):
-				self.my_plot_state.logx=True
-	
-			if (self.mygraph.read.logscale_y==1):
-				self.my_plot_state.logy=True
+		lines=[]
+		if self.load_state()==False:
+			self.save_state()
+			print "Failed to load",self.config_file
 
-			self.my_plot_state.x_label=self.mygraph.read.x_label
-			self.my_plot_state.y_label=self.mygraph.read.y_label
-			self.my_plot_state.x_units=self.mygraph.read.x_units
-			self.my_plot_state.y_units=self.mygraph.read.y_units
-			self.my_plot_state.x_mul=self.mygraph.read.x_mul
-			self.my_plot_state.y_mul=self.mygraph.read.y_mul
-			lines=[]
-			if self.load_state()==False:
-				self.save_state()
-				print "Failed to load",self.config_file
+		else:
+			print "Loaded OK",self.config_file
 
-			else:
-				print "Loaded OK",self.config_file
+		if self.plot_token.key_units=="":
+			self.plot_token.key_units=pygtk_to_latex_subscript(units)
 
-			if self.my_plot_state.key_units=="":
-				self.my_plot_state.key_units=pygtk_to_latex_subscript(units)
+		test_file=self.input_files[0]
+		for i in range(0,len(self.input_files)):
+			if os.path.isfile(self.input_files[i]):
+				test_file=self.input_files[i]
 
-			test_file=self.input_files[0]
-			for i in range(0,len(self.input_files)):
-				if os.path.isfile(self.input_files[i]):
-					test_file=self.input_files[i]
-
-			print "test_file=",test_file
-			print "self.plot_token=",self.plot_token
-
-			self.mygraph.find_file(test_file,self.plot_token)
-			print "Exit here"
+		print "test_file=",test_file
+		print "Exit here"
 
 	def load_state(self):
 		lines=[]
 		if self.config_file!="":
 			if inp_load_file(lines,self.config_file)==True:
-				self.my_plot_state.logy=str2bool(inp_search_token_value(lines, "#logy"))
-				self.my_plot_state.logx=str2bool(inp_search_token_value(lines, "#logx"))
-				self.my_plot_state.grid=str2bool(inp_search_token_value(lines, "#grid"))
-				self.my_plot_state.invert_y=str2bool(inp_search_token_value(lines, "#invert_y"))
-				self.my_plot_state.normalize=str2bool(inp_search_token_value(lines, "#normalize"))
-				self.my_plot_state.norm_to_peak_of_all_data=str2bool(inp_search_token_value(lines, "#norm_to_peak_of_all_data"))
-				self.my_plot_state.subtract_first_point=str2bool(inp_search_token_value(lines, "#subtract_first_point"))
-				self.my_plot_state.add_min=str2bool(inp_search_token_value(lines, "#add_min"))
+				self.plot_token.logy=str2bool(inp_search_token_value(lines, "#logy"))
+				self.plot_token.logx=str2bool(inp_search_token_value(lines, "#logx"))
+				self.plot_token.grid=str2bool(inp_search_token_value(lines, "#grid"))
+				self.plot_token.invert_y=str2bool(inp_search_token_value(lines, "#invert_y"))
+				self.plot_token.normalize=str2bool(inp_search_token_value(lines, "#normalize"))
+				self.plot_token.norm_to_peak_of_all_data=str2bool(inp_search_token_value(lines, "#norm_to_peak_of_all_data"))
+				self.plot_token.subtract_first_point=str2bool(inp_search_token_value(lines, "#subtract_first_point"))
+				self.plot_token.add_min=str2bool(inp_search_token_value(lines, "#add_min"))
 				self.plot_token.file0=inp_search_token_value(lines, "#file0")
 				self.plot_token.file1=inp_search_token_value(lines, "#file1")
 				self.plot_token.file2=inp_search_token_value(lines, "#file2")
 				self.plot_token.tag0=inp_search_token_value(lines, "#tag0")
 				self.plot_token.tag1=inp_search_token_value(lines, "#tag1")
 				self.plot_token.tag2=inp_search_token_value(lines, "#tag2")
-				self.my_plot_state.legend_pos=inp_search_token_value(lines, "#legend_pos")
-				self.my_plot_state.key_units=inp_search_token_value(lines, "#key_units")
-				self.my_plot_state.label_data=str2bool(inp_search_token_value(lines, "#label_data"))
+				self.plot_token.legend_pos=inp_search_token_value(lines, "#legend_pos")
+				self.plot_token.key_units=inp_search_token_value(lines, "#key_units")
+				self.plot_token.label_data=str2bool(inp_search_token_value(lines, "#label_data"))
 
 
 				myitem=self.item_factory.get_item("/Math/Subtract first point")
-				myitem.set_active(self.my_plot_state.subtract_first_point)
+				myitem.set_active(self.plot_token.subtract_first_point)
 
 				myitem=self.item_factory.get_item("/Math/Add min point")
-				myitem.set_active(self.my_plot_state.add_min)
+				myitem.set_active(self.plot_token.add_min)
 
 				myitem=self.item_factory.get_item("/Math/Invert y-axis")
-				myitem.set_active(self.my_plot_state.invert_y)
+				myitem.set_active(self.plot_token.invert_y)
 
 				myitem=self.item_factory.get_item("/Math/Norm to 1.0 y")
-				myitem.set_active(self.my_plot_state.normalize)
+				myitem.set_active(self.plot_token.normalize)
 
 				myitem=self.item_factory.get_item("/Math/Norm to peak of all data")
-				myitem.set_active(self.my_plot_state.norm_to_peak_of_all_data)
+				myitem.set_active(self.plot_token.norm_to_peak_of_all_data)
 				return True
 		return False
 
@@ -469,21 +453,21 @@ class plot_widget(gtk.VBox):
 		if self.config_file!="":
 			lines=[]
 			lines.append("#logy")
-			lines.append(str(self.my_plot_state.logy))
+			lines.append(str(self.plot_token.logy))
 			lines.append("#logx")
-			lines.append(str(self.my_plot_state.logx))
+			lines.append(str(self.plot_token.logx))
 			lines.append("#grid")
-			lines.append(str(self.my_plot_state.grid))
+			lines.append(str(self.plot_token.grid))
 			lines.append("#invert_y")
-			lines.append(str(self.my_plot_state.invert_y))
+			lines.append(str(self.plot_token.invert_y))
 			lines.append("#normalize")
-			lines.append(str(self.my_plot_state.normalize))
+			lines.append(str(self.plot_token.normalize))
 			lines.append("#norm_to_peak_of_all_data")
-			lines.append(str(self.my_plot_state.norm_to_peak_of_all_data))
+			lines.append(str(self.plot_token.norm_to_peak_of_all_data))
 			lines.append("#subtract_first_point")
-			lines.append(str(self.my_plot_state.subtract_first_point))
+			lines.append(str(self.plot_token.subtract_first_point))
 			lines.append("#add_min")
-			lines.append(str(self.my_plot_state.add_min))
+			lines.append(str(self.plot_token.add_min))
 			lines.append("#file0")
 			lines.append(self.plot_token.file0)
 			lines.append("#file1")
@@ -497,11 +481,11 @@ class plot_widget(gtk.VBox):
 			lines.append("#tag2")
 			lines.append(self.plot_token.tag2)
 			lines.append("#legend_pos")
-			lines.append(self.my_plot_state.legend_pos)
+			lines.append(self.plot_token.legend_pos)
 			lines.append("#key_units")
-			lines.append(self.my_plot_state.key_units)
+			lines.append(self.plot_token.key_units)
 			lines.append("#label_data")
-			lines.append(str(self.my_plot_state.label_data))
+			lines.append(str(self.plot_token.label_data))
 			lines.append("#ver")
 			lines.append("1.0")
 			lines.append("#end")
@@ -574,73 +558,73 @@ class plot_widget(gtk.VBox):
 		self.do_plot()
 
 	def callback_save(self, data, widget):
-		plot_export(self.output_file,self.input_files,self.my_plot_state,self.fig)
+		plot_export(self.output_file,self.input_files,self.plot_token,self.fig)
 
 	def callback_key(self, data, widget):
-		self.my_plot_state.legend_pos=widget.get_label()
+		self.plot_token.legend_pos=widget.get_label()
 		self.save_state()
 		self.do_plot()
 
 	def callback_units(self, data, widget):
-		units=dlg_get_text( "Units:", self.my_plot_state.key_units)
+		units=dlg_get_text( "Units:", self.plot_token.key_units)
 		if units!=None:
-			self.my_plot_state.key_units=units
+			self.plot_token.key_units=units
 		self.save_state()
 		self.do_plot()
 
 
 	def callback_autoscale_y(self, data, widget):
 		if widget.get_active()==True:
-			self.my_plot_state.ymax=-1
-			self.my_plot_state.ymin=-1
+			self.plot_token.ymax=-1
+			self.plot_token.ymin=-1
 		else:
 			xmin, xmax, ymin, ymax = self.ax[0].axis()
-			self.my_plot_state.ymax=ymax
-			self.my_plot_state.ymin=ymin
+			self.plot_token.ymax=ymax
+			self.plot_token.ymin=ymin
 
 	def callback_normtoone_y(self, data, widget):
 		if widget.get_active()==True:
-			self.my_plot_state.normalize=True
+			self.plot_token.normalize=True
 		else:
-			self.my_plot_state.normalize=False
+			self.plot_token.normalize=False
 		self.save_state()
 		self.do_plot()
 
 	def callback_norm_to_peak_of_all_data(self, data, widget):
 		if widget.get_active()==True:
-			self.my_plot_state.norm_to_peak_of_all_data=True
+			self.plot_token.norm_to_peak_of_all_data=True
 		else:
-			self.my_plot_state.norm_to_peak_of_all_data=False
+			self.plot_token.norm_to_peak_of_all_data=False
 		self.save_state()
 		self.do_plot()
 
 	def callback_toggle_log_scale_y(self, widget, data):
-		self.my_plot_state.logy=data.get_active()
+		self.plot_token.logy=data.get_active()
 		self.save_state()
 		self.do_plot()
 
 	def callback_toggle_log_scale_x(self, widget, data):
-		self.my_plot_state.logx=data.get_active()
+		self.plot_token.logx=data.get_active()
 		self.save_state()
 		self.do_plot()
 
 	def callback_toggle_label_data(self, widget, data):
-		self.my_plot_state.label_data=data.get_active()
+		self.plot_token.label_data=data.get_active()
 		self.save_state()
 		self.do_plot()
 
 	def callback_toggle_invert_y(self, widget, data):
-		self.my_plot_state.invert_y=data.get_active()
+		self.plot_token.invert_y=data.get_active()
 		self.save_state()
 		self.do_plot()
 
 	def callback_toggle_subtract_first_point(self, widget, data):
-		self.my_plot_state.subtract_first_point=data.get_active()
+		self.plot_token.subtract_first_point=data.get_active()
 		self.save_state()
 		self.do_plot()
 
 	def callback_toggle_add_min(self, widget, data):
-		self.my_plot_state.add_min=data.get_active()
+		self.plot_token.add_min=data.get_active()
 		self.save_state()
 		self.do_plot()
 
@@ -656,7 +640,6 @@ class plot_widget(gtk.VBox):
 		self.gen_colors(1)
 		#self.color =['r','g','b','y','o','r','g','b','y','o']
 		self.win=in_window
-		self.my_plot_state=plot_state()
 		self.toolbar = gtk.Toolbar()
 		self.toolbar.set_style(gtk.TOOLBAR_ICONS)
 		self.toolbar.set_size_request(-1, 50)

@@ -26,9 +26,7 @@ import gtk
 import sys
 import os
 import shutil
-from plot import plot_data
 from plot_gen import plot_gen
-from plot import plot_info
 from util import find_data_file
 from about import about_dialog_show
 from used_files_menu import used_files_menu
