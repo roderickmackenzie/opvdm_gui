@@ -7,9 +7,8 @@
 #	Room B86 Coates, University Park, Nottingham, NG7 2RD, UK
 #
 #    This program is free software; you can redistribute it and/or modify
-#    it under the terms of the GNU General Public License as published by
-#    the Free Software Foundation; either version 2 of the License, or
-#    (at your option) any later version.
+#    it under the terms of the GNU General Public License v2.0, as published by
+#    the Free Software Foundation.
 #
 #    This program is distributed in the hope that it will be useful,
 #    but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -33,6 +32,7 @@ from matplotlib.backends.backend_gtkagg import FigureCanvasGTKAgg as FigureCanva
 from matplotlib.backends.backend_gtkagg import NavigationToolbar2GTKAgg as NavigationToolbar
 import gobject
 from util import find_data_file
+from scan_item import scan_item_add
 
 (
   COLUMN_LAYER,
@@ -171,7 +171,6 @@ class tab_electrical_mesh(gtk.Window):
 		)
 
 	def save_model(self, ):
-		print "Saved"
 		a = open("device_epitaxy.inp", "w")
 		a.write("#layers\n")
 		a.write(str(len(self.layer_model))+"\n")
@@ -230,7 +229,6 @@ class tab_electrical_mesh(gtk.Window):
 		if column == COLUMN_THICKNES:
 			#old_text = model.get_value(iter, column)
 			articles[path][COLUMN_THICKNES] = new_text
-			print new_text
 			model.set(iter, column, articles[path][COLUMN_THICKNES])
 
 		self.save_model()
@@ -240,8 +238,6 @@ class tab_electrical_mesh(gtk.Window):
 		iter = model.get_iter_from_string(path_string)
 		path = model.get_path(iter)[0]
 		column = cell.get_data("column")
-		print "new text",new_text
-		print "path=",path
 
 
 		if column == MESH_THICKNES:
@@ -252,7 +248,6 @@ class tab_electrical_mesh(gtk.Window):
 		if column == MESH_POINTS:
 			#old_text = model.get_value(iter, column)
 			mesh_articles[path][MESH_POINTS] = new_text
-			print new_text
 			model.set(iter, column, mesh_articles[path][MESH_POINTS])
 
 		self.save_model()
@@ -266,8 +261,6 @@ class tab_electrical_mesh(gtk.Window):
 		self.fig.canvas.draw()
 
 	def draw_graph(self):
-
-		print "Drawing graph"
 
 		n=0
 		
@@ -285,20 +278,19 @@ class tab_electrical_mesh(gtk.Window):
 		#ax2.set_ylabel('Energy (eV)')
 		self.ax1.set_xlabel('Position (nm)')
 		try:
-			t,s = loadtxt("equ_Ec.dat", unpack=True)
+			t,s = loadtxt("Ec.dat", unpack=True)
 			t=t*1e9
 			Ec, = self.ax1.plot(t,s, 'ro-', linewidth=3 ,alpha=0.5)
 
-			t,s = loadtxt("equ_Ev.dat", unpack=True)
+			t,s = loadtxt("Ev.dat", unpack=True)
 			t=t*1e9
 			Ev,=self.ax1.plot(t,s, 'go-', linewidth=3 ,alpha=0.5)
 
-			t,s = loadtxt("equ_Fi.dat", unpack=True)
+			t,s = loadtxt("Fi.dat", unpack=True)
 			t=t*1e9
 			Fi,=self.ax1.plot(t,s, 'bo-', linewidth=3 ,alpha=0.5)
 			
 			if self.show_key==True:
-				print "Drawn"
 				self.fig.legend((Ec, Ev, Fi), ('LUMO', 'HOMO', 'Fi'), 'upper right')
 			else:
 				self.ax1.legend_ = None
@@ -321,7 +313,6 @@ class tab_electrical_mesh(gtk.Window):
 
 	def callback_hide_key(self, widget, data=None):
 		self.show_key=not self.show_key
-		print self.show_key
 		self.draw_graph()
 
 	def callback_save(self, widget, data=None):
@@ -341,7 +332,6 @@ class tab_electrical_mesh(gtk.Window):
 		if response == gtk.RESPONSE_OK:
 			file_name=dialog.get_filename()
 
-			print os.path.splitext(file_name)[1]
 			if os.path.splitext(file_name)[1]:
 				self.save_image(file_name)
 			else:
@@ -365,7 +355,6 @@ class tab_electrical_mesh(gtk.Window):
 		self.edit_list=[]
 		self.line_number=[]
 		self.save_file_name="device_epitaxy.inp"
-		print "loading ",self.save_file_name
 		f = open(self.save_file_name)
 		self.lines = f.readlines()
 		f.close()
@@ -381,13 +370,13 @@ class tab_electrical_mesh(gtk.Window):
 
 		for i in range(0, layers):
 			pos=pos+1
-			label=self.lines[pos]	#read label
-			print label
+			token=self.lines[pos]	#read label
 
 			pos=pos+1
 			layer_ticknes=self.lines[pos] 	#read thicknes
 
-			articles.append([ label, str(layer_ticknes), True ])
+			articles.append([ token, str(layer_ticknes), True ])
+			scan_item_add("device_epitaxy.inp",token,token,1)
 
 		pos=pos+1
 		pos=pos+1
@@ -395,17 +384,17 @@ class tab_electrical_mesh(gtk.Window):
 
 		for i in range(0, mesh_layers):
 			pos=pos+1
-			thicknes=self.lines[pos]	#read label
-			print label
+			thicknes=self.lines[pos]	#read token
 
 			pos=pos+1
 			points=self.lines[pos] 	#read thicknes
 
 			mesh_articles.append([ str(thicknes), str(points), True ])
 
-
-
 			n=n+1
+
+		scan_item_add("device_epitaxy.inp","#mesh","Mesh width",2)
+		scan_item_add("device_epitaxy.inp","#mesh","Mesh points",3)
 		gui_pos=gui_pos+1
 
 		self.draw_graph()

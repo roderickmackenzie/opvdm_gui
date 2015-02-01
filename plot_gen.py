@@ -7,9 +7,8 @@
 #	Room B86 Coates, University Park, Nottingham, NG7 2RD, UK
 #
 #    This program is free software; you can redistribute it and/or modify
-#    it under the terms of the GNU General Public License as published by
-#    the Free Software Foundation; either version 2 of the License, or
-#    (at your option) any later version.
+#    it under the terms of the GNU General Public License v2.0, as published by
+#    the Free Software Foundation.
 #
 #    This program is distributed in the hope that it will be useful,
 #    but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -20,6 +19,7 @@
 #    with this program; if not, write to the Free Software Foundation, Inc.,
 #    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
+
 import pygtk
 pygtk.require('2.0')
 import gtk
@@ -29,19 +29,37 @@ import shutil
 from token_lib import tokens
 from numpy import *
 from util import pango_to_gnuplot
-from plot import plot_data
 from plot_window import plot_window
 from matplotlib.widgets import Cursor
+from inp import inp_load_file
+from inp import inp_search_token_value
 
 window=None
 
 destroy=False
 
+def plot_load_token(plot_token,file_name):
+	lines=[]
+	if inp_load_file(lines,file_name)==True:
+		plot_token.file0=inp_search_token_value(lines, "#file0")
+		plot_token.file1=inp_search_token_value(lines, "#file1")
+		plot_token.file2=inp_search_token_value(lines, "#file2")
+		plot_token.tag0=inp_search_token_value(lines, "#tag0")
+		plot_token.tag1=inp_search_token_value(lines, "#tag1")
+		plot_token.tag2=inp_search_token_value(lines, "#tag2")
+		return True
+	else:
+		return False
+
 def set_plot_auto_close(value):
 	global destroy
 	destroy=value
 
-def plot_gen(input_files,plot_labels,plot_token):
+def plot_gen(input_files,plot_labels,plot_token,config_file,units):
+	my_config_file=config_file
+	if config_file=="auto":
+		my_config_file=input_files[0].split(".")[0]+".oplot"
+
 	if (len(input_files)==1):
 		if os.path.splitext(input_files[0])[1]==".plot":
 			plot_file=input_files[0]
@@ -50,19 +68,20 @@ def plot_gen(input_files,plot_labels,plot_token):
 			return
 	global window
 	global destroy
-
 	if window!=None:
 		if window.shown==True:
 			if destroy==True:
 				window.input_files=input_files
 				window.plot_token=plot_token
-				window.plot.load_data(input_files,plot_labels,plot_token)
+
+				window.plot.load_data(input_files,plot_labels,plot_token,my_config_file,units)
+				window.plot.do_plot()
 				window.plot.fig.canvas.draw()
 				window.window.present()
 				window.window.set_keep_above(True)
 				return
 
 	window=plot_window()
-	window.init(input_files,plot_labels,plot_token)
+	window.init(input_files,plot_labels,plot_token,my_config_file,units)
 
 

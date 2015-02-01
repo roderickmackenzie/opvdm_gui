@@ -289,6 +289,8 @@ class plot_widget(gtk.VBox):
 							if z[ii]!="":
 								self.ax[plot_number].annotate(fx_with_units(float(z[ii])),xy = (t[ii], s[ii]), xytext = (-20, 20),textcoords = 'offset points', ha = 'right', va = 'bottom',bbox = dict(boxstyle = 'round,pad=0.5', fc = 'yellow', alpha = 0.5),arrowprops = dict(arrowstyle = '->', connectionstyle = 'arc3,rad=0'))
 
+					#self.ax[plot_number].annotate(self.labels[i],xy = (t[len(t)/2], s[len(t)/2]), xytext = (-20, 20),textcoords = 'offset points', ha = 'right', va = 'bottom',bbox = dict(boxstyle = 'round,pad=0.5', fc = 'yellow', alpha = 0.5),arrowprops = dict(arrowstyle = '->', connectionstyle = 'arc3,rad=0'))
+
 					if number_of_plots>1:
 						self.ax[plot_number].yaxis.set_major_formatter(ticker.FormatStrFormatter('%0.1e'))
 						if min(s)!=max(s):

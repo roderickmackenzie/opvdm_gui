@@ -7,9 +7,8 @@
 #	Room B86 Coates, University Park, Nottingham, NG7 2RD, UK
 #
 #    This program is free software; you can redistribute it and/or modify
-#    it under the terms of the GNU General Public License as published by
-#    the Free Software Foundation; either version 2 of the License, or
-#    (at your option) any later version.
+#    it under the terms of the GNU General Public License v2.0, as published by
+#    the Free Software Foundation.
 #
 #    This program is distributed in the hope that it will be useful,
 #    but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -52,8 +51,8 @@ class config():
 			self.tag_list.append(a)
 			pos=len(self.tag_list)-1
 
-		print "Saved as",self.path+"config.inp"
-		a = open(self.path+"config.inp", "w")
+		print "Saved as",os.path.join(self.path,"config.inp")
+		a = open(os.path.join(self.path,"config.inp"), "w")
 		a.write(str(len(self.tag_list))+"\n")
 		for i in range(0,len(self.tag_list)):
 			a.write(self.tag_list[i].tag+"\n")
@@ -76,7 +75,7 @@ class config():
 		self.tag_list=[]
 		self.path=path
 		try:
-			f = open(self.path+"config.inp")
+			f = open(os.path.join(self.path,"config.inp"))
 			lines = f.readlines()
 			f.close()
 
