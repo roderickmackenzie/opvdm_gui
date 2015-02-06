@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 #    Organic Photovoltaic Device Model - a drift diffusion base/Shockley-Read-Hall
 #    model for organic solar cells. 
 #    Copyright (C) 2012 Roderick C. I. MacKenzie
@@ -8,9 +7,8 @@
 #	Room B86 Coates, University Park, Nottingham, NG7 2RD, UK
 #
 #    This program is free software; you can redistribute it and/or modify
-#    it under the terms of the GNU General Public License as published by
-#    the Free Software Foundation; either version 2 of the License, or
-#    (at your option) any later version.
+#    it under the terms of the GNU General Public License v2.0, as published by
+#    the Free Software Foundation.
 #
 #    This program is distributed in the hope that it will be useful,
 #    but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -22,12 +20,19 @@
 #    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 
-
 import sys
 import pygtk
-inp_dir='/usr/share/opvdm/'
-gui_dir='/usr/share/opvdm/gui/'
-lib_dir='/usr/lib64/opvdm/'
+from win_lin import running_on_linux
+
+if running_on_linux()==True:
+	inp_dir='/usr/share/opvdm/'
+	gui_dir='/usr/share/opvdm/gui/'
+	lib_dir='/usr/lib64/opvdm/'
+else:
+	inp_dir='c:\\opvdm\\'
+	gui_dir='c:\\opvdm\\gui\\'
+	lib_dir='c:\\opvdm\\'
+
 sys.path.append('./gui/')
 sys.path.append(lib_dir)
 
@@ -35,13 +40,15 @@ import os
 import shutil
 import signal
 import subprocess
-from scan import get_scan_dirs 
+from util import get_scan_dirs 
 from inp import inp_update_token_value
 from util import replace_file_in_zip_archive
 import os, fnmatch
 import stat 
 import zipfile
 from util import zip_remove_file
+from util import copy_scan_dir
+from util import delete_second_level_link_tree
 
 def copy_check_ver(orig,file_name,dest,only_over_write,clever):
 	#remove the dest file if both exist ready to copy
@@ -191,31 +198,35 @@ def import_archive(file_name,dest_dir,only_over_write):
 			if res!="":
 				break
 
-		sim_path=os.path.dirname(res)+"/"
+		sim_path=os.path.dirname(res)
 
 	else:
-		sim_path=file_name+"/"
+		sim_path=file_name
 
-	files=[ "sim.inp", "device.inp", "stark.inp" ,"shg.inp" ,"dos0.inp"  ,"jv.inp" ,"celiv.inp" , "optics.inp", "math.inp",  "dump.inp" , "light.inp", "tpv.inp", "otrace.inp", "server.inp", "pulse_voc.inp","pulse.inp","light_exp.inp" ]
+	files=[ "sim.inp", "device.inp", "stark.inp" ,"shg.inp" ,"dos0.inp", "dos1.inp"  ,"jv.inp" ,"celiv.inp" , "optics.inp", "math.inp",  "dump.inp" , "light.inp", "tpv.inp", "otrace.inp", "server.inp", "pulse_voc.inp","pulse.inp","light_exp.inp" ]
 
 	for i in files:
 		copy_check_ver(sim_path,i,dest_dir,only_over_write,True)
 
 
-	files=[ "device_epitaxy.inp", "optics_epitaxy.inp", "fit.inp", "dump_time.inp", "constraints.inp","duplicate.inp","dump_time.inp", "thermal.inp","lumo0.inp","homo0.inp" ]
+	files=[ "device_epitaxy.inp", "optics_epitaxy.inp", "fit.inp", "constraints.inp","duplicate.inp", "thermal.inp","lumo0.inp","homo0.inp" ]
 
 	for i in files:
 		copy_check_ver(sim_path,i,dest_dir,only_over_write,False)
+
+	import_scan_dirs(dest_dir,sim_path)
+
+def import_scan_dirs(dest_dir,src_dir):
 	sim_dirs=[]
-	get_scan_dirs(sim_dirs,sim_path)
+	get_scan_dirs(sim_dirs,src_dir)
 	for my_file in sim_dirs:
-		dest=dest_dir+os.path.basename(my_file)
+		dest=os.path.join(dest_dir,os.path.basename(my_file))
 		print "copy scan dir",my_file,"to",dest
 
 		if os.path.exists(dest):
-			shutil.rmtree(dest)
+			delete_second_level_link_tree(dest)
 
-		shutil.copytree(my_file,dest)
+		copy_scan_dir(dest,my_file)
 
 def delete_scan_dirs(path):
 	sim_dirs=[]
@@ -224,4 +235,22 @@ def delete_scan_dirs(path):
 	for my_file in sim_dirs:
 		print "Deleteing ",my_file
 		shutil.rmtree(my_file)
+
+def clean_scan_dirs(path):
+	sim_dirs=[]
+	get_scan_dirs(sim_dirs,path)
+
+	for my_dir in sim_dirs:
+		print "cleaning ",my_dir
+		files = os.listdir(my_dir)
+		for file in files:
+			file_name=os.path.join(my_dir,file)
+			if file_name.endswith(".dat"):
+				print "Remove",file_name
+				os.remove(file_name)
+			if os.path.isdir(file_name):
+				print "remove dir",file_name
+				shutil.rmtree(file_name)
+
+
 
