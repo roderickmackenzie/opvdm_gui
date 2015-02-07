@@ -44,7 +44,8 @@ from matplotlib.backends.backend_gtkagg import NavigationToolbar2GTKAgg as Navig
 from plot_widget import plot_widget
 from util import zip_get_data_file
 from window_list import windows
-import webbrowser
+from plot_state import plot_state
+from plot_gen import plot_load_token
 
 class cmp_class(gtk.Window):
 	mix_y=None
@@ -183,11 +184,14 @@ class cmp_class(gtk.Window):
 			plot_id.append(i)
 		self.plot.zero_frame_list=zero_frame
 
-		self.plot.load_data(self.file_names,plot_id,labels,None,"","")
+		print self.file_names
+		print plot_id
+		self.plot.load_data(self.file_names,plot_id,labels,self.plot_token,"","")
 
 
 
 	def callback_scale(self, adj):
+		plot_load_token(self.plot_token,self.file_names[0])
 		self.update(self.adj1.value)
 		self.plot.do_plot()
 
@@ -314,6 +318,7 @@ class cmp_class(gtk.Window):
 		return matches
 
 	def init(self,sim_dir,exe_command):
+		self.plot_token=plot_state()
 		self.sim_dir=sim_dir
 		self.win_list=windows()
 		self.win_list.load()
