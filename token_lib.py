@@ -7,9 +7,8 @@
 #	Room B86 Coates, University Park, Nottingham, NG7 2RD, UK
 #
 #    This program is free software; you can redistribute it and/or modify
-#    it under the terms of the GNU General Public License as published by
-#    the Free Software Foundation; either version 2 of the License, or
-#    (at your option) any later version.
+#    it under the terms of the GNU General Public License v2.0, as published by
+#    the Free Software Foundation.
 #
 #    This program is distributed in the hope that it will be useful,
 #    but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -20,9 +19,6 @@
 #    with this program; if not, write to the Free Software Foundation, Inc.,
 #    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
-import pygtk
-pygtk.require('2.0')
-import gtk
 import sys
 import os
 import shutil
@@ -63,7 +59,13 @@ class tokens:
 	lib.append(my_data("#Vstep","V","Voltage step",["text"],"e",1.0))
 	lib.append(my_data("#I0","Apms","I0",["text"],"e",1.0))
 	lib.append(my_data("#nid","(a.u.)","ideality factor",["text"],"e",1.0))
-	lib.append(my_data("#Psun","0/1000","Intensity of the sun",["text"],"e",1.0))
+	lib.append(my_data("#Psun","Sun","Intensity of the sun",["text"],"e",1.0))
+
+	lib.append(my_data("#saturation_n0","#saturation_n0","#saturation_n0",["text"],"e",1.0))
+	lib.append(my_data("#saturation_rate","#saturation_rate","#saturation_rate",["text"],"e",1.0))
+	lib.append(my_data("#imps_saturate","#imps_saturate","#imps_saturate",["text"],"e",1.0))
+
+
 	lib.append(my_data("#simplephotondensity","m<sup>-2</sup>s<sup>-1</sup>","Photon density",["text"],"e",1.0))
 	lib.append(my_data("#simple_alpha","m<sup>-1</sup>","Absorption of material",["text"],"e",1.0))
 	lib.append(my_data("#plot","1/0","Plot bands etc.. ",["1","0"],"e",1.0))
@@ -147,26 +149,36 @@ class tokens:
 	lib.append(my_data("#pulse_bigmeshstart","s","Big mesh start",["text"],"e",1.0))
 	lib.append(my_data("#pulse_bigmeshstop","s","Big mesh stop",["text"],"e",1.0))
 	lib.append(my_data("#pulse_bigdt","s","Big mesh dt",["text"],"e",1.0))
-	lib.append(my_data("#photokit_points","s","points",["text"],"e",1.0))
-	lib.append(my_data("#photokit_n","s","Wavelengths to simulate",["text"],"e",1.0))
-	lib.append(my_data("#photokit_Vexternal","Volts","External voltage",["text"],"e",1.0))
-	lib.append(my_data("#Rshort_photokit","Ohms","R<sub>short</sub>",["text"],"e",1.0))
-	lib.append(my_data("#photokit_sun","1=1 Sun","Backgroud light bias",["text"],"e",1.0))
-	lib.append(my_data("#photokit_modulation_max","1=1 Sun","Modulation depth",["text"],"e",1.0))
-	lib.append(my_data("#photokit_modulation_fx","Hz","Modulation frequency",["text"],"e",1.0))
-	lib.append(my_data("#Rshort_pulse_voc","Ohms","R short",["text"],"e",1.0))
+	lib.append(my_data("#imps_points","s","points",["text"],"e",1.0))
+	lib.append(my_data("#imps_n","s","Wavelengths to simulate",["text"],"e",1.0))
+	lib.append(my_data("#imps_Vexternal","Volts","External voltage",["text"],"e",1.0))
+	lib.append(my_data("#Rshort_imps","Ohms","R<sub>short</sub>",["text"],"e",1.0))
+	lib.append(my_data("#imps_sun","1=1 Sun","Backgroud light bias",["text"],"e",1.0))
+	lib.append(my_data("#imps_modulation_max","1=1 Sun","Modulation depth",["text"],"e",1.0))
+	lib.append(my_data("#imps_modulation_fx","Hz","Modulation frequency",["text"],"e",1.0))
 	lib.append(my_data("#pulse_voc_laser_eff","0-1.0","Laser Efficiency",["text"],"e",1.0))
 	lib.append(my_data("#pulse_voc_light_bias","0-1000","Light bias",["text"],"e",1.0))
 	lib.append(my_data("#high_sun_scale","au","High light multiplyer",["text"],"e",1.0))
 	lib.append(my_data("#Dphotoneff","0-1","Photon efficiency",["text"],"e",1.0))
 	lib.append(my_data("#jv_step_mul","0-2.0","JV voltage step multiplyer",["text"],"e",1.0))
+	lib.append(my_data("#jv_max_j","A m^{-2}","Maximum current density",["text"],"e",1.0))
 	lib.append(my_data("#dump_slices_by_time","1/0","dump slices by time",["1","0"],"e",1.0))
 	lib.append(my_data("#dump_1d_slices","1/0","Dump 1D slices",["1","0"],"e",1.0))
 	lib.append(my_data("#voc","V","V<sub>oc</sub>",["text"],"e",1.0))
 
-	lib.append(my_data("#photokit_r","au","Re - Amps",["text"],"e",1.0))
-	lib.append(my_data("#photokit_i","au","Im - Amps",["text"],"e",1.0))
-	lib.append(my_data("#photokit_fx","Hz","Frequency",["text"],"e",1.0))
+	lib.append(my_data("#imps_r","Amps","Re(i)",["text"],"e",1.0))
+	lib.append(my_data("#imps_i","Amps","Im(i)",["text"],"e",1.0))
+	lib.append(my_data("#imps_Jr","Amps $m^{-2}$","Re(J)",["text"],"e",1.0))
+	lib.append(my_data("#imps_Ji","Amps $m^{-2}$","Im(J)",["text"],"e",1.0))
+
+	lib.append(my_data("#imps_fx","Hz","Frequency",["text"],"e",1.0))
+	lib.append(my_data("#imps_delta_i","s","Phase shift",["text"],"e",1.0))
+	lib.append(my_data("#imps_delta_g","s","Phase shift",["text"],"e",1.0))
+	lib.append(my_data("#imps_delta_phase","s","Phase shift",["text"],"e",1.0))
+
+	lib.append(my_data("#Cext","C","External C",["text"],"e",1.0))
+	lib.append(my_data("#Rext","Ohms","External R",["text"],"e",1.0))
+
 	lib.append(my_data("#Rscope","Ohms","Resistance of scope",["text"],"e",1.0))
 	lib.append(my_data("#srh_bands","bands","Number of traps",["text"],"s",1.0))
 
@@ -246,7 +258,7 @@ class tokens:
 	lib.append(my_data("#jv_light_efficiency","","",["text"],"e",1.0))
 	lib.append(my_data("#light_model","","",["text"],"e",1.0))
 	lib.append(my_data("#NDfilter","","",["text"],"e",1.0))
-	lib.append(my_data("#newton_dump","","",["text"],"e",1.0))
+	lib.append(my_data("#newton_dump","1/0","Dump from newton solver",["1","0"],"e",1.0))
 	lib.append(my_data("#plottime","","",["text"],"e",1.0))
 	lib.append(my_data("#startstop","","",["text"],"e",1.0))
 	lib.append(my_data("#dumpitdos","","",["text"],"e",1.0))
@@ -256,11 +268,15 @@ class tokens:
 	lib.append(my_data("#dump_optics","1/0","Dump optical information",["1","0"],"e",1.0))
 	lib.append(my_data("#dump_optics_verbose","","",["text"],"e",1.0))
 	lib.append(my_data("#dump_energy_slice_switch","1/0","Dump energy slices",["1","0"],"e",1.0))
-	lib.append(my_data("#dump_energy_slice_pos","mesh position","Position of energy\nslice to dump",["text"],"e",1.0))
+	lib.append(my_data("#dump_energy_slice_pos","mesh position","Pos. of Eng. slice to dump",["text"],"e",1.0))
 	lib.append(my_data("#dump_print_newtonerror","1/0","Print newton error",["1","0"],"e",1.0))
-	lib.append(my_data("#dump_print_converge","","",["text"],"e",1.0))
-	lib.append(my_data("#dump_print_pos_error","","",["text"],"e",1.0))
-	lib.append(my_data("#dump_pl","","",["text"],"e",1.0))
+	lib.append(my_data("#dump_print_converge","1/0","Print solver convergence",["1","0"],"e",1.0))
+	lib.append(my_data("#dump_write_converge","1/0","Write newton solver convergence to disk",["1","0"],"e",1.0))
+	lib.append(my_data("#dump_print_pos_error","1/0","Print poisson solver convergence",["1","0"],"e",1.0))
+	lib.append(my_data("#dump_pl","1/0","Dump PL spectra",["text"],"e",1.0))
+	lib.append(my_data("#dump_norm_time_to_one","1/0","Normalize output x-time to one",["1","0"],"e",1.0))
+
+
 	lib.append(my_data("#celiv_dt","","",["text"],"e",1.0))
 	lib.append(my_data("#celiv_time_j0","","",["text"],"e",1.0))
 	lib.append(my_data("#celiv_time_j1","","",["text"],"e",1.0))
@@ -294,7 +310,7 @@ class tokens:
 	lib.append(my_data("#voc_J_to_Jr","au","Ratio of conduction current to recombination current",["text"],"e",1.0))
 
 	lib.append(my_data("#voc_i","au","Current",["text"],"e",1.0))
-	lib.append(my_data("#kl_in_newton","1/0","Kirchhoff Current Law\nin Newton solver",["1","0"],"e",1.0))
+	lib.append(my_data("#kl_in_newton","1/0","KCL in Newton solver",["1","0"],"e",1.0))
 
 	lib.append(my_data("#tpc_time_start","s","Start time",["text"],"e",1.0))
 	lib.append(my_data("#tpc_stop","s","Stop time",["text"],"e",1.0))
@@ -312,7 +328,33 @@ class tokens:
 	lib.append(my_data("#tpc_simall","1/0","Include RC effects",["1","0"],"e",1.0))
 	lib.append(my_data("#tpc_L","Henry","Inductance",["text"],"e",1.0))
 
-#electricalclamp_first
+	lib.append(my_data("#do_fit","1/0","Do fit",["1","0"],"e",1.0))
+	lib.append(my_data("#simplexmul","au","simplex mull",["text"],"e",1.0))
+	lib.append(my_data("#reset","au","Reset steps",["text"],"e",1.0))
+
+
+	lib.append(my_data("#max_nfree_to_ptrap","m^{-3}s^{-1}","nfree_to_ptrap",["text"],"e",1.0))
+	lib.append(my_data("#max_pfree_to_ntrap","m^{-3}s^{-1}","max_pfree_to_ntrap",["text"],"e",1.0))
+	lib.append(my_data("#max_nrelax","m^{-3}s^{-1}","max_nrelax",["text"],"e",1.0))
+	lib.append(my_data("#max_prelax","m^{-3}s^{-1}","max_prelax",["text"],"e",1.0))
+
+	lib.append(my_data("#max_nfree","m^{-3}","max_nfree",["text"],"e",1.0))
+	lib.append(my_data("#max_pfree","m^{-3}","max_pfree",["text"],"e",1.0))
+	lib.append(my_data("#max_ntrap","m^{-3}","max_ntrap",["text"],"e",1.0))
+	lib.append(my_data("#max_ptrap","m^{-3}","max_ptrap",["text"],"e",1.0))
+	lib.append(my_data("#alpha_max_reduction","m^{-1}","alpha_max_reduction",["text"],"e",1.0))
+	lib.append(my_data("#alpha_max_increase","m^{-1}","alpha_max_increase",["text"],"e",1.0))
+
+	lib.append(my_data("#srh_n_r1","m^{-3}s^{-1}","srh electron rate 1",["text"],"e",1.0))
+	lib.append(my_data("#srh_n_r2","m^{-3}s^{-1}","srh electron rate 2",["text"],"e",1.0))
+	lib.append(my_data("#srh_n_r3","m^{-3}s^{-1}","srh electron rate 3",["text"],"e",1.0))
+	lib.append(my_data("#srh_n_r4","m^{-3}s^{-1}","srh electron rate 4",["text"],"e",1.0))
+
+	lib.append(my_data("#srh_p_r1","m^{-3}s^{-1}","srh hole rate 1",["text"],"e",1.0))
+	lib.append(my_data("#srh_p_r2","m^{-3}s^{-1}","srh hole rate 2",["text"],"e",1.0))
+	lib.append(my_data("#srh_p_r3","m^{-3}s^{-1}","srh hole rate 3",["text"],"e",1.0))
+	lib.append(my_data("#srh_p_r4","m^{-3}s^{-1}","srh hole rate 4",["text"],"e",1.0))
+
 	def find(self,token):
 		for i in range(0, len(self.lib)):
 			if self.lib[i].token==token.strip():
