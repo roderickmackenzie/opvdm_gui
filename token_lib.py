@@ -355,6 +355,8 @@ class tokens:
 	lib.append(my_data("#srh_p_r3","m^{-3}s^{-1}","srh hole rate 3",["text"],"e",1.0))
 	lib.append(my_data("#srh_p_r4","m^{-3}s^{-1}","srh hole rate 4",["text"],"e",1.0))
 
+	lib.append(my_data("#band_bend_max","percent","band bend max",["text"],"e",1.0))
+
 	def find(self,token):
 		for i in range(0, len(self.lib)):
 			if self.lib[i].token==token.strip():
