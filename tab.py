@@ -7,9 +7,8 @@
 #	Room B86 Coates, University Park, Nottingham, NG7 2RD, UK
 #
 #    This program is free software; you can redistribute it and/or modify
-#    it under the terms of the GNU General Public License as published by
-#    the Free Software Foundation; either version 2 of the License, or
-#    (at your option) any later version.
+#    it under the terms of the GNU General Public License v2.0, as published by
+#    the Free Software Foundation.
 #
 #    This program is distributed in the hope that it will be useful,
 #    but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -26,7 +25,6 @@ import gtk
 import sys
 import os
 import shutil
-from scan_item import scan_item
 from scan_item import scan_item_add
 from token_lib import tokens
 from util import check_is_config_file
@@ -46,21 +44,18 @@ class tab_class(gtk.VBox):
 	visible=1
 
 	def callback_edit(self, widget, data=None):
-		#print self.file_name," ",data," ",type(widget)
 		if type(widget)==gtk.Entry:
 			a=undo_list_class()
 			a.add([self.file_name, data, inp_get_token_value(self.file_name, data),widget])
-			inp_update_token_value(self.file_name, data, widget.get_text())
-			#print self.undo_list
+			inp_update_token_value(self.file_name, data, widget.get_text(),1)
 		else:
-			inp_update_token_value(self.file_name, data, widget.get_active_text())
+			inp_update_token_value(self.file_name, data, widget.get_active_text(),1)
 
-	def init(self,filename,fullname,check_list):
+	def init(self,filename,fullname):
 		self.widget_type=[]
 		self.file_name=filename
 		self.edit_list=[]
 		self.line_number=[]
-		print "loading ",filename
 		if check_is_config_file(filename)=="file":
 			f = open(filename)
 			self.lines = f.readlines()
@@ -68,7 +63,6 @@ class tab_class(gtk.VBox):
 		elif check_is_config_file(filename)=="archive":
 			zf = zipfile.ZipFile('sim.opvdm', 'r')
 			self.lines = zf.read(filename).split("\n")
-			print self.lines
 			zf.close()
 		else:
 			print "File not found"
@@ -123,11 +117,9 @@ class tab_class(gtk.VBox):
 					edit_box.connect("changed", self.callback_edit, token)
 					edit_box.show()
 					self.widget_type.append("combo")
-					print "Rod",self.widget_type[n],n,len(self.widget_type)
 				edit_box.set_size_request(300,height)
 				self.edit_list.append(edit_box)
 				hbox.pack_start(edit_box, False, False, padding=1)
-				#print "out -> %s %i",out_text,len(self.edit_list)
 
 				label = gtk.Label()
 				label.set_markup(units)
@@ -138,7 +130,8 @@ class tab_class(gtk.VBox):
 				label.show()
 				self.pack_start(hbox, False, False, padding=1)
 				#self.add()
-				scan_item_add(check_list,filename,token,text_info)
+				line=1
+				scan_item_add(filename,token,text_info,line)
 				
 				n=n+1
 
