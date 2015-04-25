@@ -34,6 +34,7 @@ import signal
 import subprocess
 from inp import inp_get_token_value
 from inp import inp_load_file
+from inp import inp_search_token_value
 import os, fnmatch
 import stat
 from token_lib import tokens
@@ -123,8 +124,8 @@ def export_as(output):
 			line=line+"\\end{table}\n"
 			line=line+"\n"
 
-		files=["./device.inp"]
-		names=["Device"]
+		files=["./device.inp","./device_epitaxy.inp", "./stark.inp", "./phys/redf/fit.inp", "./phys/redf/patch.inp"]
+		names=["Device", "Device Epitaxy","Stark","Fit redf","Fit patch"]
 		if tex==True:
 			line=line+"\\begin{table}[H]\n"
 			line=line+"\\begin{center}\n"
@@ -136,23 +137,31 @@ def export_as(output):
 		if tex==True:
 			line=line+"  \\hline\n"
 
+		config_lines=[]
 		cur_file=0
+		inp_load_file(config_lines,"/home/rod/juan/hpc/j17/orig/latex_export_info.inp")
+		for cur_file in range(0,len(files)):
 
-		inp_load_file(lines,files[cur_file])
-		t=tokens()
 
-		for i in range(0,len(lines),2):
-			my_token=t.find(lines[i])
-			if my_token!=False:
-				if my_token.number_type=="e":
-					number=""
-					if tex==True:
-						#print lines
-						#print lines[i]
-						number=to_exp(dos_lines[ii][i+1])
-					else:
-						number=dos_lines[ii][i+1]
-					line=line+my_token.info+col+dollar+number+dollar+col+dollar+pygtk_to_latex_subscript(my_token.units)+dollar+eol+"\n"
+			if os.path.isfile(files[cur_file])==True:
+				inp_load_file(lines,files[cur_file])
+				t=tokens()
+
+				for i in range(0,len(lines),2):
+					dump_token=inp_search_token_value(config_lines, lines[i])
+					if dump_token=="1":
+						my_token=t.find(lines[i])
+						if my_token!=False:
+							if my_token.number_type=="e":
+								number=""
+								if tex==True:
+									#print lines
+									#print lines[i]
+									number=to_exp(dos_lines[ii][i+1])
+								else:
+									number=dos_lines[ii][i+1]
+								line=line+my_token.info+col+dollar+number+dollar+col+dollar+pygtk_to_latex_subscript(my_token.units)+dollar+eol+"\n"
+
 		if tex==True:
 			line=line+"  \\hline\n"
 			line=line+"\\end{tabular}\n"

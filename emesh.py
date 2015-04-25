@@ -25,6 +25,7 @@ import gtk
 import sys
 import os
 import shutil
+from util import set_exe_command
 from numpy import *
 from matplotlib.figure import Figure
 from numpy import arange, sin, pi
@@ -179,13 +180,17 @@ class tab_electrical_mesh(gtk.Window):
 		for item in self.layer_model:
 			a.write(item[COLUMN_LAYER]+"\n")
 			a.write(item[COLUMN_THICKNES]+"\n")
-		a.write("#mesh\n")
+		a.write("#mesh_layers\n")
 		a.write(str(len(self.mesh_model))+"\n")
+		i=0
 		for item in self.mesh_model:
+			a.write("#mesh_layer_length"+str(i)+"\n")
 			a.write(item[MESH_THICKNES]+"\n")
+			a.write("#mesh_layer_points"+str(i)+"\n")
 			a.write(item[MESH_POINTS]+"\n")
+			i=i+1
 		a.write("#ver\n")			
-		a.write("1.0\n")			
+		a.write("1.1\n")			
 		a.write("#end\n")			
 		a.close()
 
@@ -346,55 +351,65 @@ class tab_electrical_mesh(gtk.Window):
 		cmd = 'firefox http://www.roderickmackenzie.eu/opvdm_wiki.html'
 		os.system(cmd)
 
-	def wow(self,exe_command):
+	def init(self):
+		self.save_file_name="device_epitaxy.inp"
+
 		self.fig = Figure(figsize=(5,4), dpi=100)
 		self.ax1=None
 		self.show_key=True
 		self.hbox=gtk.HBox()
-		self.exe_command=exe_command
+		self.exe_command , exe_name  =  set_exe_command()
 		self.edit_list=[]
 		self.line_number=[]
-		self.save_file_name="device_epitaxy.inp"
-		f = open(self.save_file_name)
-		self.lines = f.readlines()
-		f.close()
-		pos=0
-		for i in range(0, len(self.lines)):
-			self.lines[i]=self.lines[i].rstrip()
-
-		n=0
 		gui_pos=0
-		pos=0
-		pos=pos+1	#first comment
-		layers=int(self.lines[pos])
 
-		for i in range(0, layers):
+		if os.path.isfile(self.save_file_name):
+			f = open(self.save_file_name)
+			self.lines = f.readlines()
+			f.close()
+			pos=0
+			for i in range(0, len(self.lines)):
+				self.lines[i]=self.lines[i].rstrip()
+
+			n=0
+
+			pos=0
+			pos=pos+1	#first comment
+			layers=int(self.lines[pos])
+
+			for i in range(0, layers):
+				pos=pos+1
+				token=self.lines[pos]	#read label
+
+				pos=pos+1
+				layer_ticknes=self.lines[pos] 	#read thicknes
+
+				articles.append([ token, str(layer_ticknes), True ])
+				scan_item_add("device_epitaxy.inp",token,token,1)
+
 			pos=pos+1
-			token=self.lines[pos]	#read label
-
 			pos=pos+1
-			layer_ticknes=self.lines[pos] 	#read thicknes
+			mesh_layers=int(self.lines[pos])
 
-			articles.append([ token, str(layer_ticknes), True ])
-			scan_item_add("device_epitaxy.inp",token,token,1)
+			for i in range(0, mesh_layers):
+				pos=pos+1					#token
+				token=self.lines[pos]
+				scan_item_add("device_epitaxy.inp",token,"Mesh width"+str(i),1)
+				pos=pos+1
+				thicknes=self.lines[pos]	#read value
 
-		pos=pos+1
-		pos=pos+1
-		mesh_layers=int(self.lines[pos])
+				pos=pos+1					#token
+				token=self.lines[pos]
+				scan_item_add("device_epitaxy.inp",token,"Mesh points"+str(i),1)
 
-		for i in range(0, mesh_layers):
-			pos=pos+1
-			thicknes=self.lines[pos]	#read token
+				pos=pos+1
+				points=self.lines[pos] 		#read value
 
-			pos=pos+1
-			points=self.lines[pos] 	#read thicknes
+				mesh_articles.append([ str(thicknes), str(points), True ])
 
-			mesh_articles.append([ str(thicknes), str(points), True ])
+				n=n+1
 
-			n=n+1
-
-		scan_item_add("device_epitaxy.inp","#mesh","Mesh width",2)
-		scan_item_add("device_epitaxy.inp","#mesh","Mesh points",3)
+		
 		gui_pos=gui_pos+1
 
 		self.draw_graph()
@@ -479,8 +494,8 @@ class tab_electrical_mesh(gtk.Window):
 		self.layer_model = self.__create_model()
 		self.mesh_model = self.__create_model_mesh()
 
-	        vbox = gtk.VBox(False, 2)
-		
+		vbox = gtk.VBox(False, 2)
+	
 
 		frame = gtk.Frame()
 		frame.set_label("Layers")
@@ -490,10 +505,10 @@ class tab_electrical_mesh(gtk.Window):
 		treeview.set_rules_hint(True)
 		treeview.get_selection().set_mode(gtk.SELECTION_SINGLE)
 		self.__add_columns(treeview)
-	        vbox_layers.pack_start(treeview, False, False, 0)
+		vbox_layers.pack_start(treeview, False, False, 0)
 		treeview.show()
 
-		
+	
 
 		if os.path.exists("./server.inp")==True:
 			add_button = gtk.Button("Add",gtk.STOCK_ADD)
@@ -515,7 +530,7 @@ class tab_electrical_mesh(gtk.Window):
 
 		frame.add(vbox_layers)
 		frame.show()
-	        vbox.pack_start(frame, False, False, 0)
+		vbox.pack_start(frame, False, False, 0)
 
 		#spacer
 		label=gtk.Label(" \n\n    ")
@@ -547,10 +562,11 @@ class tab_electrical_mesh(gtk.Window):
 		delete_button.connect("clicked", self.on_remove_from_mesh_click, treeview)
 		delete_button.show()
 
-	        hbox = gtk.HBox(False, 2)
-        
-	        hbox.pack_start(add_button, False, False, 0)
-	        hbox.pack_start(delete_button, False, False, 0)
+		hbox = gtk.HBox(False, 2)
+	    
+		hbox.pack_start(add_button, False, False, 0)
+		hbox.pack_start(delete_button, False, False, 0)
+
 		vbox_mesh.pack_start(hbox, False, False, 0)
 		frame.add(vbox_mesh)
 		vbox.pack_start(frame, False, False, 0)

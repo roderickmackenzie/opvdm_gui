@@ -357,6 +357,19 @@ class tokens:
 
 	lib.append(my_data("#band_bend_max","percent","band bend max",["text"],"e",1.0))
 
+	lib.append(my_data("#Tll","Kelvin","Device temperature",["text"],"e",1.0))
+	lib.append(my_data("#layer0","m","Active layer width",["text"],"e",1.0))
+	lib.append(my_data("#stark_saturate","au","Stark saturate",["text"],"e",1.0))
+
+	lib.append(my_data("#n_mul","au","n mul",["text"],"e",1.0))
+	lib.append(my_data("#alpha_mul","m^{-1}","Alpha mul",["text"],"e",1.0))
+	
+	lib.append(my_data("#stark_point0","s","stark point0",["text"],"e",1.0))
+	lib.append(my_data("#stark_point1","s","stark point0",["text"],"e",1.0))
+	lib.append(my_data("#stark_point2","s","stark point0",["text"],"e",1.0))
+	lib.append(my_data("#stark_point3","s","stark point0",["text"],"e",1.0))
+	lib.append(my_data("#stark_point4","s","stark point0",["text"],"e",1.0))
+
 	def find(self,token):
 		for i in range(0, len(self.lib)):
 			if self.lib[i].token==token.strip():

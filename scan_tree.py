@@ -59,7 +59,24 @@ def tree_gen(program_list,base_dir,sim_dir):
 		print i,program_list[i][0],program_list[i][1],program_list[i][2]
 		if program_list[i][2]=="scan":
 			tree_items[0].append(program_list[i][0])
-			tree_items[1].append(program_list[i][1])
+			values=program_list[i][1]
+			#This expands a [ start stop step ] command. 
+			if len(values)>0:
+				if values[0]=='[' and values[len(values)-1]==']':
+					values=values[1:len(values)-1]
+					data=values.split()
+					if len(data)==3:
+						a=float(data[0])
+						b=float(data[1])
+						c=float(data[2])
+						values=""
+						pos=a
+						while pos<b:
+							values=values+str(pos)+" "
+							pos=pos+c
+						values=values[0:len(values)-1]			
+
+			tree_items[1].append(values)
 			tree_items[2].append(program_list[i][2])
 
 	print "tree items=",tree_items

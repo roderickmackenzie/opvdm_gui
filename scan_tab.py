@@ -219,7 +219,13 @@ class scan_vbox(gtk.VBox):
 
 			help_button = dialog.add_button(gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL)
 
-			label = gtk.Label("Should I delete the old simualtions first?:\n"+"\n".join(dirs_to_del))
+			text_del_dirs=""
+			if len(dirs_to_del)>30:
+				for i in range(0,30,1):
+					text_del_dirs=text_del_dirs+dirs_to_del[i]+"\n"
+				text_del_dirs=text_del_dirs+"and "+str(len(dirs_to_del)-30)+" more."
+
+			label = gtk.Label("Should I delete the old simualtions first?:\n"+"\n"+text_del_dirs)
 			dialog.vbox.pack_start(label, True, True, 0)
 			label.show()
 
