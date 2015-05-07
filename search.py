@@ -8,9 +8,8 @@
 #	Room B86 Coates, University Park, Nottingham, NG7 2RD, UK
 #
 #    This program is free software; you can redistribute it and/or modify
-#    it under the terms of the GNU General Public License as published by
-#    the Free Software Foundation; either version 2 of the License, or
-#    (at your option) any later version.
+#    it under the terms of the GNU General Public License v2.0, as published by
+#    the Free Software Foundation.
 #
 #    This program is distributed in the hope that it will be useful,
 #    but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -26,20 +25,57 @@ import os, fnmatch
 import glob
 
 
-def find_fit_log():
+def find_fit_log(out_file,path):
 	pattern='fitlog.dat'
-	path='../'
-	result = []
+	fitlog = []
 	for root, dirs, files in os.walk(path):
 		for name in files:
 			if fnmatch.fnmatch(name, pattern):
-				result.append(os.path.join(root, name))
-	files=result
+				fitlog.append(os.path.join(root, name))
+
+	pattern='fitlog_time_speed.dat'
+	fitlog_time_speed = []
+	for root, dirs, files in os.walk(path):
+		for name in files:
+			if fnmatch.fnmatch(name, pattern):
+				fitlog_time_speed.append(os.path.join(root, name))
+
 	string="plot "
-	for my_file in files:
+	for my_file in fitlog:
 		 string=string+"'"+my_file+"' using ($2) with lp,"
+
+	#for my_file in fitlog_time_speed:
+		# string=string+"'"+my_file+"' using ($2) axis x1y2 with lp,"
+
 	string = string[:-1]
-	text_file = open("./plot/hpc_fitlog.plot", "w")
+	text_file = open(out_file, "w")
+	text_file.write(string)
+	text_file.close()
+
+def find_fit_speed_log(out_file,path):
+	pattern='fitlog_time_speed.dat'
+	fitlog = []
+	for root, dirs, files in os.walk(path):
+		for name in files:
+			if fnmatch.fnmatch(name, pattern):
+				fitlog.append(os.path.join(root, name))
+
+	pattern='fitlog_time_speed.dat'
+	fitlog_time_speed = []
+	for root, dirs, files in os.walk(path):
+		for name in files:
+			if fnmatch.fnmatch(name, pattern):
+				fitlog_time_speed.append(os.path.join(root, name))
+
+	string="plot "
+	for my_file in fitlog:
+		 string=string+"'"+my_file+"' using ($1/60/60):($2) with lp,"
+
+	#for my_file in fitlog_time_speed:
+		# string=string+"'"+my_file+"' using ($2) axis x1y2 with lp,"
+
+	string = string[:-1]
+	text_file = open(out_file, "w")
 	text_file.write(string)
 	text_file.close()
 
@@ -47,7 +83,7 @@ def return_file_list(result,start_dir,file_name):
 	print start_dir, file_name
 	pattern=file_name
 	path=start_dir
-	for root, dirs, files in os.walk(path):
+	for root, dirs, files in os.walk(path, followlinks=True):
 		for name in files:
 			if fnmatch.fnmatch(name, pattern):
 				result.append(os.path.join(root, name))
