@@ -7,9 +7,8 @@
 #	Room B86 Coates, University Park, Nottingham, NG7 2RD, UK
 #
 #    This program is free software; you can redistribute it and/or modify
-#    it under the terms of the GNU General Public License as published by
-#    the Free Software Foundation; either version 2 of the License, or
-#    (at your option) any later version.
+#    it under the terms of the GNU General Public License v2.0, as published by
+#    the Free Software Foundation.
 #
 #    This program is distributed in the hope that it will be useful,
 #    but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -19,7 +18,6 @@
 #    You should have received a copy of the GNU General Public License along
 #    with this program; if not, write to the Free Software Foundation, Inc.,
 #    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-
 
 import pygtk
 pygtk.require('2.0')
@@ -39,7 +37,11 @@ from plot_gen import plot_gen
 from util import find_data_file
 import zipfile
 import glob
-
+from scan_item import scan_item_add
+from util import lines_to_xyz
+from tab import tab_class
+from win_lin import running_on_linux
+import webbrowser
 #   columns
 (
   COLUMN_LAYER,
@@ -50,32 +52,52 @@ import glob
 ) = range(5)
 
 # data
-articles = []
+
 
 def find_modes(path):
 	result = []
-	if os.path.isfile("./light_dump.zip"):
+	file_names=[]
+	pwd=os.getcwd()
+
+	if os.path.isfile(os.path.join(pwd,"light_dump.zip")):
 		zf = zipfile.ZipFile("./light_dump.zip", 'r')
 
 		for file in zf.filelist:
-		    if file.filename.startswith("light_1d_"):
-			if file.filename.endswith("_photons_norm.dat"):
-				store = file.filename[:-17]
+			file_names.append(file.filename)
+		zf.close()
+	else:
+		for file in glob.glob(os.path.join(pwd,"light_dump","*.dat")):
+			file_names.append(os.path.basename(file))
+
+	for i in range(0,len(file_names)-1):
+		if file_names[i].startswith("light_1d_"):
+			if file_names[i].endswith("_photons_norm.dat"):
+				store = file_names[i][:-17]
 				s=store.split("light_1d_")
 				store = s[1]
 				result.append(store)
 
-		zf.close()
+
 	return result
 
 def find_models():
 	ret=[]
-	if os.path.isfile("./light/exp.so"):
-		path="./light/"
+	if running_on_linux()==True:
+		ext="so"
 	else:
-		path="/usr/lib64/opvdm/"
+		ext="dll"
 
-	for file in glob.glob(path+"*.so"):
+	local=os.path.join(os.getcwd(),"light","exp."+ext)
+	if os.path.isfile(local):
+		path=os.path.join(os.getcwd(),"light")
+	else:
+		if running_on_linux()==True:
+			path="/usr/lib64/opvdm/"
+		else:
+			path="c:\\opvdm\\light\\"
+
+	
+	for file in glob.glob(os.path.join(path,"*."+ext)):
 		ret.append(os.path.splitext(os.path.basename(file))[0])
 
 	return ret
@@ -89,8 +111,8 @@ class scan_item(gtk.CheckButton):
 class class_optical(gtk.Window):
 
 	icon_theme = gtk.icon_theme_get_default()
+	
 
-	dump_dir="./light_dump/"
 	lines=[]
 	edit_list=[]
 
@@ -99,6 +121,8 @@ class class_optical(gtk.Window):
 	file_name=""
 	name=""
 	visible=1
+
+	articles = []
 
 	def init(self):
 		self.config_file="optics_epitaxy.inp"
@@ -110,8 +134,8 @@ class class_optical(gtk.Window):
 		for i in range(0,len(self.layer_end)):
 			if (self.layer_end[i]>event.xdata):
 				break
-		
-		plot_gen(["./phys/"+self.layer_name[i]+"/alpha.inp"],[],None)
+		pwd=os.getcwd()
+		plot_gen([os.path.join(pwd,"phys",self.layer_name[i],"alpha.inp")],[],None,"","")
 
 	def update_cb(self):
 		self.cb.handler_block(self.cb_id)
@@ -135,9 +159,10 @@ class class_optical(gtk.Window):
 		used_model=inp_get_token_value("light.inp", "#light_model")
 		if models.count(used_model)==0:
 			used_model="exp"
-			inp_update_token_value("light.inp", "#light_model","exp")
+			inp_update_token_value("light.inp", "#light_model","exp",1)
 
 		self.cb_model.set_active(models.index(used_model))
+		scan_item_add("light.inp","#light_model","Optical model",1)
 
 	def __create_model(self):
 
@@ -151,7 +176,7 @@ class class_optical(gtk.Window):
 		)
 
 		# add items
-		for item in articles:
+		for item in self.articles:
 			iter = model.append()
 
 			model.set (iter,
@@ -234,12 +259,11 @@ class class_optical(gtk.Window):
 		model, iter = selection.get_selected()
 
 		path = model.get_path(iter)[0]
-		print path
 		#model.remove(iter)
 
 		#del articles[ path ]
 
-		articles.insert(path, new_item) #append(new_item)
+		self.articles.insert(path, new_item) #append(new_item)
 
 		iter = model.insert(path) #append()
 		model.set (iter,
@@ -253,7 +277,6 @@ class class_optical(gtk.Window):
 		self.update_graph(model)
 
 	def save_model(self, model):
-		print "Saved"
 		a = open("optics_epitaxy.inp", "w")
 		a.write("#layers\n")
 		a.write(str(len(model))+"\n")
@@ -283,7 +306,7 @@ class class_optical(gtk.Window):
 			path = model.get_path(iter)[0]
 			model.remove(iter)
 
-			del articles[ path ]
+			del self.articles[ path ]
 
 			self.save_model(model)
 			self.update_graph(model)
@@ -300,6 +323,8 @@ class class_optical(gtk.Window):
 
 
 	def gen_main_menu(self, window,vbox):
+		self.notebook = gtk.Notebook()
+		self.notebook.show()
 		accel_group = gtk.AccelGroup()
 
 
@@ -332,8 +357,7 @@ class class_optical(gtk.Window):
 		self.fig.canvas.draw()
 
 	def update_graph(self,model):
-		cmd = self.exe_command+' --optics --zip_results'
-		print cmd
+		cmd = self.exe_command+' --optics'
 		ret= os.system(cmd)
 		self.fig.clf()
 		self.draw_graph(model)
@@ -346,28 +370,26 @@ class class_optical(gtk.Window):
 		column = cell.get_data("column")
 
 		if column == COLUMN_LAYER:
-			articles[path][COLUMN_LAYER] = new_text
+			self.articles[path][COLUMN_LAYER] = new_text
 
-			model.set(iter, column, articles[path][COLUMN_LAYER])
+			model.set(iter, column, self.articles[path][COLUMN_LAYER])
 
 		if column == COLUMN_THICKNES:
 			#old_text = model.get_value(iter, column)
-			articles[path][COLUMN_THICKNES] = new_text
-			print new_text
-			model.set(iter, column, articles[path][COLUMN_THICKNES])
+			self.articles[path][COLUMN_THICKNES] = new_text
+			model.set(iter, column, self.articles[path][COLUMN_THICKNES])
 
 		if column == COLUMN_MATERIAL:
-			print new_text
 			#old_text = model.get_value(iter, column)
-			articles[path][COLUMN_MATERIAL] = new_text
+			self.articles[path][COLUMN_MATERIAL] = new_text
 
-			model.set(iter, column, articles[path][COLUMN_MATERIAL])
+			model.set(iter, column, self.articles[path][COLUMN_MATERIAL])
 
 		if column == COLUMN_DEVICE:
 			#old_text = model.get_value(iter, column)
-			articles[path][COLUMN_DEVICE] = new_text
+			self.articles[path][COLUMN_DEVICE] = new_text
 
-			model.set(iter, column, articles[path][COLUMN_DEVICE])
+			model.set(iter, column, self.articles[path][COLUMN_DEVICE])
 
 		self.save_model(model)
 		self.update_graph(model)
@@ -376,7 +398,6 @@ class class_optical(gtk.Window):
 		line=self.line_number[data]
 		self.lines[line]=self.edit_list[data].get_text()
 		self.edit_list[data].set_text(self.lines[line])
-		print "Written data to", self.config_file
 		a = open(self.config_file, "w")
 		for i in range(0,len(self.lines)):
 			a.write(self.lines[i]+"\n")
@@ -390,7 +411,6 @@ class class_optical(gtk.Window):
 
 	def draw_graph(self,model):
 
-		print "Drawing graph"
 
 		self.layer_end=[]
 		self.layer_name=[]
@@ -420,9 +440,7 @@ class class_optical(gtk.Window):
 			device=item[COLUMN_DEVICE]
 
 			delta=float(layer_ticknes)*1e9
-			print os.getcwd()
 			mat_file='./phys/'+layer_material+'/mat.inp'
-			print mat_file
 			myfile = open(mat_file)
 			self.mat_file_lines = myfile.readlines()
 			myfile.close()
@@ -459,47 +477,53 @@ class class_optical(gtk.Window):
 		ax2.set_ylabel('Energy (eV)')
 		ax2.set_xlim([start, x_pos])
 		#ax2.axis(max=)#autoscale(enable=True, axis='x', tight=None)
+		pwd=os.getcwd()
+		loaded=False
 		if os.path.isfile("./light_dump.zip"):
 			zf = zipfile.ZipFile("./light_dump.zip", 'r')
 			lines = zf.read(self.optical_mode_file).split("\n")
-
 			zf.close()
+			loaded=True
+		elif os.path.isfile(os.path.join(pwd,"light_dump",self.optical_mode_file)):
+			f = open(os.path.join(pwd,"light_dump",self.optical_mode_file))
+			lines = f.readlines()
+			f.close()
+			loaded=True
+		
+		if loaded==True:
 			xx=[]
 			yy=[]
-			for i in range(0, len(lines)):
-				if lines[i]!="":
-					line=lines[i].split(" ")
-					xx.append(float(line[0]))
-					yy.append(float(line[1]))
+			zz=[]
+			lines_to_xyz(xx,yy,zz,lines)
 			t = asarray(xx)
 			s = asarray(yy)
 
 			t=t*1e9
 			ax1.plot(t,s, 'black', linewidth=3 ,alpha=0.5)
 
+			
 
 		self.fig.tight_layout()
 
 	def on_changed(self, widget, model):
 		cb_text=widget.get_active_text()
-		print "Roderick=",cb_text
 		if cb_text=="all":
 			self.optical_mode_file="light_1d_photons_tot_norm.dat"
 		else:
 			self.optical_mode_file="light_1d_"+cb_text[:-3]+"_photons_norm.dat"
-		print self.optical_mode_file
 		self.draw_graph(model)
 		self.fig.canvas.draw()
 
 	def on_cb_model_changed(self, widget):
 		cb_text=widget.get_active_text()
-		inp_update_token_value("light.inp", "#light_model", cb_text)
+		inp_update_token_value("light.inp", "#light_model", cb_text,1)
 
 	def callback_help(self, widget, data=None):
-		cmd = 'firefox http://www.roderickmackenzie.eu/opvdm_wiki.html'
-		os.system(cmd)
+		webbrowser.open('firefox http://www.roderickmackenzie.eu/opvdm_wiki.html')
 
 	def wow(self,exe_command):
+		self.articles=[]
+		self.dump_dir=os.path.join(os.getcwd(),"light_dump")
 		find_models()
 		self.main_vbox=gtk.VBox()
 		self.gen_main_menu(self,self.main_vbox)
@@ -517,7 +541,6 @@ class class_optical(gtk.Window):
 		self.edit_list=[]
 		self.line_number=[]
 
-		print "loading ",os.getcwd(),self.config_file
 		f = open(self.config_file)
 		self.lines = f.readlines()
 		f.close()
@@ -536,24 +559,24 @@ class class_optical(gtk.Window):
 		for i in range(0, items):
 			pos=pos+1
 			label=self.lines[pos]	#read label
-			print label
 
 			pos=pos+1
 			layer_ticknes=self.lines[pos] 	#read thicknes
 
 			pos=pos+1
-			layer_material=self.lines[pos] 	#read thicknes
+			layer_material=self.lines[pos] 	#read material
 
 			pos=pos+1
 			device=self.lines[pos] 	#read thicknes
 
-			articles.append([ label, str(layer_ticknes),str(layer_material),str(device), True ])
-
+			self.articles.append([ label, str(layer_ticknes),str(layer_material),str(device), True ])
+			scan_item_add("optics_epitaxy.inp",label,"Material for "+label,2)
+			scan_item_add("optics_epitaxy.inp",label,"Layer width "+label,1)
 			layer=layer+1
 
-			#print "out -> %s %i",out_text,len(self.edit_list)
 
 			n=n+1
+
 
 		model = self.__create_model()
 
@@ -572,11 +595,13 @@ class class_optical(gtk.Window):
 		self.canvas = FigureCanvas(self.fig)  # a gtk.DrawingArea
 	
 		cid = self.fig.canvas.mpl_connect('button_press_event', self.onclick)
-
+		canvas_vbox=gtk.VBox()
+		canvas_vbox.show()
 		self.canvas.figure.patch.set_facecolor('white')
 		self.canvas.set_size_request(900, 400)
 		self.canvas.show()
-		self.main_vbox.pack_start(self.canvas, True, True, 0)
+
+
 		self.connect('key_press_event', self.on_key_press_event)
 		#attach(canvas, 0, 3, gui_pos, gui_pos+1)
 
@@ -663,7 +688,6 @@ class class_optical(gtk.Window):
 	        hbox.pack_start(delete_button, False, False, 0)
 		hbox.show()
 		#self.attach(hbox, 2, 4, gui_pos, gui_pos+1,gtk.SHRINK ,gtk.SHRINK)
-		self.main_vbox.pack_start(hbox, False, False, 0)
 		gui_pos=gui_pos+1
 
 
@@ -677,7 +701,20 @@ class class_optical(gtk.Window):
 		#sw.add()
 		
 		#self.attach(treeview, 0, 3, gui_pos, gui_pos+1,gtk.SHRINK ,gtk.SHRINK)
-		self.main_vbox.pack_start(treeview, False, False, 0)
+		canvas_vbox.pack_start(self.canvas, True, True, 0)
+		canvas_vbox.pack_start(treeview, False, False, 0)
+		canvas_vbox.pack_start(hbox, False, False, 0)
+		self.notebook.append_page(canvas_vbox,gtk.Label("Device configuration") )
+		self.main_vbox.pack_start(self.notebook, True, True, 0)
+
+		optics_config=tab_class()
+		optics_config.show()
+		self.notebook.append_page(optics_config,gtk.Label("Optical setup"))
+		optics_config.visible=True
+		optics_config.init("optics.inp","Config")
+		optics_config.name="Config"
+		optics_config.file_name="optics.inp"
+
 		gui_pos=gui_pos+1
 
 		self.connect("delete-event", self.callback_close) 
