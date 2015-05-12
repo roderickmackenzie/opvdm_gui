@@ -7,9 +7,8 @@
 #	Room B86 Coates, University Park, Nottingham, NG7 2RD, UK
 #
 #    This program is free software; you can redistribute it and/or modify
-#    it under the terms of the GNU General Public License as published by
-#    the Free Software Foundation; either version 2 of the License, or
-#    (at your option) any later version.
+#    it under the terms of the GNU General Public License v2.0, as published by
+#    the Free Software Foundation.
 #
 #    This program is distributed in the hope that it will be useful,
 #    but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -34,7 +33,7 @@ from matplotlib.figure import Figure
 from numpy import arange, sin, pi
 from matplotlib.backends.backend_gtkagg import FigureCanvasGTKAgg as FigureCanvas
 import gobject
-
+from scan_item import scan_item_add
 
 (
   LUMO_FUNCTION,
@@ -250,7 +249,6 @@ class tab_bands(gtk.HBox):
 		    HOMO_EDITABLE, new_item[HOMO_EDITABLE]
 		)
 	def save_model(self, ):
-		print "Saved"
 		lines=[]
 		function=0
 		for item in self.LUMO_model:
@@ -331,25 +329,21 @@ class tab_bands(gtk.HBox):
 		if column == LUMO_ENABLE:
 			#old_text = model.get_value(iter, column)
 			articles[path][LUMO_ENABLE] = new_text
-			print new_text
 			model.set(iter, column, articles[path][LUMO_ENABLE])
 
 		if column == LUMO_A:
 			#old_text = model.get_value(iter, column)
 			articles[path][LUMO_A] = new_text
-			print new_text
 			model.set(iter, column, articles[path][LUMO_A])
 
 		if column == LUMO_B:
 			#old_text = model.get_value(iter, column)
 			articles[path][LUMO_B] = new_text
-			print new_text
 			model.set(iter, column, articles[path][LUMO_B])
 
 		if column == LUMO_C:
 			#old_text = model.get_value(iter, column)
 			articles[path][LUMO_C] = new_text
-			print new_text
 			model.set(iter, column, articles[path][LUMO_C])
 
 		self.save_model()
@@ -369,26 +363,21 @@ class tab_bands(gtk.HBox):
 		if column == HOMO_ENABLE:
 			#old_text = model.get_value(iter, column)
 			HOMO_articles[path][HOMO_ENABLE] = new_text
-			print new_text
 			model.set(iter, column, HOMO_articles[path][HOMO_ENABLE])
 
 		if column == HOMO_A:
 			#old_text = model.get_value(iter, column)
-			print path
 			HOMO_articles[path][HOMO_A] = new_text
-			print new_text
 			model.set(iter, column, HOMO_articles[path][HOMO_A])
 
 		if column == HOMO_B:
 			#old_text = model.get_value(iter, column)
 			HOMO_articles[path][HOMO_B] = new_text
-			print new_text
 			model.set(iter, column, HOMO_articles[path][HOMO_B])
 
 		if column == HOMO_C:
 			#old_text = model.get_value(iter, column)
 			HOMO_articles[path][HOMO_C] = new_text
-			print new_text
 			model.set(iter, column, HOMO_articles[path][HOMO_C])
 
 		self.save_model()
@@ -402,8 +391,6 @@ class tab_bands(gtk.HBox):
 		self.LUMO_fig.canvas.draw()
 
 	def draw_graph_lumo(self):
-
-		print "Drawing graph"
 
 		n=0
 
@@ -473,7 +460,6 @@ class tab_bands(gtk.HBox):
 		if response == gtk.RESPONSE_OK:
 			file_name=dialog.get_filename()
 
-			print os.path.splitext(file_name)[1]
 			if os.path.splitext(file_name)[1]:
 				self.save_image(file_name)
 			else:
@@ -491,7 +477,7 @@ class tab_bands(gtk.HBox):
 		self.line_number=[]
 		self.lines=[]
 		self.save_file_name="lumo0.inp"
-		print "loading ",self.save_file_name
+
 		inp_load_file(self.lines,"./lumo0.inp")
 
 		n=0
@@ -499,79 +485,93 @@ class tab_bands(gtk.HBox):
 
 		while True:
 			if self.lines[pos]=="#end":
-				print "Exiting"
 				break
 			if self.lines[pos]=="#ver":
-				print "Exiting"
 				break
+
+			tag=self.lines[pos]
+			scan_item_add("lumo0.inp",tag,tag,1)
 			pos=pos+1	#skip hash tag
 
 			function=self.lines[pos]	#read label
 			pos=pos+1
 
-
+			tag=self.lines[pos]
+			scan_item_add("lumo0.inp",tag,tag,1)
 			pos=pos+1	#skip hash tag
+
 			enabled=self.lines[pos] 	#read value
 			pos=pos+1
-			#print "enabled=",enabled
 			
+			tag=self.lines[pos]
+			scan_item_add("lumo0.inp",tag,tag,1)
 			pos=pos+1	#skip hash tag
+
 			a=self.lines[pos] 	#read value
 			pos=pos+1
-			#print "a=",a
 
+			tag=self.lines[pos]
+			scan_item_add("lumo0.inp",tag,tag,1)
 			pos=pos+1	#skip hash tag
+
 			b=self.lines[pos] 	#read value
 			pos=pos+1
-			#print "b=",b
 
+			tag=self.lines[pos]
+			scan_item_add("lumo0.inp",tag,tag,1)
 			pos=pos+1	#skip hash tag
 			c=self.lines[pos] 	#read value
 			pos=pos+1
-			#print "c=",c
 
 			articles.append([ str(function), str(enabled), str(a), str(b), str(c), True ])
 
 
 		self.save_file_name="homo0.inp"
-		print "loading ",self.save_file_name
+
 		inp_load_file(self.lines,"./homo0.inp")
 		n=0
 		pos=0
 
 		while True:
 			if self.lines[pos]=="#end":
-				print "Exiting"
 				break
 			if self.lines[pos]=="#ver":
-				print "Exiting"
 				break
+
+			tag=self.lines[pos]
+			scan_item_add("homo0.inp",tag,tag,1)
 			pos=pos+1	#skip hash tag
 
 
 			function=self.lines[pos]	#read label
 			pos=pos+1
 
-
+			tag=self.lines[pos]
+			scan_item_add("homo0.inp",tag,tag,1)
 			pos=pos+1	#skip hash tag
+
 			enabled=self.lines[pos] 	#read value
 			pos=pos+1
-			#print "enabled=",enabled
-			
+
+			tag=self.lines[pos]
+			scan_item_add("homo0.inp",tag,tag,1)			
 			pos=pos+1	#skip hash tag
+
 			a=self.lines[pos] 	#read value
 			pos=pos+1
-			#print "a=",a
 
+			tag=self.lines[pos]
+			scan_item_add("homo0.inp",tag,tag,1)
 			pos=pos+1	#skip hash tag
+
 			b=self.lines[pos] 	#read  value
 			pos=pos+1
-			#print "b=",b
 
+			tag=self.lines[pos]
+			scan_item_add("homo0.inp",tag,tag,1)
 			pos=pos+1	#skip hash tag
 			c=self.lines[pos] 	#read  value
 			pos=pos+1
-			#print "c=",c
 
 			HOMO_articles.append([ str(function), str(enabled), str(a), str(b), str(c), True ])
 
