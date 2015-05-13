@@ -369,6 +369,7 @@ class tokens:
 	lib.append(my_data("#stark_point2","s","stark point0",["text"],"e",1.0))
 	lib.append(my_data("#stark_point3","s","stark point0",["text"],"e",1.0))
 	lib.append(my_data("#stark_point4","s","stark point0",["text"],"e",1.0))
+	lib.append(my_data("#stark_subtracted_value","s","subtracted value",["text"],"e",1.0))
 
 	def find(self,token):
 		for i in range(0, len(self.lib)):

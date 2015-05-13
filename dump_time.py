@@ -7,9 +7,8 @@
 #	Room B86 Coates, University Park, Nottingham, NG7 2RD, UK
 #
 #    This program is free software; you can redistribute it and/or modify
-#    it under the terms of the GNU General Public License as published by
-#    the Free Software Foundation; either version 2 of the License, or
-#    (at your option) any later version.
+#    it under the terms of the GNU General Public License v2.0, as published by
+#    the Free Software Foundation.
 #
 #    This program is distributed in the hope that it will be useful,
 #    but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -40,7 +39,6 @@ class tab_class(gtk.Table):
 		line=self.line_number[data]
 		self.lines[line]=self.edit_list[data].get_text()
 		self.edit_list[data].set_text(self.lines[line])
-		print "Written data to", self.file_name
 		a = open(self.file_name, "w")
 		for i in range(0,len(self.lines)):
 			a.write(self.lines[i]+"\n")
@@ -50,19 +48,12 @@ class tab_class(gtk.Table):
 	def delete_event(self, widget, event, data=None):
 		gtk.main_quit()
 		return False
-	#def callback_checkbox(self, widget, event, data=None):
-		#print data
-		#print widget.get_active()
-		#print widget.name
-		#print widget.filename
-		#print widget.token
-		#print widget.line
+
 
 	def wow(self,filename,fullname,check_list):
 		self.file_name=filename
 		self.edit_list=[]
 		self.line_number=[]
-		print "loading ",filename
 
 		f = open(filename)
 		self.lines = f.readlines()
@@ -507,7 +498,6 @@ class tab_class(gtk.Table):
 				self.attach(self.edit_list[n], 1, 2, n, n+1)
 				self.edit_list[n].connect("changed", self.callback_edit, n)
 				self.edit_list[n].show()
-				#print "out -> %s %i",out_text,len(self.edit_list)
 
 				label = gtk.Label()
 				label.set_markup(units)
