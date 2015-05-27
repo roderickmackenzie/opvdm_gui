@@ -68,6 +68,7 @@ class _FooThread(threading.Thread, _IdleObject):
 	def __init__(self, *args):
 		threading.Thread.__init__(self)
 		_IdleObject.__init__(self)
+		self.notifier=False
  
 	def onChange(self,ev):
 		if running_on_linux()==True:
@@ -90,6 +91,7 @@ class _FooThread(threading.Thread, _IdleObject):
 			wm = pyinotify.WatchManager()
 			ret=wm.add_watch(self.watch_path, pyinotify.IN_CLOSE_WRITE, self.onChange,False,False)
 			print ret
+			print "notifyer!!!!!!!!!!!!!",self.notifier
 			self.notifier = pyinotify.Notifier(wm)
 			self.notifier.loop()
 		else:
@@ -115,6 +117,7 @@ class _FooThread(threading.Thread, _IdleObject):
 		print "thread2:I have shutdown the thread!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!",threading.currentThread()
 		if running_on_linux()==True:
 			self.notifier.stop()
+			self.notifier=False
 		print "thread:I have shutdown the thread!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!",threading.currentThread()
 
 class server:
@@ -436,6 +439,7 @@ class server:
 						if running_on_linux()==True:
 							cmd="cd "+self.jobs[i]+";"
 							cmd=cmd+self.exe_command+" --lock "+os.path.join(self.sim_dir,"lock"+str(i)+".dat")+" &\n"
+							print "command="+cmd
 							if self.enable_gui==True:
 								self.terminal.feed_child(cmd)
 							else:

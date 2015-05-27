@@ -7,9 +7,8 @@
 #	Room B86 Coates, University Park, Nottingham, NG7 2RD, UK
 #
 #    This program is free software; you can redistribute it and/or modify
-#    it under the terms of the GNU General Public License as published by
-#    the Free Software Foundation; either version 2 of the License, or
-#    (at your option) any later version.
+#    it under the terms of the GNU General Public License v2.0, as published by
+#    the Free Software Foundation.
 #
 #    This program is distributed in the hope that it will be useful,
 #    but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -30,26 +29,24 @@ import shutil
 from inp import inp_update_token_value
 from inp import inp_get_token_value
 from search import return_file_list
-from plot import plot_data
 from plot_gen import plot_gen
-from plot import plot_info
 from plot import check_info_file
 from util import find_data_file
 from about import about_dialog_show
 from used_files_menu import used_files_menu
 from server import server
 from plot_dlg import plot_dlg_class
-from plot_command import plot_command_class
 import threading
 import gobject
-import pyinotify
+#import pyinotify
 import multiprocessing
 import time
 import glob
 from window_list import windows
+from scan_item import scan_items_get_list
 
 class select_param:
-	def init(self,liststore_combobox,dest_treeview,param_list):
+	def init(self,liststore_combobox,dest_treeview):
 		self.win_list=windows()
 		self.liststore_combobox=liststore_combobox
 		self.dest_treeview=dest_treeview
@@ -59,11 +56,11 @@ class select_param:
 		self.treestore = gtk.TreeStore(str)
 		self.win_list.set_window(self.select_window,"scan_select")
 		old=""
+		param_list=scan_items_get_list()
 		for item in range(0, len(param_list)):
-			main=param_list[item].name.split("/")[0]
-			sub=param_list[item].name.split("/")[1]
-			print "one",main
-			print "two",sub
+			split=os.path.split(param_list[item].name)
+			main=split[0]
+			sub=split[1]
 			if main!=old:
 				piter = self.treestore.append(None, [main])
 				old=main
@@ -142,7 +139,7 @@ class select_param:
 			tree_iter = model.get_iter(path)
 			parent=model.iter_parent(tree_iter)
 			value = model.get_value(tree_iter,0)
-			ret=model.get_value(parent,0)+"/"+value
+			ret=os.path.join(model.get_value(parent,0),value)
 			print ret
 
 			dest_tree_selection=self.dest_treeview.get_selection()
