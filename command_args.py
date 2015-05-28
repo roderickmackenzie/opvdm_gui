@@ -46,7 +46,7 @@ from server import server
 from util import set_exe_command
 import gtk
 from plot_state import plot_state
-from plot_io import plot_load_token
+from plot_io import plot_load_info
 from scan_plot import scan_gen_plot_data
 
 def command_args(argc,argv):
@@ -172,7 +172,7 @@ def command_args(argc,argv):
 		if argv[1]=="--scan-plot":
 			plot_token=plot_state()
 			oplot_file=argv[2]
-			if plot_load_token(plot_token,oplot_file)==True:
+			if plot_load_info(plot_token,oplot_file)==True:
 				plot_files, plot_labels, save_file = scan_gen_plot_data(plot_token,os.path.dirname(oplot_file))
 				print "written data to",save_file
 			sys.exit(0)

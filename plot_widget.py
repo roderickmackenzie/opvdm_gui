@@ -31,7 +31,7 @@ from token_lib import tokens
 from numpy import *
 from util import pango_to_gnuplot
 from util import read_data_2d
-from plot_io import plot_load_token
+from plot_io import plot_load_info
 import matplotlib.pyplot as plt
 from matplotlib.widgets import Cursor
 from plot_export import plot_export 
@@ -52,7 +52,7 @@ from util import pygtk_to_latex_subscript
 from util import fx_with_units
 from plot_state import plot_state
 from plot import plot_populate_plot_token
-from plot_io import get_plot_file_info
+from plot_io import plot_save_oplot_file
 
 class NavigationToolbar(NavigationToolbar2GTKAgg):
     # only display the buttons we need
@@ -113,7 +113,7 @@ class plot_widget(gtk.VBox):
 				self.do_clip()
 
 		self.fig.canvas.draw()
-		self.save_state()
+		plot_save_oplot_file(self.config_file,self.plot_token)
 
 	def do_clip(self):
 		snap = self.canvas.get_snapshot()
@@ -186,6 +186,7 @@ class plot_widget(gtk.VBox):
 			return False
 
 	def do_plot(self):
+		print "CONVERT in do plot!!!!!!!!!!!",type(self.plot_token.key_units)
 		print "in do plot"
 		plot_number=0
 
@@ -282,7 +283,10 @@ class plot_widget(gtk.VBox):
 							self.ax[plot_number].yaxis.set_ticks(arange(min(s), max(s), (max(s)-min(s))/4.0 ))
 
 					if self.labels[i]!="":
+						print self.labels[i]
+						print self.plot_token.key_units
 						files.append("$"+numbers_to_latex(str(self.labels[i]))+" "+self.plot_token.key_units+"$")
+
 						lines.append(Ec)
 
 			self.lx = None
@@ -301,12 +305,9 @@ class plot_widget(gtk.VBox):
 				x_len=len(x)
 				y_len=len(y)
 				data = zeros((x_len,y_len))
-				print x
-				print y
 				for xx in range(0,x_len):
 					for yy in range(0,y_len):
 						data[xx][yy]=z[xx][yy]
-						print data[xx][yy]
 				self.ax[0].pcolor(data)
 
 				#self.ax[0].plot_surface(x, y, z, rstride=1, cstride=1, cmap=cm.coolwarm,linewidth=0, antialiased=False)
@@ -381,12 +382,16 @@ class plot_widget(gtk.VBox):
 		dialog.destroy()
 
 	def load_data(self,input_files,plot_id,labels,plot_token,config_file,units):
+		print "CONVERTg!!!!!!!!!!!",type(plot_token.key_units)
 		self.plot_token=plot_token
 		print ">>>>>>>>>>>>>>>>>>>>sda>>>>>>>>>>>>>>>>>>>>sdads>",self.plot_token.x_label
 		self.config_file=config_file
+		print "CONVERTg!!!!!!!!!!!",type(self.plot_token.key_units)
 		self.output_file=os.path.splitext(config_file)[0]+".png"
 		self.labels=labels
+		print "CONVERTg!!!!!!!!!!!",type(self.plot_token.key_units)
 		self.plot_id=plot_id
+		print "CONVERTg!!!!!!!!!!!",type(self.plot_token.key_units)
 		if len(input_files)!=len(labels):
 			return
 		self.input_files=input_files
@@ -395,16 +400,28 @@ class plot_widget(gtk.VBox):
 		#if ret==True:
 		#print "Rod",input_files
 		title=self.plot_token.title
+		print "CONVERTg!!!!!!!!!!!",type(self.plot_token.key_units)
 		self.win.set_title(title+" - www.opvdm.com")
-
+		print "CONVERTg!!!!!!!!!!!",type(self.plot_token.key_units)
 		lines=[]
-		if self.load_state()==False:
-			get_plot_file_info(self.plot_token,input_files[0])
-			self.save_state()
-			print "Failed to load",self.config_file
 
-		else:
-			print "Loaded OK",self.config_file
+		ret=plot_load_info(self.plot_token,input_files[0])
+		myitem=self.item_factory.get_item("/Math/Subtract first point")
+		myitem.set_active(self.plot_token.subtract_first_point)
+
+		myitem=self.item_factory.get_item("/Math/Add min point")
+		myitem.set_active(self.plot_token.add_min)
+
+		myitem=self.item_factory.get_item("/Math/Invert y-axis")
+		myitem.set_active(self.plot_token.invert_y)
+
+		myitem=self.item_factory.get_item("/Math/Norm to 1.0 y")
+		myitem.set_active(self.plot_token.normalize)
+
+		myitem=self.item_factory.get_item("/Math/Norm to peak of all data")
+		myitem.set_active(self.plot_token.norm_to_peak_of_all_data)
+
+		print "Loaded OK",self.config_file
 
 		if self.plot_token.key_units=="":
 			self.plot_token.key_units=pygtk_to_latex_subscript(units)
@@ -417,70 +434,6 @@ class plot_widget(gtk.VBox):
 		print "test_file=",test_file
 		print "Exit here"
 
-	def load_state(self):
-		ret=False
-		if self.config_file!="":
-			ret=plot_load_token(self.plot_token,self.config_file)
-			myitem=self.item_factory.get_item("/Math/Subtract first point")
-			myitem.set_active(self.plot_token.subtract_first_point)
-
-			myitem=self.item_factory.get_item("/Math/Add min point")
-			myitem.set_active(self.plot_token.add_min)
-
-			myitem=self.item_factory.get_item("/Math/Invert y-axis")
-			myitem.set_active(self.plot_token.invert_y)
-
-			myitem=self.item_factory.get_item("/Math/Norm to 1.0 y")
-			myitem.set_active(self.plot_token.normalize)
-
-			myitem=self.item_factory.get_item("/Math/Norm to peak of all data")
-			myitem.set_active(self.plot_token.norm_to_peak_of_all_data)
-		return ret
-
-	def save_state(self):
-		if self.config_file!="":
-			lines=[]
-			lines.append("#logy")
-			lines.append(str(self.plot_token.logy))
-			lines.append("#logx")
-			lines.append(str(self.plot_token.logx))
-			lines.append("#grid")
-			lines.append(str(self.plot_token.grid))
-			lines.append("#invert_y")
-			lines.append(str(self.plot_token.invert_y))
-			lines.append("#normalize")
-			lines.append(str(self.plot_token.normalize))
-			lines.append("#norm_to_peak_of_all_data")
-			lines.append(str(self.plot_token.norm_to_peak_of_all_data))
-			lines.append("#subtract_first_point")
-			lines.append(str(self.plot_token.subtract_first_point))
-			lines.append("#add_min")
-			lines.append(str(self.plot_token.add_min))
-			lines.append("#file0")
-			lines.append(self.plot_token.file0)
-			lines.append("#file1")
-			lines.append(self.plot_token.file1)
-			lines.append("#file2")
-			lines.append(self.plot_token.file2)
-			lines.append("#tag0")
-			lines.append(self.plot_token.tag0)
-			lines.append("#tag1")
-			lines.append(self.plot_token.tag1)
-			lines.append("#tag2")
-			lines.append(self.plot_token.tag2)
-			lines.append("#legend_pos")
-			lines.append(self.plot_token.legend_pos)
-			lines.append("#key_units")
-			lines.append(self.plot_token.key_units)
-			lines.append("#label_data")
-			lines.append(str(self.plot_token.label_data))
-			lines.append("#type")
-			lines.append(self.plot_token.type)
-			lines.append("#ver")
-			lines.append("1.0")
-			lines.append("#end")
-
-			inp_save_lines(self.config_file,lines)
 
 	def gen_colors_black(self,repeat_lines):
 		#make 100 black colors
@@ -538,28 +491,32 @@ class plot_widget(gtk.VBox):
 		self.color=c_tot
 
 	def callback_black(self, data, widget):
+		print "CONVERTee!!!!!!!!!!!",type(self.plot_token.key_units)
 		self.gen_colors_black(1)
-		self.save_state()
+		plot_save_oplot_file(self.config_file,self.plot_token)
 		self.do_plot()
 
 	def callback_rainbow(self, data, widget):
+		print "CONVERTd!!!!!!!!!!!",type(self.plot_token.key_units)
 		self.gen_colors(1)
-		self.save_state()
+		plot_save_oplot_file(self.config_file,self.plot_token)
 		self.do_plot()
 
 	def callback_save(self, data, widget):
 		plot_export(self.output_file,self.input_files,self.plot_token,self.fig)
 
 	def callback_key(self, data, widget):
+		print "CONVERTc!!!!!!!!!!!",type(self.plot_token.key_units)
 		self.plot_token.legend_pos=widget.get_label()
-		self.save_state()
+		plot_save_oplot_file(self.config_file,self.plot_token)
 		self.do_plot()
 
 	def callback_units(self, data, widget):
+		print "CONVERTb!!!!!!!!!!!",type(self.plot_token.key_units)
 		units=dlg_get_text( "Units:", self.plot_token.key_units)
 		if units!=None:
 			self.plot_token.key_units=units
-		self.save_state()
+		plot_save_oplot_file(self.config_file,self.plot_token)
 		self.do_plot()
 
 
@@ -577,7 +534,7 @@ class plot_widget(gtk.VBox):
 			self.plot_token.normalize=True
 		else:
 			self.plot_token.normalize=False
-		self.save_state()
+		plot_save_oplot_file(self.config_file,self.plot_token)
 		self.do_plot()
 
 	def callback_norm_to_peak_of_all_data(self, data, widget):
@@ -585,41 +542,42 @@ class plot_widget(gtk.VBox):
 			self.plot_token.norm_to_peak_of_all_data=True
 		else:
 			self.plot_token.norm_to_peak_of_all_data=False
-		self.save_state()
+		plot_save_oplot_file(self.config_file,self.plot_token)
 		self.do_plot()
 
 	def callback_toggle_log_scale_y(self, widget, data):
 		self.plot_token.logy=data.get_active()
-		self.save_state()
+		plot_save_oplot_file(self.config_file,self.plot_token)
 		self.do_plot()
 
 	def callback_toggle_log_scale_x(self, widget, data):
 		self.plot_token.logx=data.get_active()
-		self.save_state()
+		plot_save_oplot_file(self.config_file,self.plot_token)
 		self.do_plot()
 
 	def callback_toggle_label_data(self, widget, data):
 		self.plot_token.label_data=data.get_active()
-		self.save_state()
+		plot_save_oplot_file(self.config_file,self.plot_token)
 		self.do_plot()
 
 	def callback_toggle_invert_y(self, widget, data):
 		self.plot_token.invert_y=data.get_active()
-		self.save_state()
+		plot_save_oplot_file(self.config_file,self.plot_token)
 		self.do_plot()
 
 	def callback_toggle_subtract_first_point(self, widget, data):
 		self.plot_token.subtract_first_point=data.get_active()
-		self.save_state()
+		plot_save_oplot_file(self.config_file,self.plot_token)
 		self.do_plot()
 
 	def callback_toggle_add_min(self, widget, data):
 		self.plot_token.add_min=data.get_active()
-		self.save_state()
+		plot_save_oplot_file(self.config_file,self.plot_token)
 		self.do_plot()
 
 	def callback_refresh(self, widget, data=None):
-		self.save_state()
+		plot_save_oplot_file(self.config_file,self.plot_token)
+		print "CONVERTf!!!!!!!!!!!",type(self.plot_token.key_units)
 		self.do_plot()
 
 	def init(self,in_window):

@@ -30,8 +30,17 @@ from inp import inp_load_file
 from inp import inp_search_token_value
 from util import zip_get_data_file
 from util import str2bool
+from inp import inp_save_lines
 
-def plot_load_token(plot_token,file_name):
+def plot_load_info(plot_token,file_name):
+	ret=False
+	config_file=file_name.split(".")[0]+".oplot"
+	ret=plot_load_oplot_file(plot_token,config_file)
+	if ret==False:
+		ret=get_plot_file_info(plot_token,file_name)
+	return ret
+
+def plot_load_oplot_file(plot_token,file_name):
 	lines=[]
 	if inp_load_file(lines,file_name)==True:
 		plot_token.logy=str2bool(inp_search_token_value(lines, "#logy"))
@@ -55,6 +64,50 @@ def plot_load_token(plot_token,file_name):
 		return True
 	return False
 
+def plot_save_oplot_file(config_file,plot_token):
+	if config_file!="":
+		lines=[]
+		lines.append("#logy")
+		lines.append(str(plot_token.logy))
+		lines.append("#logx")
+		lines.append(str(plot_token.logx))
+		lines.append("#grid")
+		lines.append(str(plot_token.grid))
+		lines.append("#invert_y")
+		lines.append(str(plot_token.invert_y))
+		lines.append("#normalize")
+		lines.append(str(plot_token.normalize))
+		lines.append("#norm_to_peak_of_all_data")
+		lines.append(str(plot_token.norm_to_peak_of_all_data))
+		lines.append("#subtract_first_point")
+		lines.append(str(plot_token.subtract_first_point))
+		lines.append("#add_min")
+		lines.append(str(plot_token.add_min))
+		lines.append("#file0")
+		lines.append(plot_token.file0)
+		lines.append("#file1")
+		lines.append(plot_token.file1)
+		lines.append("#file2")
+		lines.append(plot_token.file2)
+		lines.append("#tag0")
+		lines.append(plot_token.tag0)
+		lines.append("#tag1")
+		lines.append(plot_token.tag1)
+		lines.append("#tag2")
+		lines.append(plot_token.tag2)
+		lines.append("#legend_pos")
+		lines.append(plot_token.legend_pos)
+		lines.append("#key_units")
+		lines.append(plot_token.key_units)
+		lines.append("#label_data")
+		lines.append(str(plot_token.label_data))
+		lines.append("#type")
+		lines.append(plot_token.type)
+		lines.append("#ver")
+		lines.append("1.0")
+		lines.append("#end")
+
+		inp_save_lines(config_file,lines)
 
 def get_plot_file_info(output,file_name):
 	found,lines=zip_get_data_file(file_name)

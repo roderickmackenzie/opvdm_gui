@@ -325,11 +325,7 @@ class NotebookExample:
 		self.rod=[]
 		self.number_of_tabs=0
 
-		self.optics_window=class_optical()
-		self.optics_window.init()
-		if self.optics_window.enabled==True:
-			self.optics_window.wow(self.exe_command)
-			self.optics_window.hide()
+		self.optics_window=False
 
 		if (os.path.exists("sim.opvdm")==True) and (os.getcwd()!="C:\\opvdm"):
 			self.play.set_sensitive(True)
@@ -967,6 +963,13 @@ class NotebookExample:
 
 
 	def callback_optics_sim(self, widget, data=None):
+		if self.optics_window==False:
+			self.optics_window=class_optical()
+			self.optics_window.init()
+			if self.optics_window.enabled==True:
+				self.optics_window.wow(self.exe_command)
+				self.optics_window.hide()
+
 		if self.optics_window.get_property("visible")==True:
 			self.optics_window.hide()
 		else:

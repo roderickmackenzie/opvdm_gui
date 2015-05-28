@@ -45,7 +45,7 @@ from plot_widget import plot_widget
 from util import zip_get_data_file
 from window_list import windows
 from plot_state import plot_state
-from plot_io import plot_load_token
+from plot_io import plot_load_info
 
 class cmp_class(gtk.Window):
 	mix_y=None
@@ -191,8 +191,12 @@ class cmp_class(gtk.Window):
 
 
 	def callback_scale(self, adj):
-		plot_load_token(self.plot_token,self.file_names[0])
+		print "here",type(self.plot.plot_token.key_units)
+
+		plot_load_info(self.plot_token,self.file_names[0])
+		print "here1",type(self.plot.plot_token.key_units)
 		self.update(self.adj1.value)
+		print "here2",type(self.plot.plot_token.key_units)
 		self.plot.do_plot()
 
 
@@ -296,6 +300,7 @@ class cmp_class(gtk.Window):
 	def callback_toggle_subtract(self, widget, data):
 		self.plot.zero_frame_enable=data.get_active()
 		self.update(self.adj1.value)
+		print "CONVERTh!!!!!!!!!!!",type(self.plot.plot_token.key_units)
 		self.plot.do_plot()
 
 	def callback_multi_plot(self, data, widget):
@@ -304,6 +309,7 @@ class cmp_class(gtk.Window):
 		else:
 			self.multi_plot=False
 		self.update(self.adj1.value)
+		print "CONVERTi!!!!!!!!!!!",type(self.plot.plot_token.key_units)
 		self.plot.do_plot()
 
 	def update_snapshots_dir(self):
@@ -506,6 +512,7 @@ class cmp_class(gtk.Window):
 		self.update(0)
 		if ret==True:
 			self.plot.do_plot()
+			print "CONVERTj!!!!!!!!!!!",type(self.plot.plot_token.key_units)
 		#["Ec","Ev","Fn","Fp"]
 		self.set_border_width(10)
 		self.set_title("Compare")

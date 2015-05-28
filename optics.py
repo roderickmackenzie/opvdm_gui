@@ -42,6 +42,9 @@ from util import lines_to_xyz
 from tab import tab_class
 from win_lin import running_on_linux
 from photon_dist import photon_dist_class
+from plot_widget import plot_widget
+from plot_state import plot_state
+from plot_io import plot_load_info
 import webbrowser
 #   columns
 (
@@ -721,7 +724,35 @@ class class_optical(gtk.Window):
 		#Photon distribution
 		photon_dist=photon_dist_class()
 		photon_dist.show()
-		self.notebook.append_page(photon_dist,gtk.Label("Photon dist."))
+
+##################
+		input_files=[]
+		input_files.append("./light_dump/light_2d_photons.dat")
+		input_files.append("./light_dump/light_2d_photons_asb.dat")
+
+		plot_labels=[]
+		plot_labels.append("Photon dist.")
+		plot_labels.append("Photon dist ads.")
+
+		ids=[]
+		ids.append(0)
+		ids.append(0)
+
+		self.plot_widgets=[]
+		for i in range(0,len(input_files)):
+			self.plot_widgets.append(plot_widget())
+			self.plot_widgets[i].init(self)
+
+			plot_token=plot_state()
+
+			plot_load_info(plot_token,input_files[i])
+
+			self.plot_widgets[i].load_data([input_files[i]],[ids[i]],[plot_labels[0]],plot_token,"one.oplot","")
+
+			self.plot_widgets[i].do_plot()
+			self.plot_widgets[i].show()
+##################
+			self.notebook.append_page(self.plot_widgets[i],gtk.Label(plot_labels[i]))
 
 		gui_pos=gui_pos+1
 
