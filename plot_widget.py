@@ -30,6 +30,8 @@ import shutil
 from token_lib import tokens
 from numpy import *
 from util import pango_to_gnuplot
+from util import read_data_2d
+from plot_io import plot_load_token
 import matplotlib.pyplot as plt
 from matplotlib.widgets import Cursor
 from plot_export import plot_export 
@@ -45,12 +47,13 @@ from inp import inp_load_file
 from inp import inp_write_lines_to_file
 from inp import inp_search_token_value
 from inp import inp_save_lines
-from util import str2bool
 from util import numbers_to_latex
 from util import pygtk_to_latex_subscript
 from util import fx_with_units
 from plot_state import plot_state
 from plot import plot_populate_plot_token
+from plot_io import get_plot_file_info
+
 class NavigationToolbar(NavigationToolbar2GTKAgg):
     # only display the buttons we need
     toolitems = [t for t in NavigationToolbar2GTKAgg.toolitems if
@@ -129,42 +132,6 @@ class plot_widget(gtk.VBox):
 
 		#except:
 		#	print "Error opening file ",file_name
-
-	def read_data_2d(self,x_scale,y_scale,z,file_name):
-		found,lines=zip_get_data_file(file_name)
-		if found==True:
-			x_max=0
-			y_max=0
-			count_x=True
-			for i in range(0, len(lines)):
-				if (lines[i][0]!="#"):
-					if lines[i]!="\n":
-						if x_max==True:
-							x_max=x_max+1
-
-					if lines[i]=="\n":
-						y_max=y_max+1
-						x_max=False
-
-			if  lines[len(lines)-1]!="\n":
-				y_max=y_max+1
-
-			#z=zeros((x_max,y_max))
-			#for i in range(0, len(x_max)):
-			#	for i in range(0, len(y_max)):
-
-			#	lines[i]=re.sub(' +',' ',lines[i])
-			#	lines[i]=re.sub('\t',' ',lines[i])
-			#	lines[i]=lines[i].rstrip()
-			#	sline=lines[i].split(" ")
-			#	if len(sline)==2:
-			#		if (lines[i][0]!="#"):
-			#			x.append(float(lines[i].split(" ")[0]))
-			#			y.append(float(lines[i].split(" ")[1]))
-			#			z.append(float(lines[i].split(" ")[2]))
-			return True
-		else:
-			return False
 
 
 	def sub_zero_frame(self,t,s,i):
@@ -272,7 +239,7 @@ class plot_widget(gtk.VBox):
 		files=[]
 
 		my_max=1.0
-
+		print "token type==",self.plot_token.type
 		if self.plot_token.type=="xy":
 
 			all_max=1.0
@@ -328,32 +295,29 @@ class plot_widget(gtk.VBox):
 			x=[]
 			y=[]
 			z=[]
+			print "3d data!!!!!!!!!!!!!!"
+			if read_data_2d(x,y,z,self.input_files[0])==True:
 
-			if self.read_data_2d(x,y,z,self.input_files[0])==True:
-				maxx=-1
-				maxy=-1
-				for i in range(0,len(z)):
-					if x[i]>maxx:
-						maxx=x[i]
+				x_len=len(x)
+				y_len=len(y)
+				data = zeros((x_len,y_len))
+				print x
+				print y
+				for xx in range(0,x_len):
+					for yy in range(0,y_len):
+						data[xx][yy]=z[xx][yy]
+						print data[xx][yy]
+				self.ax[0].pcolor(data)
 
-					if y[i]>maxy:
-						maxy=y[i]
-
-				maxx=maxx+1
-				maxy=maxy+1
-
-				data = zeros((maxy,maxx))
-
-				self.ax[0].pcolor(data,cmap=plt.cm.Blues)
-
-				self.ax[0].invert_yaxis()
-				self.ax[0].xaxis.tick_top()
+				#self.ax[0].plot_surface(x, y, z, rstride=1, cstride=1, cmap=cm.coolwarm,linewidth=0, antialiased=False)
+				#self.ax[0].invert_yaxis()
+				#self.ax[0].xaxis.tick_top()
 		else:
 			x=[]
 			y=[]
 			z=[]
 
-			if self.read_data_2d(x,y,z,self.input_files[0])==True:
+			if read_data_2d(x,y,z,self.input_files[0])==True:
 				maxx=-1
 				maxy=-1
 				for i in range(0,len(z)):
@@ -435,6 +399,7 @@ class plot_widget(gtk.VBox):
 
 		lines=[]
 		if self.load_state()==False:
+			get_plot_file_info(self.plot_token,input_files[0])
 			self.save_state()
 			print "Failed to load",self.config_file
 
@@ -453,44 +418,24 @@ class plot_widget(gtk.VBox):
 		print "Exit here"
 
 	def load_state(self):
-		lines=[]
+		ret=False
 		if self.config_file!="":
-			if inp_load_file(lines,self.config_file)==True:
-				self.plot_token.logy=str2bool(inp_search_token_value(lines, "#logy"))
-				self.plot_token.logx=str2bool(inp_search_token_value(lines, "#logx"))
-				self.plot_token.grid=str2bool(inp_search_token_value(lines, "#grid"))
-				self.plot_token.invert_y=str2bool(inp_search_token_value(lines, "#invert_y"))
-				self.plot_token.normalize=str2bool(inp_search_token_value(lines, "#normalize"))
-				self.plot_token.norm_to_peak_of_all_data=str2bool(inp_search_token_value(lines, "#norm_to_peak_of_all_data"))
-				self.plot_token.subtract_first_point=str2bool(inp_search_token_value(lines, "#subtract_first_point"))
-				self.plot_token.add_min=str2bool(inp_search_token_value(lines, "#add_min"))
-				self.plot_token.file0=inp_search_token_value(lines, "#file0")
-				self.plot_token.file1=inp_search_token_value(lines, "#file1")
-				self.plot_token.file2=inp_search_token_value(lines, "#file2")
-				self.plot_token.tag0=inp_search_token_value(lines, "#tag0")
-				self.plot_token.tag1=inp_search_token_value(lines, "#tag1")
-				self.plot_token.tag2=inp_search_token_value(lines, "#tag2")
-				self.plot_token.legend_pos=inp_search_token_value(lines, "#legend_pos")
-				self.plot_token.key_units=inp_search_token_value(lines, "#key_units")
-				self.plot_token.label_data=str2bool(inp_search_token_value(lines, "#label_data"))
+			ret=plot_load_token(self.plot_token,self.config_file)
+			myitem=self.item_factory.get_item("/Math/Subtract first point")
+			myitem.set_active(self.plot_token.subtract_first_point)
 
+			myitem=self.item_factory.get_item("/Math/Add min point")
+			myitem.set_active(self.plot_token.add_min)
 
-				myitem=self.item_factory.get_item("/Math/Subtract first point")
-				myitem.set_active(self.plot_token.subtract_first_point)
+			myitem=self.item_factory.get_item("/Math/Invert y-axis")
+			myitem.set_active(self.plot_token.invert_y)
 
-				myitem=self.item_factory.get_item("/Math/Add min point")
-				myitem.set_active(self.plot_token.add_min)
+			myitem=self.item_factory.get_item("/Math/Norm to 1.0 y")
+			myitem.set_active(self.plot_token.normalize)
 
-				myitem=self.item_factory.get_item("/Math/Invert y-axis")
-				myitem.set_active(self.plot_token.invert_y)
-
-				myitem=self.item_factory.get_item("/Math/Norm to 1.0 y")
-				myitem.set_active(self.plot_token.normalize)
-
-				myitem=self.item_factory.get_item("/Math/Norm to peak of all data")
-				myitem.set_active(self.plot_token.norm_to_peak_of_all_data)
-				return True
-		return False
+			myitem=self.item_factory.get_item("/Math/Norm to peak of all data")
+			myitem.set_active(self.plot_token.norm_to_peak_of_all_data)
+		return ret
 
 	def save_state(self):
 		if self.config_file!="":
@@ -529,6 +474,8 @@ class plot_widget(gtk.VBox):
 			lines.append(self.plot_token.key_units)
 			lines.append("#label_data")
 			lines.append(str(self.plot_token.label_data))
+			lines.append("#type")
+			lines.append(self.plot_token.type)
 			lines.append("#ver")
 			lines.append("1.0")
 			lines.append("#end")

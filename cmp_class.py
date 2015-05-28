@@ -45,7 +45,7 @@ from plot_widget import plot_widget
 from util import zip_get_data_file
 from window_list import windows
 from plot_state import plot_state
-from plot_gen import plot_load_token
+from plot_io import plot_load_token
 
 class cmp_class(gtk.Window):
 	mix_y=None

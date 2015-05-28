@@ -57,3 +57,5 @@ class plot_state():
 		self.type="xy"
 		self.section_one=""
 		self.section_two=""
+
+

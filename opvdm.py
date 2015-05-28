@@ -88,7 +88,7 @@ from ver import ver
 from win_lin import running_on_linux
 import webbrowser
 from debug import debug_mode
-
+from util import read_data_2d
 if running_on_linux()==True:
 	import pyinotify
 	import pynotify

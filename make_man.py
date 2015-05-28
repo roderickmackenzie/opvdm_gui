@@ -23,7 +23,7 @@ import sys
 import os
 import glob
 import operator
-from plot import get_plot_file_info
+from plot_io import get_plot_file_info
 from plot_state import plot_state
 
 def make_man():

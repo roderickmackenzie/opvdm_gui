@@ -26,6 +26,7 @@ from token_lib import tokens
 from util import pango_to_gnuplot
 from plot_info import plot_info
 from util import zip_get_data_file
+from plot_io import get_plot_file_info
 
 def load_graph(path):
 	cmd = '/usr/bin/gnuplot -persist '+path
@@ -42,52 +43,6 @@ def check_info_file(search_string):
 def file_name_to_latex(in_string):
 	out_string=in_string.replace("_","\\_")
 	return out_string
-
-def get_plot_file_info(output,file_name):
-	found,lines=zip_get_data_file(file_name)
-	if found==False:
-		return False
-
-	for i in range(0, len(lines)):
-		lines[i]=lines[i].rstrip()
-	if len(lines)>1:
-		if lines[0]=="#opvdm":
-			for i in range(0, len(lines)):
-				if (lines[i][0]!="#"):
-					break
-				else:
-					command=lines[i].split(" ",1)
-					if len(command)<2:
-						command.append("")
-					if (command[0]=="#x_mul"):
-						output.x_mul=float(command[1])
-					if (command[0]=="#y_mul"):
-						output.y_mul=float(command[1])
-					if (command[0]=="#x_label"):
-						output.x_label=command[1]
-					if (command[0]=="#y_label"):
-						output.y_label=command[1]
-					if (command[0]=="#x_units"):
-						output.x_units=command[1]
-					if (command[0]=="#y_units"):
-						output.y_units=command[1]
-					if (command[0]=="#logscale_x"):
-						output.logx=bool(int(command[1]))
-					if (command[0]=="#logscale_y"):
-						output.logy=bool(int(command[1]))
-					if (command[0]=="#type"):
-						output.type=command[1]
-					if (command[0]=="#title"):
-						output.title=command[1]
-					if (command[0]=="#section_one"):
-						output.section_one=command[1]
-					if (command[0]=="#section_two"):
-						output.section_two=command[1]
-
-			#print "Data read from file"
-			return True
-
-	return False
 
 def plot_populate_plot_token(plot_token,file_name):
 	if file_name!=None:
@@ -117,3 +72,5 @@ def plot_populate_plot_token(plot_token,file_name):
 			print "Tokens not found",plot_token.tag0,plot_token.tag1
 
 	return False
+
+

@@ -33,7 +33,7 @@ import logging
 from plot_state import plot_state
 import glob
 from inp import inp_load_file
-from plot_gen import plot_load_token
+from plot_io import plot_load_token
 
 class used_files_menu:
 	def __init__(self):

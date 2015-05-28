@@ -38,19 +38,6 @@ window=None
 
 destroy=False
 
-def plot_load_token(plot_token,file_name):
-	lines=[]
-	if inp_load_file(lines,file_name)==True:
-		plot_token.file0=inp_search_token_value(lines, "#file0")
-		plot_token.file1=inp_search_token_value(lines, "#file1")
-		plot_token.file2=inp_search_token_value(lines, "#file2")
-		plot_token.tag0=inp_search_token_value(lines, "#tag0")
-		plot_token.tag1=inp_search_token_value(lines, "#tag1")
-		plot_token.tag2=inp_search_token_value(lines, "#tag2")
-		return True
-	else:
-		return False
-
 def set_plot_auto_close(value):
 	global destroy
 	destroy=value

@@ -46,7 +46,7 @@ from server import server
 from util import set_exe_command
 import gtk
 from plot_state import plot_state
-from plot_gen import plot_load_token
+from plot_io import plot_load_token
 from scan_plot import scan_gen_plot_data
 
 def command_args(argc,argv):

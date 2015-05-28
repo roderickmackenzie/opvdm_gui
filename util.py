@@ -28,6 +28,7 @@ from tempfile import mkstemp
 import logging
 import zipfile
 import re
+from numpy import zeros
 from encode import encode_now
 from encode import inp_set_encode
 from encode import inp_unset_encode
@@ -67,6 +68,52 @@ def join_path(one,two):
 
 	return output_file
 	
+def read_data_2d(x_scale,y_scale,z,file_name):
+	found,lines=zip_get_data_file(file_name)
+	if found==True:
+		x_max=0
+		y_max=0
+		x_pos=0
+		z_store=[]
+		for i in range(0, len(lines)):
+			if (lines[i][0]!="#"):
+				if lines[i]!="\n":
+
+					temp=lines[i]
+					temp=re.sub(' +',' ',temp)
+					temp=re.sub('\t',' ',temp)
+					temp=temp.rstrip()
+					sline=temp.split(" ")
+					if len(sline)==3:
+						if y_max==0:
+							x_scale.append(float(lines[i].split(" ")[1]))
+						if x_pos==0:
+							y_scale.append(float(lines[i].split(" ")[0]))
+
+						z_store.append(float(lines[i].split(" ")[2]))
+					x_pos=x_pos+1
+
+					if y_max==0:
+						x_max=x_max+1
+
+				if lines[i]=="\n":
+					y_max=y_max+1
+					x_pos=0
+
+		if  lines[len(lines)-1]!="\n":
+			y_max=y_max+1
+
+		print "load 3d data",x_scale,y_scale
+
+		pos=0
+		for x in range(0, x_max):
+			z.append([])
+			for y in range(0, y_max):
+				z[x].append(z_store[pos])
+				pos=pos+1
+		return True
+	else:
+		return False
 
 def get_cache_path(path):
 	m = hashlib.md5()
