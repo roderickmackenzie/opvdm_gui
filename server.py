@@ -41,84 +41,7 @@ from time import sleep
 from win_lin import running_on_linux
 import subprocess
 from util import gui_print_path
-
-if running_on_linux()==True:
-	import pyinotify
-else:
-	from welcome_windows import welcome_class	
-	import win32file
-	import win32con
-
-	FILE_LIST_DIRECTORY = 0x0001
-
-class _IdleObject(gobject.GObject):
-
-	def __init__(self):
-		gobject.GObject.__init__(self)
-	 
-	def emit(self, *args):
-		gobject.idle_add(gobject.GObject.emit,self,*args)
-
-class _FooThread(threading.Thread, _IdleObject):
-	__gsignals__ = {
-		"file_changed": (
-		gobject.SIGNAL_RUN_LAST, gobject.TYPE_NONE, [])
-		}
-	 
-	def __init__(self, *args):
-		threading.Thread.__init__(self)
-		_IdleObject.__init__(self)
-		self.notifier=False
- 
-	def onChange(self,ev):
-		if running_on_linux()==True:
-			file_name=os.path.basename(ev.pathname)
-		else:
-			file_name=os.path.basename(ev)
-
-		file_name=file_name.rstrip()
-		self.thread_data[0]
-		self.thread_data[0]=file_name
-		print "File changed!!!!!!!!!!!!!!!!!!!!!"
-		self.emit("file_changed")
-
-	def set_watch_path(self,path,thread_data):
-		self.watch_path=path
-		self.thread_data=thread_data
-
-	def run(self):
-		if running_on_linux()==True:
-			wm = pyinotify.WatchManager()
-			ret=wm.add_watch(self.watch_path, pyinotify.IN_CLOSE_WRITE, self.onChange,False,False)
-			print ret
-			print "notifyer!!!!!!!!!!!!!",self.notifier
-			self.notifier = pyinotify.Notifier(wm)
-			self.notifier.loop()
-		else:
-			hDir = win32file.CreateFile (self.watch_path,FILE_LIST_DIRECTORY,win32con.FILE_SHARE_READ | win32con.FILE_SHARE_WRITE | win32con.FILE_SHARE_DELETE,None,win32con.OPEN_EXISTING,win32con.FILE_FLAG_BACKUP_SEMANTICS,None)
-
-			while 1:
-				results = win32file.ReadDirectoryChangesW (hDir,1024,True,
-				win32con.FILE_NOTIFY_CHANGE_FILE_NAME |
-				win32con.FILE_NOTIFY_CHANGE_DIR_NAME |
-				win32con.FILE_NOTIFY_CHANGE_ATTRIBUTES |
-				win32con.FILE_NOTIFY_CHANGE_SIZE |
-				win32con.FILE_NOTIFY_CHANGE_LAST_WRITE |
-				win32con.FILE_NOTIFY_CHANGE_SECURITY,
-				None,
-				None)
-
-				for action, file in results:
-					full_filename = os.path.join (self.watch_path, file)
-					self.onChange(full_filename)
-	
-
-	def stop(self):
-		print "thread2:I have shutdown the thread!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!",threading.currentThread()
-		if running_on_linux()==True:
-			self.notifier.stop()
-			self.notifier=False
-		print "thread:I have shutdown the thread!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!",threading.currentThread()
+from monitor_dir import _FooThread
 
 class server:
 	def __init__(self):
@@ -147,7 +70,7 @@ class server:
 			self.thread.daemon = True
 			print "I am watching!!!!!!!!!!!!!!!!!!!!!!!!!!!!",self.sim_dir
 			if self.running==True:
-				#print "thread:I'm still running!!!!!!!!!!!!!"
+				print "thread:I'm still running!!!!!!!!!!!!!"
 				self.stop()
 			self.thread.start()
 
@@ -460,6 +383,7 @@ class server:
 
 	def stop(self):
 		if self.cluster==False:
+			print "server: Ask the thread to stop."
 			self.thread.stop()
 			self.running=False
 		else:
@@ -482,7 +406,7 @@ class server:
 				print "delete file:",del_file
 				os.remove(del_file)
 	
-		print "thread: I have shut down the server."
+		print "I have shut down the server."
 
 
 	def simple_run(self,exe_command):

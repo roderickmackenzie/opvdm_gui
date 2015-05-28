@@ -130,20 +130,38 @@ class plot_widget(gtk.VBox):
 		#except:
 		#	print "Error opening file ",file_name
 
-	def read_data_2d(self,x,y,z,file_name):
+	def read_data_2d(self,x_scale,y_scale,z,file_name):
 		found,lines=zip_get_data_file(file_name)
 		if found==True:
-
+			x_max=0
+			y_max=0
+			count_x=True
 			for i in range(0, len(lines)):
-				lines[i]=re.sub(' +',' ',lines[i])
-				lines[i]=re.sub('\t',' ',lines[i])
-				lines[i]=lines[i].rstrip()
-				sline=lines[i].split(" ")
-				if len(sline)==2:
-					if (lines[i][0]!="#"):
-						x.append(float(lines[i].split(" ")[0]))
-						y.append(float(lines[i].split(" ")[1]))
-						z.append(float(lines[i].split(" ")[2]))
+				if (lines[i][0]!="#"):
+					if lines[i]!="\n":
+						if x_max==True:
+							x_max=x_max+1
+
+					if lines[i]=="\n":
+						y_max=y_max+1
+						x_max=False
+
+			if  lines[len(lines)-1]!="\n":
+				y_max=y_max+1
+
+			#z=zeros((x_max,y_max))
+			#for i in range(0, len(x_max)):
+			#	for i in range(0, len(y_max)):
+
+			#	lines[i]=re.sub(' +',' ',lines[i])
+			#	lines[i]=re.sub('\t',' ',lines[i])
+			#	lines[i]=lines[i].rstrip()
+			#	sline=lines[i].split(" ")
+			#	if len(sline)==2:
+			#		if (lines[i][0]!="#"):
+			#			x.append(float(lines[i].split(" ")[0]))
+			#			y.append(float(lines[i].split(" ")[1]))
+			#			z.append(float(lines[i].split(" ")[2]))
 			return True
 		else:
 			return False
@@ -306,7 +324,30 @@ class plot_widget(gtk.VBox):
 				self.ax[plot_number].legend_ = None
 			else:
 				legend=self.fig.legend(lines, files, self.plot_token.legend_pos)
-			
+		elif self.plot_token.type=="3d":
+			x=[]
+			y=[]
+			z=[]
+
+			if self.read_data_2d(x,y,z,self.input_files[0])==True:
+				maxx=-1
+				maxy=-1
+				for i in range(0,len(z)):
+					if x[i]>maxx:
+						maxx=x[i]
+
+					if y[i]>maxy:
+						maxy=y[i]
+
+				maxx=maxx+1
+				maxy=maxy+1
+
+				data = zeros((maxy,maxx))
+
+				self.ax[0].pcolor(data,cmap=plt.cm.Blues)
+
+				self.ax[0].invert_yaxis()
+				self.ax[0].xaxis.tick_top()
 		else:
 			x=[]
 			y=[]

@@ -41,6 +41,7 @@ from scan_item import scan_item_add
 from util import lines_to_xyz
 from tab import tab_class
 from win_lin import running_on_linux
+from photon_dist import photon_dist_class
 import webbrowser
 #   columns
 (
@@ -630,7 +631,9 @@ class class_optical(gtk.Window):
 		tool_bar_pos=tool_bar_pos+1
 
 		image = gtk.Image()
-   		image.set_from_file(self.icon_theme.lookup_icon("media-playback-start", 32, 0).get_filename())
+   		image.set_from_file(find_data_file("gui/play.png"))
+		self.play = gtk.ToolButton(image)
+   		#image.set_from_file(self.icon_theme.lookup_icon("media-playback-start", 32, 0).get_filename())
 		refresh = gtk.ToolButton(image)
 		refresh.connect("clicked", self.callback_refresh,treeview)
 		toolbar.insert(refresh, tool_bar_pos)
@@ -714,6 +717,11 @@ class class_optical(gtk.Window):
 		optics_config.init("optics.inp","Config")
 		optics_config.name="Config"
 		optics_config.file_name="optics.inp"
+
+		#Photon distribution
+		photon_dist=photon_dist_class()
+		photon_dist.show()
+		self.notebook.append_page(photon_dist,gtk.Label("Photon dist."))
 
 		gui_pos=gui_pos+1
 
