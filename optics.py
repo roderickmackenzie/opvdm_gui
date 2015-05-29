@@ -106,6 +106,22 @@ def find_models():
 
 	return ret
 
+def find_light_source():
+	ret=[]
+
+	path=os.path.join(os.getcwd(),"phys")
+	if os.path.isdir(path)==False:
+		if running_on_linux()==True:
+			path="/usr/lib64/phys/"
+		else:
+			path="c:\\opvdm\\phys\\"
+
+	
+	for file in glob.glob(os.path.join(path,"*.inp")):
+		ret.append(os.path.splitext(os.path.basename(file))[0])
+
+	return ret
+
 class scan_item(gtk.CheckButton):
 	name=""
 	token=""
@@ -167,6 +183,20 @@ class class_optical(gtk.Window):
 
 		self.cb_model.set_active(models.index(used_model))
 		scan_item_add("light.inp","#light_model","Optical model",1)
+
+	def update_light_source_model(self):
+		models=find_light_source()
+		for i in range(0, len(models)):
+			self.light_source_model.append_text(models[i])
+
+		used_model=inp_get_token_value("optics.inp", "#sun")
+		if models.count(used_model)==0:
+			used_model="sun"
+			inp_update_token_value("optics.inp", "#sun","sun",1)
+
+		self.light_source_model.set_active(models.index(used_model))
+		scan_item_add("optics.inp","#sun","Light source",1)
+
 
 	def __create_model(self):
 
@@ -522,6 +552,11 @@ class class_optical(gtk.Window):
 		cb_text=widget.get_active_text()
 		inp_update_token_value("light.inp", "#light_model", cb_text,1)
 
+	def on_light_source_model_changed(self, widget):
+		cb_text=widget.get_active_text()
+		cb_text=cb_text+".inp"
+		inp_update_token_value("optics.inp", "#sun", cb_text,1)
+
 	def callback_help(self, widget, data=None):
 		webbrowser.open('firefox http://www.roderickmackenzie.eu/opvdm_wiki.html')
 
@@ -595,6 +630,12 @@ class class_optical(gtk.Window):
 		self.cb_model.connect("changed", self.on_cb_model_changed)
 		self.update_cb_model()
 
+		self.light_source_model = gtk.combo_box_new_text()
+		self.light_source_model.set_wrap_width(5)
+		self.light_source_model.connect("changed", self.on_light_source_model_changed)
+		self.update_light_source_model()
+		self.light_source_model.show()
+
 		self.fig = Figure(figsize=(5,4), dpi=100)
 		self.canvas = FigureCanvas(self.fig)  # a gtk.DrawingArea
 	
@@ -602,7 +643,7 @@ class class_optical(gtk.Window):
 		canvas_vbox=gtk.VBox()
 		canvas_vbox.show()
 		self.canvas.figure.patch.set_facecolor('white')
-		self.canvas.set_size_request(900, 400)
+		self.canvas.set_size_request(600, 400)
 		self.canvas.show()
 
 
@@ -622,7 +663,7 @@ class class_optical(gtk.Window):
 
 		# create tree view
 		treeview = gtk.TreeView(model)
-		treeview.set_size_request(500, 150)
+		treeview.set_size_request(300, 150)
 		treeview.set_rules_hint(True)
 		treeview.get_selection().set_mode(gtk.SELECTION_SINGLE)
 
@@ -646,11 +687,11 @@ class class_optical(gtk.Window):
 		ti_light = gtk.ToolItem()
 		lable=gtk.Label("Optical mode:")
 		lable.show()
-	        ti_hbox = gtk.HBox(False, 2)
+		ti_hbox = gtk.HBox(False, 2)
 		ti_hbox.show()
         
-	        ti_hbox.pack_start(lable, False, False, 0)
-	        ti_hbox.pack_start(self.cb, False, False, 0)
+		ti_hbox.pack_start(lable, False, False, 0)
+		ti_hbox.pack_start(self.cb, False, False, 0)
 		self.cb.show()
 
 		lable=gtk.Label("Optical model:")
@@ -666,6 +707,18 @@ class class_optical(gtk.Window):
 
 		tool_bar_pos=tool_bar_pos+1
 
+		sep = gtk.SeparatorToolItem()
+		sep.set_draw(False)
+		sep.set_expand(False)
+		toolbar.insert(sep, tool_bar_pos)
+		sep.show()
+		tool_bar_pos=tool_bar_pos+1
+
+		lable=gtk.Label("Light source:")
+		lable.show()
+		ti_hbox.pack_start(lable, False, False, 0)
+		ti_hbox.pack_start(self.light_source_model, False, False, 0)
+		self.cb_model.show()
 
 		sep = gtk.SeparatorToolItem()
 		sep.set_draw(False)
@@ -707,11 +760,29 @@ class class_optical(gtk.Window):
 		#sw.add()
 		
 		#self.attach(treeview, 0, 3, gui_pos, gui_pos+1,gtk.SHRINK ,gtk.SHRINK)
-		canvas_vbox.pack_start(self.canvas, True, True, 0)
-		canvas_vbox.pack_start(treeview, False, False, 0)
-		canvas_vbox.pack_start(hbox, False, False, 0)
+		hbox0=gtk.HBox()
+		frame_vbox=gtk.VBox()
+		frame_vbox.show()
+		frame = gtk.Frame()
+		frame.set_label("Device layers")
+		frame.set_label_align(0.0, 0.0)
+		frame.set_shadow_type(gtk.SHADOW_ETCHED_OUT)
+		frame.show()
+
+
+		#hbox0.pack_start(self.canvas, False, False, 0)
+		hbox0.show()
+		frame_vbox.pack_start(treeview, False, False, 0)
+		frame_vbox.pack_start(hbox, False, False, 0)
+
+		frame.add(frame_vbox)
+
+		hbox0.pack_start(frame, False, False, 0)
+		hbox0.pack_start(self.canvas, False, False, 0)
+
+		canvas_vbox.pack_start(hbox0, False, False, 0)
 		self.notebook.append_page(canvas_vbox,gtk.Label("Device configuration") )
-		self.main_vbox.pack_start(self.notebook, True, True, 0)
+		self.main_vbox.pack_start(self.notebook, False, False, 0)
 
 		optics_config=tab_class()
 		optics_config.show()
@@ -729,12 +800,16 @@ class class_optical(gtk.Window):
 		input_files=[]
 		input_files.append("./light_dump/light_2d_photons.dat")
 		input_files.append("./light_dump/light_2d_photons_asb.dat")
+		input_files.append("./light_dump/reflect.dat")
 
 		plot_labels=[]
 		plot_labels.append("Photon dist.")
 		plot_labels.append("Photon dist ads.")
+		plot_labels.append("Reflection")
+
 
 		ids=[]
+		ids.append(0)
 		ids.append(0)
 		ids.append(0)
 
@@ -751,7 +826,7 @@ class class_optical(gtk.Window):
 
 			self.plot_widgets[i].do_plot()
 			self.plot_widgets[i].show()
-##################
+
 			self.notebook.append_page(self.plot_widgets[i],gtk.Label(plot_labels[i]))
 
 		gui_pos=gui_pos+1
