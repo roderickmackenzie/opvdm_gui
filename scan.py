@@ -150,6 +150,16 @@ class scan_class(gtk.Window):
 			print "I want to copy",new_dir,old_dir
 			self.add_page(new_sim_name)
 
+	def callback_run_simulation(self,widget,data):
+		pageNum = self.notebook.get_current_page()
+		tab = self.notebook.get_nth_page(pageNum)
+		tab.simulate(True)
+
+	def callback_build_simulation(self,widget,data):
+		pageNum = self.notebook.get_current_page()
+		tab = self.notebook.get_nth_page(pageNum)
+		tab.simulate(False)
+
 	def callback_rename_page(self,widget,data):
 		pageNum = self.notebook.get_current_page()
 		tab = self.notebook.get_nth_page(pageNum)
@@ -226,10 +236,6 @@ class scan_class(gtk.Window):
 			tab = self.notebook.get_nth_page(i)
 			tab.simulate()
 
-	def callback_run_simulation(self,widget):
-		pageNum = self.notebook.get_current_page()
-		tab = self.notebook.get_nth_page(pageNum)
-		tab.simulate()
 
 	def callback_stop_simulation(self,widget):
 		pageNum = self.notebook.get_current_page()
@@ -370,6 +376,8 @@ class scan_class(gtk.Window):
 		    ( "/Simulations/_Delete",     None, self.callback_delete_page, 0, "<StockItem>", "gtk-clear" ),
 		    ( "/Simulations/_Rename",     None, self.callback_rename_page, 0, "<StockItem>", "gtk-edit" ),
 		    ( "/Simulations/_Clone",     None, self.callback_copy_page, 0, "<StockItem>", "gtk-copy" ),
+		    ( "/Simulations/_Run simulation",     None, self.callback_run_simulation, 0, "<StockItem>", "gtk-copy" ),
+		    ( "/Simulations/_Build simulation",     None, self.callback_build_simulation, 0, "<StockItem>", "gtk-copy" ),
 		    ( "/Cluster/_Cluster sleep",     None, self.callback_cluster_sleep, 0, "<StockItem>", "gtk-copy" ),
 		    ( "/Cluster/_Cluster poweroff",     None, self.callback_cluster_poweroff, 0, "<StockItem>", "gtk-copy" ),
 		    ( "/Cluster/_Cluster wake",     None, self.callback_wol, 0, "<StockItem>", "gtk-copy" ),

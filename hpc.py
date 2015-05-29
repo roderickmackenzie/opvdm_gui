@@ -43,65 +43,26 @@ class hpc_class(gtk.Window):
 	cpus=[]
 
 	def callback_node(self, widget, data=None):
-		nodes=0
-		jobs=21
 		lines=[]
-		cpus_per_job=1
+		a = open("../clusterscripts/allowed_nodes", "w")
+
 		if inp_load_file(lines,"./server.inp")==True:
 			cpus_per_job=int(inp_search_token_value(lines, "#server_cpus"))
 			print "CPUs per job=",cpus_per_job
+		a.write(str(cpus_per_job)+"\n")
 
-		jobs_array=[]
-		allocated=0
-		for i in range(len(self.cpus)):
-			jobs_array.append(0)
-
-		for j in range (0, jobs):
-			for i in range(0, len(self.button)):
-				if self.button[i].get_active()==True:
-					if ((jobs_array[i]*cpus_per_job)<int(self.cpus[i])):
-						jobs_array[i]=jobs_array[i]+1
-						allocated=allocated+1
-						break
-		print jobs_array
-
-		print "allocated",allocated,"jobs",jobs
-		print len(self.cpus), len(self.button)
-		if (allocated<jobs):
-			pos=0
-			for i in range(allocated, jobs):
-
-					while (self.button[pos].get_active()==False):
-						print pos
-						pos=pos+1
-						if pos>=len(self.cpus):
-							pos=0
-
-					jobs_array[pos]=jobs_array[pos]+1
-					pos=pos+1
-					if pos>=len(self.cpus):
-						pos=0
-					print jobs_array
-					
-
-
-					
-		written=0
-		a = open("../clusterscripts/nodelist", "w")
-		for i in range(0, len(jobs_array)):
-				if (jobs_array[i]>0):
-					for ii in range(0, jobs_array[i]):
-						print self.name[i]
-						a.write(self.name[i]+"\n")
-
-		#if (written<jobs):
-		#	while (written<=jobs):
-		#		for i in range(0, len(self.button)):
-		#			if self.button[i].get_active()==True:
-		#				a.write(self.name[i]+"\n")
-		#				written=written+1
-	
+		for i in range(0, len(self.button)):
+			if self.button[i].get_active()==True:
+				a.write(self.name[i]+"\n")
+				a.write(str(self.cpus[i])+"\n")
 		a.close()
+
+		now_dir=os.getcwd()
+
+		os.chdir("../clusterscripts")
+		os.system("./make_node_list.py")
+
+		os.chdir(now_dir)
 
 	def callback_hpc_check_load(self, widget, data=None):
 		curdir=os.getcwd()
@@ -111,7 +72,7 @@ class hpc_class(gtk.Window):
 		self.name=[]
 		
 
-		f = open("./clusterscripts/nodelist")
+		f = open("./hpc/allowed_nodes")
 		lines = f.readlines()
 		f.close()
 
@@ -186,7 +147,7 @@ class hpc_class(gtk.Window):
 		os.chdir(curdir)
 
 		self.terminal.feed_child("cd "+self.hpc_root_dir+"\n")
-		self.terminal.feed_child("./buildforhpc.sh\n")
+		self.terminal.feed_child("./buildforhpc.sh scan\n")
 		self.terminal.feed_child("cd "+curdir+"\n")
 		
 		print "Build job"

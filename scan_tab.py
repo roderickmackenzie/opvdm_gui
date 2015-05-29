@@ -80,6 +80,21 @@ class scan_vbox(gtk.VBox):
 			path = model.get_path(iter)[0]
  			self.liststore_combobox.move_after( iter,self.liststore_combobox.iter_next(iter))
 			#self.liststore_combobox.swap(path+1,path)
+
+	def callback_insert_command(self, widget, data=None):
+
+		selection = self.treeview.get_selection()
+		model, iter = selection.get_selected()
+
+		if iter:
+			path = model.get_path(iter)[0]
+			print path
+			model[path][1]="ret=str(round(random.uniform(1.0, 9.9),2))+\"e-\"+str(randint(1, 9))"
+			model[path][2]="python_code"
+ 			#self.liststore_combobox.move_after( iter,self.liststore_combobox.iter_next(iter))
+			#self.liststore_combobox.swap(path+1,path)
+
+
 	def add_line(self,data):
 		selection = self.treeview.get_selection()
 		model, iter = selection.get_selected()
@@ -101,7 +116,8 @@ class scan_vbox(gtk.VBox):
 		model, iter = selection.get_selected()
 
 		if iter:
-			build=model[0][0]+"\n"+model[0][1]+"\n"+model[0][2]
+			path = model.get_path(iter)[0]
+			build=model[path][0]+"\n"+model[path][1]+"\n"+model[path][2]
 			self.clipboard.set_text(build, -1)
 
 	def callback_paste_item(self, widget, data=None):
@@ -182,7 +198,7 @@ class scan_vbox(gtk.VBox):
 				if os.path.isfile(os.path.join(full_name,'scan.inp')):
 					dirs_to_del.append(full_name)
 
-	def simulate(self):
+	def simulate(self,run_simulation):
 
 		base_dir=os.getcwd()
 		run=True
@@ -224,6 +240,9 @@ class scan_vbox(gtk.VBox):
 				for i in range(0,30,1):
 					text_del_dirs=text_del_dirs+dirs_to_del[i]+"\n"
 				text_del_dirs=text_del_dirs+"and "+str(len(dirs_to_del)-30)+" more."
+			else:
+				for i in range(0,len(dirs_to_del)):
+					text_del_dirs=text_del_dirs+dirs_to_del[i]+"\n"
 
 			label = gtk.Label("Should I delete the old simualtions first?:\n"+"\n"+text_del_dirs)
 			dialog.vbox.pack_start(label, True, True, 0)
@@ -270,22 +289,23 @@ class scan_vbox(gtk.VBox):
 			print "Feeding,",base_dir,self.sim_dir
 			commands=tree_gen(program_list,base_dir,self.sim_dir)
 
-			self.myserver.init(self.sim_dir)
+			if run_simulation==True:
+				self.myserver.init(self.sim_dir)
 
-			if self.myserver.start_threads()==0:
-				self.myserver.clear_cache()
-				for i in range(0, len(commands)):
-					self.myserver.add_job(commands[i])
-					print "Adding job"+commands[i]
+				if self.myserver.start_threads()==0:
+					self.myserver.clear_cache()
+					for i in range(0, len(commands)):
+						self.myserver.add_job(commands[i])
+						print "Adding job"+commands[i]
 
-				self.myserver.start(self.exe_command)
+					self.myserver.start(self.exe_command)
 
 
-			else:
-				message = gtk.MessageDialog(type=gtk.MESSAGE_ERROR, buttons=gtk.BUTTONS_OK)
-				message.set_markup("I can't connect to the server")
-				message.run()
-				message.destroy()
+				else:
+					message = gtk.MessageDialog(type=gtk.MESSAGE_ERROR, buttons=gtk.BUTTONS_OK)
+					message.set_markup("I can't connect to the server")
+					message.run()
+					message.destroy()
 
 		self.save_combo()
 		os.chdir(base_dir)
@@ -391,7 +411,8 @@ class scan_vbox(gtk.VBox):
 		model[path][2] = text
 		if model[path][2]!="constant":
 			if model[path][2]!="scan":
-				model[path][1] = "mirror"
+				if model[path][2]!="python_code":
+					model[path][1] = "mirror"
 		self.save_combo()
 
 
@@ -418,6 +439,7 @@ class scan_vbox(gtk.VBox):
 		self.liststore_op_type.clear()
 		self.liststore_op_type.append(["scan"])
 		self.liststore_op_type.append(["constant"])
+		self.liststore_op_type.append(["python_code"])
 
 		for i in range(0,len(self.liststore_combobox)):
 			if self.liststore_combobox[i][0]!="Select parameter":
@@ -440,7 +462,10 @@ class scan_vbox(gtk.VBox):
 			self.hide()
 
 	def callback_run_simulation(self,widget):
-		self.simulate()
+		self.simulate(True)
+
+	def callback_build_simulation(self,widget):
+		self.simulate(False)
 
 	def callback_stop_simulation(self,widget):
 		self.stop_simulation()
@@ -584,6 +609,13 @@ class scan_vbox(gtk.VBox):
 		toolbar.insert(quick, pos)
 		pos=pos+1
 
+		image = gtk.Image()
+   		image.set_from_file(find_data_file("gui/command.png"))
+		insert_command = gtk.ToolButton(image)
+		insert_command.connect("clicked", self.callback_insert_command)
+		self.tooltips.set_tip(insert_command, "Insert python command")
+		toolbar.insert(insert_command, pos)
+		pos=pos+1
 		#reopen_xy = gtk.ToolButton(gtk.STOCK_SELECT_COLOR)
 		#reopen_xy.connect("clicked", self.callback_reopen_xy_window)
 		#self.tooltips.set_tip(reopen_xy, "Reopen xy window selector")

@@ -25,6 +25,8 @@ import sys
 import os
 import shutil
 import glob
+import random
+from random import randint
 
 from inp import inp_update_token_value
 from scan_item import scan_items_get_list
@@ -107,8 +109,17 @@ def tree_apply_constant(program_list):
 		if program_list[i][2]=="constant":
 			pos_mirror_dest=scan_items_index_item(program_list[i][0])
 			inp_update_token_value(param_list[pos_mirror_dest].filename, param_list[pos_mirror_dest].token, program_list[i][1],param_list[pos_mirror_dest].line)
+
+def tree_apply_python_script(program_list):
+	param_list=scan_items_get_list()
+	for i in range(0, len(program_list)):
+		if program_list[i][2]=="python_code":
+			pos_mirror_dest=scan_items_index_item(program_list[i][0])
+			ret=""
+			exec(program_list[i][1])
+			inp_update_token_value(param_list[pos_mirror_dest].filename, param_list[pos_mirror_dest].token, ret,param_list[pos_mirror_dest].line)
 			print os.getcwd()
-			print "Replace",param_list[pos_mirror_dest].filename,param_list[pos_mirror_dest].token,program_list[i][1]
+			print "Replace",param_list[pos_mirror_dest].filename,param_list[pos_mirror_dest].token,program_list[i][1],ret
 
 def copy_simulation(base_dir,cur_dir):
 	param_list=scan_items_get_list()
@@ -180,6 +191,7 @@ def tree(program_list,tree_items,commands,base_dir,level,path,var_to_change,valu
 					inp_update_token_value(param_list[int(pos[i])].filename, param_list[int(pos[i])].token, new_values[i],param_list[int(pos[i])].line)
 				
 				tree_apply_constant(program_list)
+				tree_apply_python_script(program_list)
 				tree_apply_mirror(program_list)
 
 				
