@@ -23,8 +23,8 @@ import sys
 import os
 import glob
 import operator
-from plot_io import get_plot_file_info
 from plot_state import plot_state
+from plot_io import plot_load_info
 
 def make_man():
 	file_paths = []  # List which will store all of the full filepaths.
@@ -38,7 +38,7 @@ def make_man():
 		if filename.endswith(".dat")==True:
 
 			temp=plot_state()
-			ret=get_plot_file_info(temp,filename)
+			ret=plot_load_info(temp,filename)
 			if ret==True:
 				
 				section_one.append(temp.section_one)

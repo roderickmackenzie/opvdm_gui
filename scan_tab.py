@@ -57,6 +57,8 @@ from scan_tree import tree_gen
 from scan_tree import tree_load_program
 from scan_item import scan_item_save
 from scan_plot import scan_gen_plot_data
+from scan_io import scan_clean_dir
+
 class scan_vbox(gtk.VBox):
 
 	icon_theme = gtk.icon_theme_get_default()
@@ -183,21 +185,6 @@ class scan_vbox(gtk.VBox):
 	def stop_simulation(self):
 		self.myserver.killall()
 
-
-
-	def delete_simulations(self,dirs_to_del):
-		for i in range(0, len(dirs_to_del)):
-			delete_link_tree(dirs_to_del[i])
-
-	def list_simulations(self,dirs_to_del):
-		ls=os.listdir(self.sim_dir)
-		print ls
-		for i in range(0, len(ls)):
-			full_name=os.path.join(self.sim_dir,ls[i])
-			if os.path.isdir(full_name):
-				if os.path.isfile(os.path.join(full_name,'scan.inp')):
-					dirs_to_del.append(full_name)
-
 	def simulate(self,run_simulation):
 
 		base_dir=os.getcwd()
@@ -219,50 +206,7 @@ class scan_vbox(gtk.VBox):
 			return
 
 		self.make_sim_dir()
-		dirs_to_del=[]
-		self.list_simulations(dirs_to_del)
-
-		if (len(dirs_to_del)!=0):
-
-			settings = gtk.settings_get_default()
-			settings.set_property('gtk-alternative-button-order', True)
-
-			dialog = gtk.Dialog()
-			cancel_button = dialog.add_button(gtk.STOCK_YES, gtk.RESPONSE_YES)
-
-			ok_button = dialog.add_button(gtk.STOCK_NO, gtk.RESPONSE_NO)
-			ok_button.grab_default()
-
-			help_button = dialog.add_button(gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL)
-
-			text_del_dirs=""
-			if len(dirs_to_del)>30:
-				for i in range(0,30,1):
-					text_del_dirs=text_del_dirs+dirs_to_del[i]+"\n"
-				text_del_dirs=text_del_dirs+"and "+str(len(dirs_to_del)-30)+" more."
-			else:
-				for i in range(0,len(dirs_to_del)):
-					text_del_dirs=text_del_dirs+dirs_to_del[i]+"\n"
-
-			label = gtk.Label("Should I delete the old simualtions first?:\n"+"\n"+text_del_dirs)
-			dialog.vbox.pack_start(label, True, True, 0)
-			label.show()
-
-			dialog.set_alternative_button_order([gtk.RESPONSE_YES, gtk.RESPONSE_NO,
-						       gtk.RESPONSE_CANCEL])
-
-			#dialog = gtk.MessageDialog(None, 0, gtk.MESSAGE_QUESTION,  gtk.BUTTONS_YES_NO, str("Should I delete the old simualtions first?:\n"+"\n".join(dirs_to_del)))
-			response = dialog.run()
-			
-			if response == gtk.RESPONSE_YES:
-					self.delete_simulations(dirs_to_del)
-			elif response == gtk.RESPONSE_NO:
-				print "Not deleting"
-			elif response == gtk.RESPONSE_CANCEL:
-				run=False
-				print "Cancel"
-
-			dialog.destroy()
+		scan_clean_dir(self.sim_dir)
 
 
 		for i in range(0,len(self.liststore_combobox)):

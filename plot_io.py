@@ -33,11 +33,13 @@ from util import str2bool
 from inp import inp_save_lines
 
 def plot_load_info(plot_token,file_name):
+	print "LOAD!!!!!!!!!!!!!!!!",file_name
 	ret=False
 	config_file=file_name.split(".")[0]+".oplot"
 	ret=plot_load_oplot_file(plot_token,config_file)
 	if ret==False:
 		ret=get_plot_file_info(plot_token,file_name)
+		plot_save_oplot_file(file_name,plot_token)
 	return ret
 
 def plot_load_oplot_file(plot_token,file_name):
@@ -65,7 +67,12 @@ def plot_load_oplot_file(plot_token,file_name):
 	return False
 
 def plot_save_oplot_file(config_file,plot_token):
-	if config_file!="":
+	save_name=config_file
+	print "save name",save_name
+	if save_name!="":
+		if save_name.endswith(".oplot")==False:
+			save_name=save_name.split(".")[0]+".oplot"
+
 		lines=[]
 		lines.append("#logy")
 		lines.append(str(plot_token.logy))
@@ -107,7 +114,7 @@ def plot_save_oplot_file(config_file,plot_token):
 		lines.append("1.0")
 		lines.append("#end")
 
-		inp_save_lines(config_file,lines)
+		inp_save_lines(save_name,lines)
 
 def get_plot_file_info(output,file_name):
 	found,lines=zip_get_data_file(file_name)

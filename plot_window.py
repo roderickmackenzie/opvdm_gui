@@ -27,16 +27,6 @@ import sys
 import os
 import shutil
 from token_lib import tokens
-from numpy import *
-from util import pango_to_gnuplot
-import matplotlib.pyplot as plt
-from matplotlib.widgets import Cursor
-from plot_export import plot_export 
-from numpy import arange, sin, pi, zeros
-from matplotlib.backends.backend_gtkagg import FigureCanvasGTKAgg as FigureCanvas
-from matplotlib.backends.backend_gtkagg import NavigationToolbar2GTKAgg as NavigationToolbar
-#from matplotlib.backends.backend_gtk import FigureCanvasGTK as FigureCanvas
-from matplotlib.figure import Figure
 from plot_widget import plot_widget
 
 class plot_window():

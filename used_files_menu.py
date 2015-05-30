@@ -34,7 +34,7 @@ from plot_state import plot_state
 import glob
 from inp import inp_load_file
 from plot_io import plot_load_info
-
+from plot_io import plot_save_oplot_file
 class used_files_menu:
 	def __init__(self):
 		self.menu=gtk.Menu()

@@ -26,7 +26,7 @@ from token_lib import tokens
 from util import pango_to_gnuplot
 from plot_info import plot_info
 from util import zip_get_data_file
-from plot_io import get_plot_file_info
+from plot_io import plot_load_info
 
 def load_graph(path):
 	cmd = '/usr/bin/gnuplot -persist '+path
@@ -46,7 +46,7 @@ def file_name_to_latex(in_string):
 
 def plot_populate_plot_token(plot_token,file_name):
 	if file_name!=None:
-		ret=get_plot_file_info(plot_token,file_name)
+		ret=plot_load_info(plot_token,file_name)
 		print "ret====",ret
 		if ret==True:
 			return True
