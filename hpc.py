@@ -124,7 +124,7 @@ class hpc_class(gtk.Window):
 		curdir=os.getcwd()
 		#os.chdir(self.hpc_root_dir)
 		self.terminal.feed_child("cd "+self.hpc_root_dir+"\n")
-		self.terminal.feed_child("./from_hpc.sh\n")
+		self.terminal.feed_child("./hpc_pull_data.sh\n")
 		self.terminal.feed_child("cd "+curdir+"\n")
 
 		#cmd = './from_hpc.sh'
