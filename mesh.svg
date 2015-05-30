@@ -13,7 +13,7 @@
    height="48px"
    id="svg3885"
    version="1.1"
-   inkscape:version="0.48.4 r9939"
+   inkscape:version="0.91 r13725"
    sodipodi:docname="mesh.svg"
    inkscape:export-filename="/home/rod/nl/orig/gui/mesh.png"
    inkscape:export-xdpi="90"
@@ -27,16 +27,16 @@
      borderopacity="1.0"
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
-     inkscape:zoom="17.072762"
-     inkscape:cx="27.577628"
-     inkscape:cy="37.802494"
+     inkscape:zoom="41.565609"
+     inkscape:cx="23.535825"
+     inkscape:cy="37.685348"
      inkscape:current-layer="layer1"
      showgrid="true"
      inkscape:grid-bbox="true"
      inkscape:document-units="px"
-     inkscape:window-width="1920"
-     inkscape:window-height="1028"
-     inkscape:window-x="1920"
+     inkscape:window-width="1440"
+     inkscape:window-height="818"
+     inkscape:window-x="0"
      inkscape:window-y="29"
      inkscape:window-maximized="1" />
   <metadata
@@ -48,6 +48,11 @@
         <dc:type
            rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
         <dc:title></dc:title>
+        <dc:creator>
+          <cc:Agent>
+            <dc:title>Roderick C.I. MacKenzie</dc:title>
+          </cc:Agent>
+        </dc:creator>
       </cc:Work>
     </rdf:RDF>
   </metadata>
