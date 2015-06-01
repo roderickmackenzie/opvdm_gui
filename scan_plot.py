@@ -38,6 +38,7 @@ from plot_state import plot_state
 from plot import plot_populate_plot_token
 
 def gen_plot_line(dirname,plot_token):
+	print plot_token.file0,plot_token.file1
 	if plot_token.file1=="":
 		f = open(os.path.join(dirname,plot_token.file0),'r')
 		values=f.readline()
@@ -47,21 +48,22 @@ def gen_plot_line(dirname,plot_token):
 		v0=inp_get_token_value(os.path.join(dirname,plot_token.file0), plot_token.tag0)
 		v1=inp_get_token_value(os.path.join(dirname,plot_token.file1), plot_token.tag1)
 		v2=""
+		print os.path.join(dirname,plot_token.file1),plot_token.tag1
 		if plot_token.file2!="":
 			v2=inp_get_token_value(os.path.join(dirname,plot_token.file2), plot_token.tag2)
 		values=v0+" "+v1+" "+v2+"\n"
 		return values
 
-def gen_infofile_plot(result_in,base_dir,plot_token):
+def gen_infofile_plot(file_list_in,base_dir,plot_token):
 	file_name=os.path.splitext(plot_token.file0)[0]+plot_token.tag0+"#"+os.path.splitext(plot_token.file1)[0]+plot_token.tag1+".dat"
 	values=""
 	result=[]
 
 	#only allow files from real simulations in the list
-	for i in range(0,len(result_in)):
-		test_name=os.path.join(os.path.dirname(result_in[i]),'sim.opvdm')
+	for i in range(0,len(file_list_in)):
+		test_name=os.path.join(os.path.dirname(file_list_in[i]),'sim.opvdm')
 		if os.path.isfile(test_name):
-			result.append(result_in[i])
+			result.append(file_list_in[i])
 
 
 	if len(result)==0:
@@ -106,7 +108,6 @@ def gen_infofile_plot(result_in,base_dir,plot_token):
 		cur_sim_path=os.path.dirname(result[i])
 		if cur_sim_path!=base_dir:
 			#print result[i],cur_sim_path
-			
 			values=gen_plot_line(cur_sim_path,plot_token)
 
 			if depth==0:
@@ -148,10 +149,14 @@ def scan_gen_plot_data(plot_token,base_path):
 	save_file=""
 
 	file_name=plot_token.file0
-	
+	if file_name=="":
+		print "You have given me no file name!!!"
+		sys.exit(0)
+
 	#search for the files
 	return_file_list(plot_files,base_path,file_name)
-	print "rodrod",plot_token.file0,plot_files
+	print "search_file=",plot_token.file0
+	print "found_files=",plot_files
 	num_list=[]
 
 	#remove the file name in the base_dir
@@ -173,11 +178,14 @@ def scan_gen_plot_data(plot_token,base_path):
 
 	#if it is an info file then deal with it
 	print check_info_file(file_name),file_name,plot_token.file0,plot_token.file1,plot_token.tag0,plot_token.tag1
+
 	if (check_info_file(file_name)==True):
 		#print "Rod",plot_files,self.sim_dir
 
 		print plot_files,"r",plot_labels,"r",save_file,"r",plot_files,"r",base_path,"r",plot_token
+		
 		plot_files, plot_labels, save_file = gen_infofile_plot(plot_files,base_path,plot_token)
+
 	else:
 		ret=plot_populate_plot_token(plot_token,plot_files[0])
 		if ret==False:
@@ -199,6 +207,7 @@ def scan_gen_plot_data(plot_token,base_path):
 			plot_labels.append(str(text))
 
 		save_file=os.path.join(base_path,os.path.splitext(os.path.basename(plot_files[0]))[0])+".oplot"
+		
 		#plot_gen(plot_files,plot_labels,plot_token,save_file)
 
 	return plot_files, plot_labels, save_file

@@ -33,9 +33,8 @@ from util import str2bool
 from inp import inp_save_lines
 
 def plot_load_info(plot_token,file_name):
-	print "LOAD!!!!!!!!!!!!!!!!",file_name
 	ret=False
-	config_file=file_name.split(".")[0]+".oplot"
+	config_file=os.path.splitext(file_name)[0]+".oplot"
 	ret=plot_load_oplot_file(plot_token,config_file)
 	if ret==False:
 		ret=get_plot_file_info(plot_token,file_name)
@@ -63,6 +62,14 @@ def plot_load_oplot_file(plot_token,file_name):
 		plot_token.key_units=inp_search_token_value(lines, "#key_units")
 		plot_token.label_data=str2bool(inp_search_token_value(lines, "#label_data"))
 		plot_token.type=inp_search_token_value(lines, "#type")
+		plot_token.x_label=inp_search_token_value(lines, "#x_label")
+		plot_token.y_label=inp_search_token_value(lines, "#y_label")
+		plot_token.x_units=inp_search_token_value(lines, "#x_units")
+		plot_token.y_units=inp_search_token_value(lines, "#y_units")
+		plot_token.x_mul=float(inp_search_token_value(lines, "#x_mul"))
+		plot_token.y_mul=float(inp_search_token_value(lines, "#y_mul"))
+		plot_token.key_units=inp_search_token_value(lines, "#key_units")
+
 		return True
 	return False
 
@@ -110,6 +117,20 @@ def plot_save_oplot_file(config_file,plot_token):
 		lines.append(str(plot_token.label_data))
 		lines.append("#type")
 		lines.append(plot_token.type)
+		lines.append("#x_label")
+		lines.append(plot_token.x_label)
+		lines.append("#y_label")
+		lines.append(plot_token.y_label)
+		lines.append("#x_units")
+		lines.append(plot_token.x_units)
+		lines.append("#y_units")
+		lines.append(plot_token.y_units)
+		lines.append("#x_mul")
+		lines.append(str(plot_token.x_mul))
+		lines.append("#y_mul")
+		lines.append(str(plot_token.y_mul))
+		lines.append("#key_units")
+		lines.append(plot_token.key_units)
 		lines.append("#ver")
 		lines.append("1.0")
 		lines.append("#end")

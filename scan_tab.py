@@ -50,7 +50,6 @@ from config import config
 import hashlib
 from os.path import expanduser
 from token_lib import tokens
-from util import delete_link_tree
 from scan_item import scan_items_get_list
 from win_lin import running_on_linux
 from scan_tree import tree_gen
@@ -58,6 +57,7 @@ from scan_tree import tree_load_program
 from scan_item import scan_item_save
 from scan_plot import scan_gen_plot_data
 from scan_io import scan_clean_dir
+from server import server_find_simulations_to_run
 
 class scan_vbox(gtk.VBox):
 
@@ -149,14 +149,14 @@ class scan_vbox(gtk.VBox):
 
 		self.rebuild_liststore_op_type()
 
-	def plot_results(self,plot_tokens):
-		plot_files, plot_labels, save_file = scan_gen_plot_data(plot_tokens,self.sim_dir)
+	def plot_results(self,plot_token):
+		plot_files, plot_labels, save_file = scan_gen_plot_data(plot_token,self.sim_dir)
 		units=self.get_units()
 
-		plot_gen(plot_files,plot_labels,plot_tokens,save_file,units)
+		plot_gen(plot_files,plot_labels,plot_token,save_file,units)
 		self.plot_open.set_sensitive(True)
 
-		self.last_plot_data=plot_tokens
+		self.last_plot_data=plot_token
 
 		return 
 
@@ -185,7 +185,23 @@ class scan_vbox(gtk.VBox):
 	def stop_simulation(self):
 		self.myserver.killall()
 
-	def simulate(self,run_simulation):
+	def clean_scan_dir(self):
+		scan_clean_dir(self.sim_dir)
+
+	def import_from_hpc(self):
+		scan_clean_dir(self.sim_dir)
+		hpc_path="../hpc_run_1/"
+		hpc_path=os.path.abspath(hpc_path)
+		files=os.listdir(hpc_path)
+		for i in range(0,len(files)):
+			full_name=os.path.join(hpc_path,files[i])
+			if files[i]!="orig":
+				if os.path.isdir(full_name)==True:
+					dest=os.path.join(self.sim_dir,files[i])
+					shutil.copytree(full_name, dest, symlinks=False, ignore=None)
+					print full_name
+ 
+	def simulate(self,run_simulation,generate_simulations):
 
 		base_dir=os.getcwd()
 		run=True
@@ -206,7 +222,8 @@ class scan_vbox(gtk.VBox):
 			return
 
 		self.make_sim_dir()
-		scan_clean_dir(self.sim_dir)
+		if generate_simulations==True:
+			scan_clean_dir(self.sim_dir)
 
 
 		for i in range(0,len(self.liststore_combobox)):
@@ -227,11 +244,16 @@ class scan_vbox(gtk.VBox):
 
 
 		if run==True:
+			print "Running"
 			program_list=[]
 			for i in range(0,len(self.liststore_combobox)):
-				program_list.append([self.liststore_combobox[i][0],self.liststore_combobox[i][1],self.liststore_combobox[i][2]])
-			print "Feeding,",base_dir,self.sim_dir
-			commands=tree_gen(program_list,base_dir,self.sim_dir)
+				program_list.append([self.liststore_combobox[i][0],self.liststore_combobox[i][1],self.liststore_combobox[i][2],self.liststore_combobox[i][3]])
+
+			if generate_simulations==True:
+				tree_gen(program_list,base_dir,self.sim_dir)
+
+			commands=[]
+			server_find_simulations_to_run(commands,self.sim_dir)
 
 			if run_simulation==True:
 				self.myserver.init(self.sim_dir)
@@ -341,7 +363,7 @@ class scan_vbox(gtk.VBox):
 			a.write(item[0]+"\n")
 			a.write(item[1]+"\n")
 			a.write(item[2]+"\n")	
-		
+			a.write(str(item[3])+"\n")
 		a.close()
 
 		scan_item_save(os.path.join(self.sim_dir,"scan_items.inp"))
@@ -364,6 +386,14 @@ class scan_vbox(gtk.VBox):
 		model[path][1] = text
 		self.save_combo()
 
+	def toggled_cb( self, cell, path, model ):
+		"""
+		Sets the toggled state on the toggle button to true or false.
+		"""
+		model[path][3] = not model[path][3]
+		print model[path][2],model[path][3]
+		self.save_combo()
+		return
 
 	def reload_liststore(self):
 		self.liststore_combobox.clear()
@@ -406,10 +436,8 @@ class scan_vbox(gtk.VBox):
 			self.hide()
 
 	def callback_run_simulation(self,widget):
-		self.simulate(True)
+		self.simulate(True,True)
 
-	def callback_build_simulation(self,widget):
-		self.simulate(False)
 
 	def callback_stop_simulation(self,widget):
 		self.stop_simulation()
@@ -573,7 +601,7 @@ class scan_vbox(gtk.VBox):
 		for i in range(0,len(self.param_list)):
 		    liststore_manufacturers.append([self.param_list[i].name])
 
-		self.liststore_combobox = gtk.ListStore(str, str, str)
+		self.liststore_combobox = gtk.ListStore(str, str, str, bool)
 
 		self.config.load(self.sim_dir)
 		self.visible=self.config.get_value("#visible",True)
@@ -590,9 +618,6 @@ class scan_vbox(gtk.VBox):
 		column_text = gtk.TreeViewColumn("Values")
 		column_combo = gtk.TreeViewColumn("Parameter to change")
 		column_mirror = gtk.TreeViewColumn("Opperation")
-		self.treeview.append_column(column_combo)
-		self.treeview.append_column(column_text)
-		self.treeview.append_column(column_mirror)
 
 		cellrenderer_combo = gtk.CellRendererCombo()
 		cellrenderer_combo.set_property("editable", True)
@@ -601,7 +626,7 @@ class scan_vbox(gtk.VBox):
 		cellrenderer_combo.connect("edited", self.combo_changed, self.liststore_combobox)
 
 		column_combo.pack_start(cellrenderer_combo, False)
-		column_combo.set_min_width(240)
+		#column_combo.set_min_width(240)
 		column_combo.add_attribute(cellrenderer_combo, "text", 0)
 
 		cellrenderer_mirror = gtk.CellRendererCombo()
@@ -609,10 +634,11 @@ class scan_vbox(gtk.VBox):
 		self.rebuild_liststore_op_type()
 		cellrenderer_mirror.set_property("model", self.liststore_op_type)
 		cellrenderer_mirror.set_property("text-column", 0)
+
 		cellrenderer_mirror.connect("edited", self.combo_mirror_changed, self.liststore_combobox)
 
-		column_mirror.pack_start(cellrenderer_mirror, False)
-		column_mirror.set_min_width(240)
+		column_mirror.pack_start(cellrenderer_mirror, True)
+		column_mirror.set_min_width(200)
 		column_mirror.add_attribute(cellrenderer_mirror, "text", 2)
 
 		cellrenderer_text = gtk.CellRendererText()
@@ -620,11 +646,25 @@ class scan_vbox(gtk.VBox):
 		cellrenderer_text.connect("edited", self.text_changed, self.liststore_combobox)
 		cellrenderer_text.props.wrap_width = 400
 		cellrenderer_text.props.wrap_mode = gtk.WRAP_WORD
+
 		column_text.pack_start(cellrenderer_text, False)
-		column_text.set_min_width(240)
+		column_text.set_min_width(400)
 		column_text.add_attribute(cellrenderer_text, "text", 1)
 
+		renderer_enable = gtk.CellRendererToggle()
+		#renderer_enable.set_property("activatable", True)
+		renderer_enable.set_activatable(True)
+		renderer_enable.connect("toggled", self.toggled_cb, self.liststore_combobox)
+		column_enable = gtk.TreeViewColumn("Enabled",renderer_enable)
+		column_enable.set_max_width(50)
+	
+		column_enable.add_attribute(renderer_enable, "active", 3)
+		column_enable.pack_start(renderer_enable, False)
 
+		self.treeview.append_column(column_combo)
+		self.treeview.append_column(column_text)
+		self.treeview.append_column(column_mirror)
+		self.treeview.append_column(column_enable)
 
 		#window.connect("destroy", lambda w: gtk.main_quit())
 		scrolled_window = gtk.ScrolledWindow()

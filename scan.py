@@ -153,12 +153,29 @@ class scan_class(gtk.Window):
 	def callback_run_simulation(self,widget,data):
 		pageNum = self.notebook.get_current_page()
 		tab = self.notebook.get_nth_page(pageNum)
-		tab.simulate(True)
+		tab.simulate(True,True)
 
 	def callback_build_simulation(self,widget,data):
 		pageNum = self.notebook.get_current_page()
 		tab = self.notebook.get_nth_page(pageNum)
-		tab.simulate(False)
+		tab.simulate(False,True)
+
+	def callback_run_simulation_no_build(self,widget,data):
+		pageNum = self.notebook.get_current_page()
+		tab = self.notebook.get_nth_page(pageNum)
+		tab.simulate(True,False)
+
+
+	def callback_clean_simulation(self,widget,data):
+		pageNum = self.notebook.get_current_page()
+		tab = self.notebook.get_nth_page(pageNum)
+		tab.clean_scan_dir()
+
+	def callback_import_from_hpc(self,widget,data):
+		pageNum = self.notebook.get_current_page()
+		tab = self.notebook.get_nth_page(pageNum)
+		tab.import_from_hpc()
+
 
 	def callback_rename_page(self,widget,data):
 		pageNum = self.notebook.get_current_page()
@@ -373,11 +390,14 @@ class scan_class(gtk.Window):
 		    ( "/File/Change dir",     None, self.callback_change_dir, 0, None ),
 		    ( "/File/Close",     None, self.callback_close, 0, None ),
 		    ( "/Simulations/_New",     None, self.callback_add_page, 0, "<StockItem>", "gtk-new" ),
-		    ( "/Simulations/_Delete",     None, self.callback_delete_page, 0, "<StockItem>", "gtk-clear" ),
-		    ( "/Simulations/_Rename",     None, self.callback_rename_page, 0, "<StockItem>", "gtk-edit" ),
-		    ( "/Simulations/_Clone",     None, self.callback_copy_page, 0, "<StockItem>", "gtk-copy" ),
+		    ( "/Simulations/_Delete simulaton",     None, self.callback_delete_page, 0, "<StockItem>", "gtk-delete" ),
+		    ( "/Simulations/_Rename simulation",     None, self.callback_rename_page, 0, "<StockItem>", "gtk-edit" ),
+		    ( "/Simulations/_Clone simulation",     None, self.callback_copy_page, 0, "<StockItem>", "gtk-copy" ),
 		    ( "/Simulations/_Run simulation",     None, self.callback_run_simulation, 0, "<StockItem>", "gtk-media-play" ),
 		    ( "/Simulations/_Build simulation",     None, self.callback_build_simulation, 0, "<StockItem>", "gtk-cdrom" ),
+			( "/Simulations/_Run (no build)",     None, self.callback_run_simulation_no_build, 0, "<StockItem>", "gtk-media-play" ),
+			( "/Simulations/_Clean simulation",     None, self.callback_clean_simulation, 0, "<StockItem>", "gtk-clear" ),
+			( "/Simulations/_Import from hpc",     None, self.callback_import_from_hpc, 0, "<StockItem>", "gtk-clear" ),
 		    ( "/Cluster/_Cluster sleep",     None, self.callback_cluster_sleep, 0, "<StockItem>", "gtk-copy" ),
 		    ( "/Cluster/_Cluster poweroff",     None, self.callback_cluster_poweroff, 0, "<StockItem>", "gtk-copy" ),
 		    ( "/Cluster/_Cluster wake",     None, self.callback_wol, 0, "<StockItem>", "gtk-copy" ),
@@ -423,7 +443,7 @@ class scan_class(gtk.Window):
 		toolbar.insert(sep, pos)
 		pos=pos+1
 
-		delete = gtk.ToolButton(gtk.STOCK_CLEAR)
+		delete = gtk.ToolButton(gtk.STOCK_DELETE)
 		delete.connect("clicked", self.callback_delete_page,None)
 		self.tooltips.set_tip(delete, "Delete simulation")
 		toolbar.insert(delete, pos)

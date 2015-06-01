@@ -202,6 +202,9 @@ class plot_widget(gtk.VBox):
 
 		self.ax=[]
 		number_of_plots=max(self.plot_id)+1
+		if self.plot_token.type=="heat":
+			number_of_plots=1
+
 		if number_of_plots>1:
 			yloc = plt.MaxNLocator(4)
 		else:
@@ -313,6 +316,60 @@ class plot_widget(gtk.VBox):
 				#self.ax[0].plot_surface(x, y, z, rstride=1, cstride=1, cmap=cm.coolwarm,linewidth=0, antialiased=False)
 				#self.ax[0].invert_yaxis()
 				#self.ax[0].xaxis.tick_top()
+		elif self.plot_token.type=="heat":
+			x=[]
+			y=[]
+			z=[]
+			x_start=450
+			x_stop=600
+			x_points=50.0
+			pos=x_start
+			x_step=(x_stop-x_start)/x_points
+			while(pos<x_stop):
+				x.append(pos)
+				pos=pos+x_step
+
+			y_start=-1
+			y_stop=1
+			y_points=30.0
+			pos=y_start
+			y_step=(y_stop-y_start)/y_points
+			while(pos<y_stop):
+				y.append(pos)
+				pos=pos+y_step
+
+			data = zeros((len(y),len(x)))
+
+			for ii in range(0,len(self.input_files)):
+				t=[]
+				s=[]
+				z=[]
+				if self.read_data_file(t,s,z,ii)==True:
+					print self.input_files[ii]
+					for points in range(0,len(t)):
+						found=0
+						for x_pos in range(0,len(x)):
+							if x[x_pos]>t[points]:
+								found=found+1
+								break
+
+						if y[0]<=s[points]:
+							for y_pos in range(0,len(y)):
+								if y[y_pos]>s[points]:
+									found=found+1
+									break
+						if found==2:
+							print "adding data at",x_pos,y_pos
+							data[y_pos][x_pos]=data[y_pos][x_pos]+1
+						else:
+							print "not adding point",t[points],s[points]
+
+			print x
+			print y
+			print data
+			x_grid, y_grid = mgrid[y_start:y_stop:complex(0, len(y)), x_start:x_stop:complex(0, len(x))]
+			self.ax[0].pcolor(y_grid,x_grid,data)
+
 		else:
 			x=[]
 			y=[]

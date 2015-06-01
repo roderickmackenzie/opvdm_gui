@@ -1479,6 +1479,7 @@ class NotebookExample:
 			self.window2.show()
 
 def main():
+	random.seed()
 	gtk.main()
 	return 0
 

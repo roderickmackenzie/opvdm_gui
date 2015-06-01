@@ -45,7 +45,7 @@ def set_plot_auto_close(value):
 def plot_gen(input_files,plot_labels,plot_token,config_file,units):
 	my_config_file=config_file
 	if config_file=="auto":
-		my_config_file=input_files[0].split(".")[0]+".oplot"
+		my_config_file=os.path.splitext(input_files[0])[0]+".oplot"
 
 	if (len(input_files)==1):
 		if os.path.splitext(input_files[0])[1]==".plot":

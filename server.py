@@ -43,6 +43,13 @@ import subprocess
 from util import gui_print_path
 from monitor_dir import _FooThread
 
+def server_find_simulations_to_run(commands,search_path):
+	for root, dirs, files in os.walk(search_path):
+		for my_file in files:
+			if my_file.endswith("sim.opvdm")==True:
+				full_name=os.path.join(root, my_file)
+				commands.append(root)
+
 class server:
 	def __init__(self):
 		self.running=False

@@ -33,6 +33,7 @@ from scan_item import scan_items_get_list
 from scan_item import scan_items_index_item
 from inp import inp_get_token_value
 from inp import inp_get_token_array
+from util import str2bool
 
 def tree_load_program(program_list,sim_dir):
 	file_name=os.path.join(sim_dir,'opvdm_gui_config.inp')
@@ -48,13 +49,13 @@ def tree_load_program(program_list,sim_dir):
 		pos=0
 		mylen=int(config[0])
 		pos=pos+1
+		
 		for i in range(0, mylen):
-			program_list.append([config[pos], config[pos+1], config[pos+2]])
-			pos=pos+3
+			program_list.append([config[pos], config[pos+1], config[pos+2], str2bool(config[pos+3])])
+			pos=pos+4
 
 def tree_gen(program_list,base_dir,sim_dir):
 	sim_dir=os.path.abspath(sim_dir)	# we are about to traverse the directory structure better to have the abs path
-	commands=[]
 	print "here",program_list
 	tree_items=[[],[],[]]
 	for i in range(0,len(program_list)):
@@ -82,8 +83,8 @@ def tree_gen(program_list,base_dir,sim_dir):
 			tree_items[2].append(program_list[i][2])
 
 	print "tree items=",tree_items
-	tree(program_list,tree_items,commands,base_dir,0,sim_dir,"","")
-	return commands
+	tree(program_list,tree_items,base_dir,0,sim_dir,"","")
+	return True
 
 def tree_apply_mirror(program_list):
 	param_list=scan_items_get_list()
@@ -162,7 +163,7 @@ def copy_simulation(base_dir,cur_dir):
 
 	shutil.copy(os.path.join(base_dir, "sim.opvdm"), cur_dir)
 
-def tree(program_list,tree_items,commands,base_dir,level,path,var_to_change,value_to_change):
+def tree(program_list,tree_items,base_dir,level,path,var_to_change,value_to_change):
 		param_list=scan_items_get_list()
 		print level,tree_items
 		i=tree_items[1][level]
@@ -178,7 +179,7 @@ def tree(program_list,tree_items,commands,base_dir,level,path,var_to_change,valu
 			pass_value_to_change=value_to_change+" "+ii
 
 			if ((level+1)<len(tree_items[0])):
-					tree(program_list,tree_items,commands,base_dir,level+1,cur_dir,pass_var_to_change,pass_value_to_change)
+					tree(program_list,tree_items,base_dir,level+1,cur_dir,pass_var_to_change,pass_value_to_change)
 			else:
 				new_values=pass_value_to_change.split()
 				pos=pass_var_to_change.split()
@@ -197,8 +198,6 @@ def tree(program_list,tree_items,commands,base_dir,level,path,var_to_change,valu
 				
 				inp_update_token_value("physdir.inp", "#physdir", os.path.join(base_dir,"phys"),1)
 				inp_update_token_value("dump.inp", "#plot", "0",1)
-
-				commands.append(os.getcwd())
 
 			if level==0:
 				f = open(os.path.join(cur_dir,'scan.inp'),'w')

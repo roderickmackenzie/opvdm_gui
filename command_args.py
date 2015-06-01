@@ -48,6 +48,7 @@ import gtk
 from plot_state import plot_state
 from plot_io import plot_load_info
 from scan_plot import scan_gen_plot_data
+from server import server_find_simulations_to_run
 
 def command_args(argc,argv):
 	if argc>=2:
@@ -66,6 +67,10 @@ def command_args(argc,argv):
 			print "\t--dump-tab (output file)\t\tdumps simulation parameters as jpg"
 			print "\t--import-scandirs\t\tOnly imports the scan directories"
 			print "\t--clean-scandirs\t\tDeletes the content of all scan dirs"
+			print "\t--scan-plot\t\truns an oplot file"
+			print "\t\t\tusage --scan-plot /path/to/oplot/file.oplot "
+			print "\t--run-scan\t\truns a scan"
+			print "\t\t\tusage --run-scan /path/containing/base/files/ /path/to/scan/dir/ "
 
 			print ""
 			print "Additional information about opvdm is available at http://www.opvdm.com."
@@ -146,9 +151,9 @@ def command_args(argc,argv):
 			sys.exit(0)
 
 		if argv[1]=="--run-scan":
-			scan_dir_path=argv[2]
+			scan_dir_path=argv[3]	#program file
 			program_list=[]
-			pwd=os.getcwd()
+			base_dir=argv[2]				#base dir
 			exe_command , exe_name  =  set_exe_command()
 			scan_item_load(os.path.join(scan_dir_path,"scan_items.inp"))
 			tree_load_program(program_list,scan_dir_path)
@@ -156,10 +161,12 @@ def command_args(argc,argv):
 			watch_dir=os.path.join(os.getcwd(),scan_dir_path)
 			#print program_list,pwd,scan_dir_path
 			#sys.exit(0)
-			print pwd,scan_dir_path
-			print os.getcwd(),os.path.join(scan_dir_path)
-			#commands=tree_gen(program_list,os.getcwd(),os.path.join(os.getcwd(),"suns"))
-			commands=tree_gen(program_list,pwd,scan_dir_path)
+			#print pwd,scan_dir_path
+			#print os.getcwd(),os.path.join(scan_dir_path)
+			#tree_gen(program_list,os.getcwd(),os.path.join(os.getcwd(),"suns"))
+			tree_gen(program_list,base_dir,scan_dir_path)
+			commands=[]
+			server_find_simulations_to_run(commands,scan_dir_path)
 			myserver=server()
 			myserver.init(watch_dir)
 			myserver.clear_cache()
@@ -173,8 +180,11 @@ def command_args(argc,argv):
 			plot_token=plot_state()
 			oplot_file=argv[2]
 			if plot_load_info(plot_token,oplot_file)==True:
+				print "file0=",plot_token.file0,"<"
 				plot_files, plot_labels, save_file = scan_gen_plot_data(plot_token,os.path.dirname(oplot_file))
 				print "written data to",save_file
+			else:
+				print "Problem loading oplot file"
 			sys.exit(0)
 
 
