@@ -49,16 +49,17 @@ import zipfile
 from util import zip_remove_file
 from util import copy_scan_dir
 from util import delete_second_level_link_tree
+import tempfile
 
 def copy_check_ver(orig,file_name,dest,only_over_write,clever):
 	#remove the dest file if both exist ready to copy
 	do_copy=True
 	orig_ver=""
 	dest_ver=""
-	orig_file=orig+file_name
-	dest_file=dest+file_name
-	orig_zip_file=orig+"sim.opvdm"
-	dest_zip_file=dest+"sim.opvdm"
+	orig_file=os.path.join(orig,file_name)
+	dest_file=os.path.join(dest,file_name)
+	orig_zip_file=os.path.join(orig,"sim.opvdm")
+	dest_zip_file=os.path.join(dest,"sim.opvdm")
 	in_dest_zip_file=False
 	orig_exists=False
 	dest_exists=False
@@ -176,7 +177,7 @@ def copy_check_ver(orig,file_name,dest,only_over_write,clever):
 
 def import_archive(file_name,dest_dir,only_over_write):
 	if file_name.endswith('.tar.gz')==True:
-		tmp_dir="/tmp/opvdm"
+		tmp_dir=os.path.join(tempfile.gettempdir(), "opvdm")
 
 		if os.path.exists(tmp_dir):
 			shutil.rmtree(tmp_dir)
@@ -188,7 +189,7 @@ def import_archive(file_name,dest_dir,only_over_write):
 		os.system(cmd)
 
 		pattern='sim.opvdm'
-		path='/tmp/opvdm/'
+		path=tmp_dir
 		res=""
 		for root, dirs, files in os.walk(path):
 			for name in files:
@@ -207,7 +208,6 @@ def import_archive(file_name,dest_dir,only_over_write):
 
 	for i in files:
 		copy_check_ver(sim_path,i,dest_dir,only_over_write,True)
-
 
 	files=[ "device_epitaxy.inp", "optics_epitaxy.inp", "fit.inp", "constraints.inp","duplicate.inp", "thermal.inp","lumo0.inp","homo0.inp" ]
 

@@ -90,7 +90,8 @@ def command_args(argc,argv):
 			export_as(argv[2])
 			sys.exit(0)
 		if argv[1]=="--import":
-			import_archive(argv[2],"./",False)
+			
+			import_archive(argv[2],os.getcwd(),False)
 			sys.exit(0)
 		if argv[1]=="--patch":
 			import_archive(argv[2],argv[3],True)

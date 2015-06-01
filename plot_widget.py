@@ -186,224 +186,225 @@ class plot_widget(gtk.VBox):
 			return False
 
 	def do_plot(self):
-		print "CONVERT in do plot!!!!!!!!!!!",type(self.plot_token.key_units)
-		print "in do plot"
-		plot_number=0
+		if self.plot_token!=None:
+			print "CONVERT in do plot!!!!!!!!!!!",type(self.plot_token.key_units)
+			print "in do plot"
+			plot_number=0
 
-		self.fig.clf()
-		self.fig.subplots_adjust(bottom=0.2)
-		self.fig.subplots_adjust(bottom=0.2)
-		self.fig.subplots_adjust(left=0.1)
-		self.fig.subplots_adjust(hspace = .001)
-		if self.plot_title=="":
-			self.fig.suptitle(self.plot_token.title)
-		else:
-			self.fig.suptitle(self.plot_title)
-
-		self.ax=[]
-		number_of_plots=max(self.plot_id)+1
-		if self.plot_token.type=="heat":
-			number_of_plots=1
-
-		if number_of_plots>1:
-			yloc = plt.MaxNLocator(4)
-		else:
-			yloc = plt.MaxNLocator(10)
-
-
-
-
-		for i in range(0,number_of_plots):
-			self.ax.append(self.fig.add_subplot(number_of_plots,1,i+1, axisbg='white'))
-			#Only place label on bottom plot
-			if i==number_of_plots-1:
-				self.ax[i].set_xlabel(self.plot_token.x_label+" ("+self.plot_token.x_units+")")
-
+			self.fig.clf()
+			self.fig.subplots_adjust(bottom=0.2)
+			self.fig.subplots_adjust(bottom=0.2)
+			self.fig.subplots_adjust(left=0.1)
+			self.fig.subplots_adjust(hspace = .001)
+			if self.plot_title=="":
+				self.fig.suptitle(self.plot_token.title)
 			else:
-				self.ax[i].tick_params(axis='x', which='both', bottom='off', top='off',labelbottom='off') # labels along the bottom edge are off
+				self.fig.suptitle(self.plot_title)
 
-			#Only place y label on center plot
-			if self.plot_token.normalize==True or self.plot_token.norm_to_peak_of_all_data==True:
-				y_text="Normalized "+self.plot_token.y_label
-				y_units="au"
+			self.ax=[]
+			number_of_plots=max(self.plot_id)+1
+			if self.plot_token.type=="heat":
+				number_of_plots=1
+
+			if number_of_plots>1:
+				yloc = plt.MaxNLocator(4)
 			else:
-				y_text=self.plot_token.y_label
-				y_units=self.plot_token.y_units
-			if i==math.trunc(number_of_plots/2):
-				self.ax[i].set_ylabel(y_text+" ("+y_units+")")
-
-			if self.plot_token.logx==True:
-				self.ax[i].set_xscale("log")
-
-			if self.plot_token.logy==True:
-				self.ax[i].set_yscale("log")
+				yloc = plt.MaxNLocator(10)
 
 
-		lines=[]
-		files=[]
 
-		my_max=1.0
-		print "token type==",self.plot_token.type
-		if self.plot_token.type=="xy":
 
-			all_max=1.0
-			if self.plot_token.norm_to_peak_of_all_data==True:
-				m=[]
-				my_max=-1e40
+			for i in range(0,number_of_plots):
+				self.ax.append(self.fig.add_subplot(number_of_plots,1,i+1, axisbg='white'))
+				#Only place label on bottom plot
+				if i==number_of_plots-1:
+					self.ax[i].set_xlabel(self.plot_token.x_label+" ("+self.plot_token.x_units+")")
+
+				else:
+					self.ax[i].tick_params(axis='x', which='both', bottom='off', top='off',labelbottom='off') # labels along the bottom edge are off
+
+				#Only place y label on center plot
+				if self.plot_token.normalize==True or self.plot_token.norm_to_peak_of_all_data==True:
+					y_text="Normalized "+self.plot_token.y_label
+					y_units="au"
+				else:
+					y_text=self.plot_token.y_label
+					y_units=self.plot_token.y_units
+				if i==math.trunc(number_of_plots/2):
+					self.ax[i].set_ylabel(y_text+" ("+y_units+")")
+
+				if self.plot_token.logx==True:
+					self.ax[i].set_xscale("log")
+
+				if self.plot_token.logy==True:
+					self.ax[i].set_yscale("log")
+
+
+			lines=[]
+			files=[]
+
+			my_max=1.0
+			print "token type==",self.plot_token.type
+			if self.plot_token.type=="xy":
+
+				all_max=1.0
+				if self.plot_token.norm_to_peak_of_all_data==True:
+					m=[]
+					my_max=-1e40
+					for i in range(0, len(self.input_files)):
+						t=[]
+						s=[]
+						z=[]
+						if self.read_data_file(t,s,z,i)==True:
+							if max(s)>my_max:
+								my_max=max(s)
+					all_max=my_max
+
 				for i in range(0, len(self.input_files)):
+					#t,s = loadtxt(self.input_files[i], unpack=True)
 					t=[]
 					s=[]
 					z=[]
 					if self.read_data_file(t,s,z,i)==True:
-						if max(s)>my_max:
-							my_max=max(s)
-				all_max=my_max
+						#print "z==",z
+						if all_max!=1.0:
+							for ii in range(0,len(s)):
+								s[ii]=s[ii]/all_max
+						#print len(self.ax),plot_number,i,len(self.color),len(self.marker)
+						Ec, = self.ax[plot_number].plot(t,s, linewidth=3 ,alpha=1.0,color=self.color[i],marker=self.marker[i])
 
-			for i in range(0, len(self.input_files)):
-				#t,s = loadtxt(self.input_files[i], unpack=True)
-				t=[]
-				s=[]
+						#label data if required
+						if self.plot_token.label_data==True:
+							for ii in range(0,len(t)):
+								if z[ii]!="":
+									self.ax[plot_number].annotate(fx_with_units(float(z[ii])),xy = (t[ii], s[ii]), xytext = (-20, 20),textcoords = 'offset points', ha = 'right', va = 'bottom',bbox = dict(boxstyle = 'round,pad=0.5', fc = 'yellow', alpha = 0.5),arrowprops = dict(arrowstyle = '->', connectionstyle = 'arc3,rad=0'))
+
+						#self.ax[plot_number].annotate(self.labels[i],xy = (t[len(t)/2], s[len(t)/2]), xytext = (-20, 20),textcoords = 'offset points', ha = 'right', va = 'bottom',bbox = dict(boxstyle = 'round,pad=0.5', fc = 'yellow', alpha = 0.5),arrowprops = dict(arrowstyle = '->', connectionstyle = 'arc3,rad=0'))
+
+						if number_of_plots>1:
+							self.ax[plot_number].yaxis.set_major_formatter(ticker.FormatStrFormatter('%0.1e'))
+							if min(s)!=max(s):
+								self.ax[plot_number].yaxis.set_ticks(arange(min(s), max(s), (max(s)-min(s))/4.0 ))
+
+						if self.labels[i]!="":
+							print self.labels[i]
+							print self.plot_token.key_units
+							files.append("$"+numbers_to_latex(str(self.labels[i]))+" "+self.plot_token.key_units+"$")
+
+							lines.append(Ec)
+
+				self.lx = None
+				self.ly = None
+				if self.plot_token.legend_pos=="No key":
+					self.ax[plot_number].legend_ = None
+				else:
+					legend=self.fig.legend(lines, files, self.plot_token.legend_pos)
+			elif self.plot_token.type=="3d":
+				x=[]
+				y=[]
 				z=[]
-				if self.read_data_file(t,s,z,i)==True:
-					#print "z==",z
-					if all_max!=1.0:
-						for ii in range(0,len(s)):
-							s[ii]=s[ii]/all_max
-					#print len(self.ax),plot_number,i,len(self.color),len(self.marker)
-					Ec, = self.ax[plot_number].plot(t,s, linewidth=3 ,alpha=1.0,color=self.color[i],marker=self.marker[i])
+				print "3d data!!!!!!!!!!!!!!"
+				if read_data_2d(x,y,z,self.input_files[0])==True:
 
-					#label data if required
-					if self.plot_token.label_data==True:
-						for ii in range(0,len(t)):
-							if z[ii]!="":
-								self.ax[plot_number].annotate(fx_with_units(float(z[ii])),xy = (t[ii], s[ii]), xytext = (-20, 20),textcoords = 'offset points', ha = 'right', va = 'bottom',bbox = dict(boxstyle = 'round,pad=0.5', fc = 'yellow', alpha = 0.5),arrowprops = dict(arrowstyle = '->', connectionstyle = 'arc3,rad=0'))
+					x_len=len(x)
+					y_len=len(y)
+					data = zeros((x_len,y_len))
+					for xx in range(0,x_len):
+						for yy in range(0,y_len):
+							data[xx][yy]=z[xx][yy]
+					self.ax[0].pcolor(data)
 
-					#self.ax[plot_number].annotate(self.labels[i],xy = (t[len(t)/2], s[len(t)/2]), xytext = (-20, 20),textcoords = 'offset points', ha = 'right', va = 'bottom',bbox = dict(boxstyle = 'round,pad=0.5', fc = 'yellow', alpha = 0.5),arrowprops = dict(arrowstyle = '->', connectionstyle = 'arc3,rad=0'))
-
-					if number_of_plots>1:
-						self.ax[plot_number].yaxis.set_major_formatter(ticker.FormatStrFormatter('%0.1e'))
-						if min(s)!=max(s):
-							self.ax[plot_number].yaxis.set_ticks(arange(min(s), max(s), (max(s)-min(s))/4.0 ))
-
-					if self.labels[i]!="":
-						print self.labels[i]
-						print self.plot_token.key_units
-						files.append("$"+numbers_to_latex(str(self.labels[i]))+" "+self.plot_token.key_units+"$")
-
-						lines.append(Ec)
-
-			self.lx = None
-			self.ly = None
-			if self.plot_token.legend_pos=="No key":
-				self.ax[plot_number].legend_ = None
-			else:
-				legend=self.fig.legend(lines, files, self.plot_token.legend_pos)
-		elif self.plot_token.type=="3d":
-			x=[]
-			y=[]
-			z=[]
-			print "3d data!!!!!!!!!!!!!!"
-			if read_data_2d(x,y,z,self.input_files[0])==True:
-
-				x_len=len(x)
-				y_len=len(y)
-				data = zeros((x_len,y_len))
-				for xx in range(0,x_len):
-					for yy in range(0,y_len):
-						data[xx][yy]=z[xx][yy]
-				self.ax[0].pcolor(data)
-
-				#self.ax[0].plot_surface(x, y, z, rstride=1, cstride=1, cmap=cm.coolwarm,linewidth=0, antialiased=False)
-				#self.ax[0].invert_yaxis()
-				#self.ax[0].xaxis.tick_top()
-		elif self.plot_token.type=="heat":
-			x=[]
-			y=[]
-			z=[]
-			x_start=450
-			x_stop=600
-			x_points=50.0
-			pos=x_start
-			x_step=(x_stop-x_start)/x_points
-			while(pos<x_stop):
-				x.append(pos)
-				pos=pos+x_step
-
-			y_start=-1
-			y_stop=1
-			y_points=30.0
-			pos=y_start
-			y_step=(y_stop-y_start)/y_points
-			while(pos<y_stop):
-				y.append(pos)
-				pos=pos+y_step
-
-			data = zeros((len(y),len(x)))
-
-			for ii in range(0,len(self.input_files)):
-				t=[]
-				s=[]
+					#self.ax[0].plot_surface(x, y, z, rstride=1, cstride=1, cmap=cm.coolwarm,linewidth=0, antialiased=False)
+					#self.ax[0].invert_yaxis()
+					#self.ax[0].xaxis.tick_top()
+			elif self.plot_token.type=="heat":
+				x=[]
+				y=[]
 				z=[]
-				if self.read_data_file(t,s,z,ii)==True:
-					print self.input_files[ii]
-					for points in range(0,len(t)):
-						found=0
-						for x_pos in range(0,len(x)):
-							if x[x_pos]>t[points]:
-								found=found+1
-								break
+				x_start=450
+				x_stop=600
+				x_points=50.0
+				pos=x_start
+				x_step=(x_stop-x_start)/x_points
+				while(pos<x_stop):
+					x.append(pos)
+					pos=pos+x_step
 
-						if y[0]<=s[points]:
-							for y_pos in range(0,len(y)):
-								if y[y_pos]>s[points]:
+				y_start=-1
+				y_stop=1
+				y_points=30.0
+				pos=y_start
+				y_step=(y_stop-y_start)/y_points
+				while(pos<y_stop):
+					y.append(pos)
+					pos=pos+y_step
+
+				data = zeros((len(y),len(x)))
+
+				for ii in range(0,len(self.input_files)):
+					t=[]
+					s=[]
+					z=[]
+					if self.read_data_file(t,s,z,ii)==True:
+						print self.input_files[ii]
+						for points in range(0,len(t)):
+							found=0
+							for x_pos in range(0,len(x)):
+								if x[x_pos]>t[points]:
 									found=found+1
 									break
-						if found==2:
-							print "adding data at",x_pos,y_pos
-							data[y_pos][x_pos]=data[y_pos][x_pos]+1
-						else:
-							print "not adding point",t[points],s[points]
 
-			print x
-			print y
-			print data
-			x_grid, y_grid = mgrid[y_start:y_stop:complex(0, len(y)), x_start:x_stop:complex(0, len(x))]
-			self.ax[0].pcolor(y_grid,x_grid,data)
+							if y[0]<=s[points]:
+								for y_pos in range(0,len(y)):
+									if y[y_pos]>s[points]:
+										found=found+1
+										break
+							if found==2:
+								print "adding data at",x_pos,y_pos
+								data[y_pos][x_pos]=data[y_pos][x_pos]+1
+							else:
+								print "not adding point",t[points],s[points]
 
-		else:
-			x=[]
-			y=[]
-			z=[]
+				print x
+				print y
+				print data
+				x_grid, y_grid = mgrid[y_start:y_stop:complex(0, len(y)), x_start:x_stop:complex(0, len(x))]
+				self.ax[0].pcolor(y_grid,x_grid,data)
 
-			if read_data_2d(x,y,z,self.input_files[0])==True:
-				maxx=-1
-				maxy=-1
-				for i in range(0,len(z)):
-					if x[i]>maxx:
-						maxx=x[i]
+			else:
+				x=[]
+				y=[]
+				z=[]
 
-					if y[i]>maxy:
-						maxy=y[i]
+				if read_data_2d(x,y,z,self.input_files[0])==True:
+					maxx=-1
+					maxy=-1
+					for i in range(0,len(z)):
+						if x[i]>maxx:
+							maxx=x[i]
 
-				maxx=maxx+1
-				maxy=maxy+1
+						if y[i]>maxy:
+							maxy=y[i]
 
-				data = zeros((maxy,maxx))
+					maxx=maxx+1
+					maxy=maxy+1
+
+					data = zeros((maxy,maxx))
 
 
-				for i in range(0,len(z)):
-					data[y[i]][x[i]]= random.random()+5
-					self.ax[0].text(x[i], y[i]+float(maxy)/float(len(z))+0.1,'%.1e' %  z[i], fontsize=12)
+					for i in range(0,len(z)):
+						data[y[i]][x[i]]= random.random()+5
+						self.ax[0].text(x[i], y[i]+float(maxy)/float(len(z))+0.1,'%.1e' %  z[i], fontsize=12)
 
-				#fig, ax = plt.subplots()
-				self.ax[0].pcolor(data,cmap=plt.cm.Blues)
+					#fig, ax = plt.subplots()
+					self.ax[0].pcolor(data,cmap=plt.cm.Blues)
 
-				self.ax[0].invert_yaxis()
-				self.ax[0].xaxis.tick_top()
+					self.ax[0].invert_yaxis()
+					self.ax[0].xaxis.tick_top()
 
-		#self.fig.tight_layout(pad=0.0, w_pad=0.0, h_pad=0.0)
-		self.fig.canvas.draw()
-		print "exit do plot"
+			#self.fig.tight_layout(pad=0.0, w_pad=0.0, h_pad=0.0)
+			self.fig.canvas.draw()
+			print "exit do plot"
 
 	def callback_plot_save(self, widget, data=None):
 		dialog = gtk.FileChooserDialog("Directory to make a gnuplot script..",
@@ -439,57 +440,58 @@ class plot_widget(gtk.VBox):
 		dialog.destroy()
 
 	def load_data(self,input_files,plot_id,labels,plot_token,config_file,units):
-		print "CONVERTg!!!!!!!!!!!",type(plot_token.key_units)
-		self.plot_token=plot_token
-		print ">>>>>>>>>>>>>>>>>>>>sda>>>>>>>>>>>>>>>>>>>>sdads>",self.plot_token.x_label
-		self.config_file=config_file
-		print "CONVERTg!!!!!!!!!!!",type(self.plot_token.key_units)
-		self.output_file=os.path.splitext(config_file)[0]+".png"
-		self.labels=labels
-		print "CONVERTg!!!!!!!!!!!",type(self.plot_token.key_units)
-		self.plot_id=plot_id
-		print "CONVERTg!!!!!!!!!!!",type(self.plot_token.key_units)
-		if len(input_files)!=len(labels):
-			return
-		self.input_files=input_files
-		#ret=plot_populate_plot_token(plot_token,self.input_files[0])
-		print ">>>>>>>>>>>>>>>>>>>>sda>>>>>>>>>>>>>>>>>>>>sdads>",self.plot_token.x_label
-		#if ret==True:
-		#print "Rod",input_files
-		title=self.plot_token.title
-		print "CONVERTg!!!!!!!!!!!",type(self.plot_token.key_units)
-		self.win.set_title(title+" - www.opvdm.com")
-		print "CONVERTg!!!!!!!!!!!",type(self.plot_token.key_units)
-		lines=[]
+		if os.path.isfile(input_files[0]):
+			print "CONVERTg!!!!!!!!!!!",type(plot_token.key_units)
+			self.plot_token=plot_token
+			print ">>>>>>>>>>>>>>>>>>>>sda>>>>>>>>>>>>>>>>>>>>sdads>",self.plot_token.x_label
+			self.config_file=config_file
+			print "CONVERTg!!!!!!!!!!!",type(self.plot_token.key_units)
+			self.output_file=os.path.splitext(config_file)[0]+".png"
+			self.labels=labels
+			print "CONVERTg!!!!!!!!!!!",type(self.plot_token.key_units)
+			self.plot_id=plot_id
+			print "CONVERTg!!!!!!!!!!!",type(self.plot_token.key_units)
+			if len(input_files)!=len(labels):
+				return
+			self.input_files=input_files
+			#ret=plot_populate_plot_token(plot_token,self.input_files[0])
+			print ">>>>>>>>>>>>>>>>>>>>sda>>>>>>>>>>>>>>>>>>>>sdads>",self.plot_token.x_label
+			#if ret==True:
+			#print "Rod",input_files
+			title=self.plot_token.title
+			print "CONVERTg!!!!!!!!!!!",type(self.plot_token.key_units)
+			self.win.set_title(title+" - www.opvdm.com")
+			print "CONVERTg!!!!!!!!!!!",type(self.plot_token.key_units)
+			lines=[]
 
-		ret=plot_load_info(self.plot_token,input_files[0])
-		myitem=self.item_factory.get_item("/Math/Subtract first point")
-		myitem.set_active(self.plot_token.subtract_first_point)
+			ret=plot_load_info(self.plot_token,input_files[0])
+			myitem=self.item_factory.get_item("/Math/Subtract first point")
+			myitem.set_active(self.plot_token.subtract_first_point)
 
-		myitem=self.item_factory.get_item("/Math/Add min point")
-		myitem.set_active(self.plot_token.add_min)
+			myitem=self.item_factory.get_item("/Math/Add min point")
+			myitem.set_active(self.plot_token.add_min)
 
-		myitem=self.item_factory.get_item("/Math/Invert y-axis")
-		myitem.set_active(self.plot_token.invert_y)
+			myitem=self.item_factory.get_item("/Math/Invert y-axis")
+			myitem.set_active(self.plot_token.invert_y)
 
-		myitem=self.item_factory.get_item("/Math/Norm to 1.0 y")
-		myitem.set_active(self.plot_token.normalize)
+			myitem=self.item_factory.get_item("/Math/Norm to 1.0 y")
+			myitem.set_active(self.plot_token.normalize)
 
-		myitem=self.item_factory.get_item("/Math/Norm to peak of all data")
-		myitem.set_active(self.plot_token.norm_to_peak_of_all_data)
+			myitem=self.item_factory.get_item("/Math/Norm to peak of all data")
+			myitem.set_active(self.plot_token.norm_to_peak_of_all_data)
 
-		print "Loaded OK",self.config_file
+			print "Loaded OK",self.config_file
 
-		if self.plot_token.key_units=="":
-			self.plot_token.key_units=pygtk_to_latex_subscript(units)
+			if self.plot_token.key_units=="":
+				self.plot_token.key_units=pygtk_to_latex_subscript(units)
 
-		test_file=self.input_files[0]
-		for i in range(0,len(self.input_files)):
-			if os.path.isfile(self.input_files[i]):
-				test_file=self.input_files[i]
+			test_file=self.input_files[0]
+			for i in range(0,len(self.input_files)):
+				if os.path.isfile(self.input_files[i]):
+					test_file=self.input_files[i]
 
-		print "test_file=",test_file
-		print "Exit here"
+			print "test_file=",test_file
+			print "Exit here"
 
 
 	def gen_colors_black(self,repeat_lines):
@@ -634,7 +636,6 @@ class plot_widget(gtk.VBox):
 
 	def callback_refresh(self, widget, data=None):
 		plot_save_oplot_file(self.config_file,self.plot_token)
-		print "CONVERTf!!!!!!!!!!!",type(self.plot_token.key_units)
 		self.do_plot()
 
 	def init(self,in_window):
@@ -650,7 +651,7 @@ class plot_widget(gtk.VBox):
 		self.toolbar.set_size_request(-1, 50)
 		self.toolbar.show()
 		self.config_file=""
-		
+		self.plot_token=None
 
 		self.fig = Figure(figsize=(2.5,2), dpi=100)
 
