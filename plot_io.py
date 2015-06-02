@@ -32,13 +32,15 @@ from util import zip_get_data_file
 from util import str2bool
 from inp import inp_save_lines
 
-def plot_load_info(plot_token,file_name):
+def plot_load_info(plot_token,file_name_in):
+	file_name=os.path.splitext(file_name_in)[0]+".dat"
+
 	ret=False
+
 	config_file=os.path.splitext(file_name)[0]+".oplot"
 	ret=plot_load_oplot_file(plot_token,config_file)
 	if ret==False:
 		ret=get_plot_file_info(plot_token,file_name)
-		plot_save_oplot_file(file_name,plot_token)
 	return ret
 
 def plot_load_oplot_file(plot_token,file_name):
@@ -75,7 +77,6 @@ def plot_load_oplot_file(plot_token,file_name):
 
 def plot_save_oplot_file(config_file,plot_token):
 	save_name=config_file
-	print "save name",save_name
 	if save_name!="":
 		if save_name.endswith(".oplot")==False:
 			save_name=save_name.split(".")[0]+".oplot"
@@ -178,7 +179,6 @@ def get_plot_file_info(output,file_name):
 					if (command[0]=="#section_two"):
 						output.section_two=command[1]
 
-			#print "Data read from file"
 			return True
 
 	return False

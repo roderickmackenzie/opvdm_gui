@@ -30,7 +30,6 @@ import shutil
 from search import return_file_list
 from plot import check_info_file
 from util import find_data_file
-from plot_gen import plot_gen
 from token_lib import tokens
 from win_lin import running_on_linux
 from inp import inp_get_token_value
@@ -136,7 +135,6 @@ def gen_infofile_plot(file_list_in,base_dir,plot_token):
 
 	save_file=os.path.join(base_dir,os.path.splitext(file_name)[0])+".oplot"
 	#print "save path",save,plot_files
-	#plot_gen(plot_files,plot_labels,plot_token,save_file)
 
 	plot_populate_plot_token(plot_token,None)
 
@@ -208,6 +206,5 @@ def scan_gen_plot_data(plot_token,base_path):
 
 		save_file=os.path.join(base_path,os.path.splitext(os.path.basename(plot_files[0]))[0])+".oplot"
 		
-		#plot_gen(plot_files,plot_labels,plot_token,save_file)
 
 	return plot_files, plot_labels, save_file

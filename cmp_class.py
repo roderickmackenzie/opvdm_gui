@@ -186,7 +186,9 @@ class cmp_class(gtk.Window):
 
 		print self.file_names
 		print plot_id
-		self.plot.load_data(self.file_names,plot_id,labels,self.plot_token,"","")
+		self.plot.plot_labels(labels)
+		self.plot.set_plot_ids(plot_id)
+		self.plot.load_data(self.file_names,self.plot_token,"","")
 
 
 

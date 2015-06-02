@@ -58,7 +58,7 @@ from scan_item import scan_item_save
 from scan_plot import scan_gen_plot_data
 from scan_io import scan_clean_dir
 from server import server_find_simulations_to_run
-
+from plot_io import plot_save_oplot_file
 class scan_vbox(gtk.VBox):
 
 	icon_theme = gtk.icon_theme_get_default()
@@ -150,10 +150,12 @@ class scan_vbox(gtk.VBox):
 		self.rebuild_liststore_op_type()
 
 	def plot_results(self,plot_token):
-		plot_files, plot_labels, save_file = scan_gen_plot_data(plot_token,self.sim_dir)
-		units=self.get_units()
-
-		plot_gen(plot_files,plot_labels,plot_token,save_file,units)
+		plot_token.key_units=self.get_units()
+		print "here!!!!!!!!!!"
+		plot_files, plot_labels, config_file = scan_gen_plot_data(plot_token,self.sim_dir)
+		print plot_files, plot_labels
+		plot_save_oplot_file(config_file,plot_token)
+		plot_gen(plot_files,plot_labels,config_file)
 		self.plot_open.set_sensitive(True)
 
 		self.last_plot_data=plot_token
@@ -281,6 +283,7 @@ class scan_vbox(gtk.VBox):
 		self.plot_results(self.last_plot_data)
 
 	def callback_last_menu_click(self, widget, data):
+		print "here one!"
 		self.plot_results(data)
 
 	def callback_reopen_xy_window(self, widget, data=None):

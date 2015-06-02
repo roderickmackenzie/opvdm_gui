@@ -42,7 +42,7 @@ def set_plot_auto_close(value):
 	global destroy
 	destroy=value
 
-def plot_gen(input_files,plot_labels,plot_token,config_file,units):
+def plot_gen(input_files,plot_labels,config_file):
 	my_config_file=config_file
 	if config_file=="auto":
 		my_config_file=os.path.splitext(input_files[0])[0]+".oplot"
@@ -53,15 +53,15 @@ def plot_gen(input_files,plot_labels,plot_token,config_file,units):
 			cmd = 'gnuplot -persist '+plot_file
 			os.system(cmd)
 			return
+
 	global window
 	global destroy
 	if window!=None:
 		if window.shown==True:
 			if destroy==True:
 				window.input_files=input_files
-				window.plot_token=plot_token
-
-				window.plot.load_data(input_files,plot_labels,plot_token,my_config_file,units)
+				window.plot.set_labels(plot_labels)
+				window.plot.load_data(input_files,my_config_file)
 				window.plot.do_plot()
 				window.plot.fig.canvas.draw()
 				window.window.present()
@@ -69,6 +69,6 @@ def plot_gen(input_files,plot_labels,plot_token,config_file,units):
 				return
 
 	window=plot_window()
-	window.init(input_files,plot_labels,plot_token,my_config_file,units)
+	window.init(input_files,plot_labels,my_config_file)
 
 

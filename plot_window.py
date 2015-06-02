@@ -40,7 +40,7 @@ class plot_window():
 	def callback_destroy(self,widget):
 		self.destroy()
 
-	def init(self,input_files,plot_labels,plot_token,config_file,units):
+	def init(self,input_files,plot_labels,config_file):
 		self.shown=True
 		self.window = gtk.Window()
 		self.window.set_border_width(10)
@@ -60,10 +60,8 @@ class plot_window():
 					plot_labels[i]=plot_labels[i][1:]
 			plot_labels[i].replace("\\","/")
 
-		ids=[]
-		for i in range(0,len(input_files)):
-			ids.append(0)
-		self.plot.load_data(input_files,ids,plot_labels,plot_token,config_file,units)
+		self.plot.set_labels(plot_labels)
+		self.plot.load_data(input_files,config_file)
 
 		self.plot.do_plot()
 		self.plot.show()

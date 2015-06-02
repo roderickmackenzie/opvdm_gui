@@ -155,7 +155,7 @@ class class_optical(gtk.Window):
 			if (self.layer_end[i]>event.xdata):
 				break
 		pwd=os.getcwd()
-		plot_gen([os.path.join(pwd,"phys",self.layer_name[i],"alpha.inp")],[],None,"","")
+		plot_gen([os.path.join(pwd,"phys",self.layer_name[i],"alpha.inp")],[],None,"")
 
 	def update_cb(self):
 		self.cb.handler_block(self.cb_id)
@@ -396,6 +396,8 @@ class class_optical(gtk.Window):
 		self.fig.clf()
 		self.draw_graph(model)
 		self.fig.canvas.draw()
+		for i in range(0,len(self.plot_widgets)):
+			self.plot_widgets[i].update()
 
 	def on_cell_edited(self, cell, path_string, new_text, model):
 
@@ -807,22 +809,12 @@ class class_optical(gtk.Window):
 		plot_labels.append("Photon dist ads.")
 		plot_labels.append("Reflection")
 
-
-		ids=[]
-		ids.append(0)
-		ids.append(0)
-		ids.append(0)
-
 		self.plot_widgets=[]
 		for i in range(0,len(input_files)):
 			self.plot_widgets.append(plot_widget())
 			self.plot_widgets[i].init(self)
-
-			plot_token=plot_state()
-
-			plot_load_info(plot_token,input_files[i])
-
-			self.plot_widgets[i].load_data([input_files[i]],[ids[i]],[plot_labels[0]],plot_token,"one.oplot","")
+			self.plot_widgets[i].set_labels([plot_labels[0]])
+			self.plot_widgets[i].load_data([input_files[i]],os.path.splitext(input_files[i])[0]+".oplot")
 
 			self.plot_widgets[i].do_plot()
 			self.plot_widgets[i].show()

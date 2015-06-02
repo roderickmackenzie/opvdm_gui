@@ -284,7 +284,7 @@ class NotebookExample:
 			self.gui_sim_stop("")
 			if self.plot_after_run==True:
 				if self.plot_after_run_file!="":
-					plot_gen([self.plot_after_run_file,"old.dat"],[],None,"","")
+					plot_gen([self.plot_after_run_file,"old.dat"],[],"")
 
 		if (file_name=="signal_plot.dat"):
 			#print "stopping!\n"
@@ -667,13 +667,7 @@ class NotebookExample:
 		if response == gtk.RESPONSE_OK:
 			self.plot_open.set_sensitive(True)
 
-			plot_token=plot_state()
-			plot_token.path=os.path.dirname(dialog.get_filename())
-			plot_token.file0=os.path.basename(dialog.get_filename())
-			plot_token.tag0=""
-			plot_token.file1=""
-			plot_token.tag1=""
-			plot_gen([dialog.get_filename()],[],plot_token,"auto","")
+			plot_gen([dialog.get_filename()],[],"auto")
 
 			self.plotted_graphs.refresh()
 			self.plot_after_run_file=dialog.get_filename()
@@ -682,13 +676,12 @@ class NotebookExample:
 		dialog.destroy()
 
 	def callback_plot_open(self, widget, data=None):
-		plot_data=plot_state()
-		plot_gen([self.plot_after_run_file],[],plot_data,"","")
+		plot_gen([self.plot_after_run_file],[],"")
 
 	def callback_last_menu_click(self, widget, data):
 		self.plot_open.set_sensitive(True)
 		file_to_load=os.path.join(data.path,data.file0)
-		plot_gen([file_to_load],[],data,"auto","")
+		plot_gen([file_to_load],[],"auto")
 		self.plot_after_run_file=file_to_load
 
 	def callback_plot_fit_erros(self, widget, data=None):
@@ -699,7 +692,7 @@ class NotebookExample:
 		load_graph("./plot/converge.plot")
 
 	def callback_plot_matrix(self, widget, data=None):
-		plot_gen(["matrix.dat"],[],None,"","")
+		plot_gen(["matrix.dat"],[],"")
 
 	def callback_import(self, widget, data=None):
 		logging.info('callback_import')

@@ -53,6 +53,7 @@ from util import fx_with_units
 from plot_state import plot_state
 from plot import plot_populate_plot_token
 from plot_io import plot_save_oplot_file
+from plot_state import plot_state
 
 class NavigationToolbar(NavigationToolbar2GTKAgg):
     # only display the buttons we need
@@ -177,8 +178,11 @@ class plot_widget(gtk.VBox):
 						s[ii]=0.0
 
 
-			plot_number=self.plot_id[index]
-			#print plot_number, number_of_plots,self.plot_id
+			if index<len(self.plot_id):
+				plot_number=self.plot_id[index]
+			else:
+				plot_number=index
+			print "YMIN=",self.plot_token.ymin
 			if self.plot_token.ymax!=-1:
 				self.ax[plot_number].set_ylim((self.plot_token.ymin,self.plot_token.ymax))
 			return True
@@ -187,8 +191,6 @@ class plot_widget(gtk.VBox):
 
 	def do_plot(self):
 		if self.plot_token!=None:
-			print "CONVERT in do plot!!!!!!!!!!!",type(self.plot_token.key_units)
-			print "in do plot"
 			plot_number=0
 
 			self.fig.clf()
@@ -218,8 +220,9 @@ class plot_widget(gtk.VBox):
 				self.ax.append(self.fig.add_subplot(number_of_plots,1,i+1, axisbg='white'))
 				#Only place label on bottom plot
 				if i==number_of_plots-1:
+					print self.plot_token.x_label,self.plot_token.x_units
 					self.ax[i].set_xlabel(self.plot_token.x_label+" ("+self.plot_token.x_units+")")
-
+					
 				else:
 					self.ax[i].tick_params(axis='x', which='both', bottom='off', top='off',labelbottom='off') # labels along the bottom edge are off
 
@@ -270,6 +273,7 @@ class plot_widget(gtk.VBox):
 						if all_max!=1.0:
 							for ii in range(0,len(s)):
 								s[ii]=s[ii]/all_max
+						print plot_number,len(self.ax)
 						#print len(self.ax),plot_number,i,len(self.color),len(self.marker)
 						Ec, = self.ax[plot_number].plot(t,s, linewidth=3 ,alpha=1.0,color=self.color[i],marker=self.marker[i])
 
@@ -279,14 +283,13 @@ class plot_widget(gtk.VBox):
 								if z[ii]!="":
 									self.ax[plot_number].annotate(fx_with_units(float(z[ii])),xy = (t[ii], s[ii]), xytext = (-20, 20),textcoords = 'offset points', ha = 'right', va = 'bottom',bbox = dict(boxstyle = 'round,pad=0.5', fc = 'yellow', alpha = 0.5),arrowprops = dict(arrowstyle = '->', connectionstyle = 'arc3,rad=0'))
 
-						#self.ax[plot_number].annotate(self.labels[i],xy = (t[len(t)/2], s[len(t)/2]), xytext = (-20, 20),textcoords = 'offset points', ha = 'right', va = 'bottom',bbox = dict(boxstyle = 'round,pad=0.5', fc = 'yellow', alpha = 0.5),arrowprops = dict(arrowstyle = '->', connectionstyle = 'arc3,rad=0'))
-
 						if number_of_plots>1:
 							self.ax[plot_number].yaxis.set_major_formatter(ticker.FormatStrFormatter('%0.1e'))
 							if min(s)!=max(s):
+								print "TICKS=",(max(s)-min(s))/4.0
 								self.ax[plot_number].yaxis.set_ticks(arange(min(s), max(s), (max(s)-min(s))/4.0 ))
 
-						if self.labels[i]!="":
+						if i<len(self.labels[i]) and self.labels[i]!="":
 							print self.labels[i]
 							print self.plot_token.key_units
 							files.append("$"+numbers_to_latex(str(self.labels[i]))+" "+self.plot_token.key_units+"$")
@@ -303,7 +306,6 @@ class plot_widget(gtk.VBox):
 				x=[]
 				y=[]
 				z=[]
-				print "3d data!!!!!!!!!!!!!!"
 				if read_data_2d(x,y,z,self.input_files[0])==True:
 
 					x_len=len(x)
@@ -439,29 +441,50 @@ class plot_widget(gtk.VBox):
 
 		dialog.destroy()
 
-	def load_data(self,input_files,plot_id,labels,plot_token,config_file,units):
-		if os.path.isfile(input_files[0]):
-			print "CONVERTg!!!!!!!!!!!",type(plot_token.key_units)
+	def set_labels(self,labels):
+		self.labels=labels
+
+	def set_plot_ids(self,plot_id):
+		self.plot_id=plot_id
+
+	def load_data(self,input_files,config_file):
+		self.input_files=input_files
+		self.config_file=config_file
+
+		if config_file=="":
+			config_file=os.path.splitext(input_files[0])[0]+".oplot"
+
+		loaded=False		
+		plot_token=plot_state()
+
+		#Try and get the data from the config file
+		if plot_load_info(plot_token,config_file)==True:
+			loaded=True
+
+		#If that did not work get it from the data file
+		if loaded==False:
+			if plot_load_info(plot_token,input_files[0])==True:
+				loaded=True
+
+		print "the config file is",config_file
+		if loaded==True:
+
+			if len(self.plot_id)==0:
+				for i in range(0,len(input_files)):
+					self.plot_id.append(0)
+
+			plot_token.path=os.path.dirname(config_file)
+			plot_token.file0=os.path.basename(input_files[0])
+
+			plot_save_oplot_file(config_file,plot_token)
 			self.plot_token=plot_token
-			print ">>>>>>>>>>>>>>>>>>>>sda>>>>>>>>>>>>>>>>>>>>sdads>",self.plot_token.x_label
-			self.config_file=config_file
-			print "CONVERTg!!!!!!!!!!!",type(self.plot_token.key_units)
 			self.output_file=os.path.splitext(config_file)[0]+".png"
-			self.labels=labels
-			print "CONVERTg!!!!!!!!!!!",type(self.plot_token.key_units)
-			self.plot_id=plot_id
-			print "CONVERTg!!!!!!!!!!!",type(self.plot_token.key_units)
-			if len(input_files)!=len(labels):
-				return
-			self.input_files=input_files
+
 			#ret=plot_populate_plot_token(plot_token,self.input_files[0])
-			print ">>>>>>>>>>>>>>>>>>>>sda>>>>>>>>>>>>>>>>>>>>sdads>",self.plot_token.x_label
 			#if ret==True:
 			#print "Rod",input_files
 			title=self.plot_token.title
-			print "CONVERTg!!!!!!!!!!!",type(self.plot_token.key_units)
 			self.win.set_title(title+" - www.opvdm.com")
-			print "CONVERTg!!!!!!!!!!!",type(self.plot_token.key_units)
 			lines=[]
 
 			ret=plot_load_info(self.plot_token,input_files[0])
@@ -481,9 +504,6 @@ class plot_widget(gtk.VBox):
 			myitem.set_active(self.plot_token.norm_to_peak_of_all_data)
 
 			print "Loaded OK",self.config_file
-
-			if self.plot_token.key_units=="":
-				self.plot_token.key_units=pygtk_to_latex_subscript(units)
 
 			test_file=self.input_files[0]
 			for i in range(0,len(self.input_files)):
@@ -550,13 +570,11 @@ class plot_widget(gtk.VBox):
 		self.color=c_tot
 
 	def callback_black(self, data, widget):
-		print "CONVERTee!!!!!!!!!!!",type(self.plot_token.key_units)
 		self.gen_colors_black(1)
 		plot_save_oplot_file(self.config_file,self.plot_token)
 		self.do_plot()
 
 	def callback_rainbow(self, data, widget):
-		print "CONVERTd!!!!!!!!!!!",type(self.plot_token.key_units)
 		self.gen_colors(1)
 		plot_save_oplot_file(self.config_file,self.plot_token)
 		self.do_plot()
@@ -565,13 +583,11 @@ class plot_widget(gtk.VBox):
 		plot_export(self.output_file,self.input_files,self.plot_token,self.fig)
 
 	def callback_key(self, data, widget):
-		print "CONVERTc!!!!!!!!!!!",type(self.plot_token.key_units)
 		self.plot_token.legend_pos=widget.get_label()
 		plot_save_oplot_file(self.config_file,self.plot_token)
 		self.do_plot()
 
 	def callback_units(self, data, widget):
-		print "CONVERTb!!!!!!!!!!!",type(self.plot_token.key_units)
 		units=dlg_get_text( "Units:", self.plot_token.key_units)
 		if units!=None:
 			self.plot_token.key_units=units
@@ -634,9 +650,12 @@ class plot_widget(gtk.VBox):
 		plot_save_oplot_file(self.config_file,self.plot_token)
 		self.do_plot()
 
-	def callback_refresh(self, widget, data=None):
-		plot_save_oplot_file(self.config_file,self.plot_token)
+	def update(self):
+		self.load_data(self.input_files,self.config_file)
 		self.do_plot()
+
+	def callback_refresh(self, widget, data=None):
+		self.update()
 
 	def init(self,in_window):
 		self.zero_frame_enable=False
@@ -652,9 +671,9 @@ class plot_widget(gtk.VBox):
 		self.toolbar.show()
 		self.config_file=""
 		self.plot_token=None
-
+		self.labels=[]
 		self.fig = Figure(figsize=(2.5,2), dpi=100)
-
+		self.plot_id=[]
 		self.canvas = FigureCanvas(self.fig)  # a gtk.DrawingArea
 
 		self.fig.canvas.mpl_connect('motion_notify_event', self.mouse_move)

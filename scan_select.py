@@ -29,7 +29,6 @@ import shutil
 from inp import inp_update_token_value
 from inp import inp_get_token_value
 from search import return_file_list
-from plot_gen import plot_gen
 from plot import check_info_file
 from util import find_data_file
 from about import about_dialog_show
