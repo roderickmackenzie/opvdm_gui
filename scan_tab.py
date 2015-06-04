@@ -110,7 +110,7 @@ class scan_vbox(gtk.VBox):
 		self.rebuild_liststore_op_type()
 
 	def callback_add_item(self, widget, data=None):
-		self.add_line(["Select parameter", "0.0 0.0", "scan"])
+		self.add_line(["Select parameter", "0.0 0.0", "scan",True])
 		
 
 	def callback_copy_item(self, widget, data=None):

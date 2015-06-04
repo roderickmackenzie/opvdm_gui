@@ -24,7 +24,6 @@ import os
 import shutil
 from token_lib import tokens
 from util import pango_to_gnuplot
-from plot_info import plot_info
 from util import zip_get_data_file
 from plot_io import plot_load_info
 

@@ -132,7 +132,6 @@ class cmp_class(gtk.Window):
 		if value>len(self.lines) or self.lines[0]=="none":
 			return
 
-
 		plus=files[0].count("%")
 
 
@@ -186,20 +185,22 @@ class cmp_class(gtk.Window):
 
 		print self.file_names
 		print plot_id
-		self.plot.plot_labels(labels)
+		self.plot.set_labels(labels)
 		self.plot.set_plot_ids(plot_id)
-		self.plot.load_data(self.file_names,self.plot_token,"","")
-
+		config_file=os.path.join(self.entry0.get_active_text(),os.path.splitext(self.entry2.get_text().split()[0])[0])+".oplot"
+		print "file names=",self.file_names
+		print "config file",config_file
+		self.plot.load_data(self.file_names,config_file)
 
 
 	def callback_scale(self, adj):
 		print "here",type(self.plot.plot_token.key_units)
 
-		plot_load_info(self.plot_token,self.file_names[0])
-		print "here1",type(self.plot.plot_token.key_units)
-		self.update(self.adj1.value)
-		print "here2",type(self.plot.plot_token.key_units)
-		self.plot.do_plot()
+		if plot_load_info(self.plot_token,self.file_names[0])==True:
+			print "here1",type(self.plot.plot_token.key_units)
+			self.update(self.adj1.value)
+			print "here2",type(self.plot.plot_token.key_units)
+			self.plot.do_plot()
 
 
 	def callback_edit(self,data):

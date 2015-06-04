@@ -474,7 +474,8 @@ class plot_widget(gtk.VBox):
 					self.plot_id.append(0)
 
 			plot_token.path=os.path.dirname(config_file)
-			plot_token.file0=os.path.basename(input_files[0])
+			if plot_token.tag0=="":
+				plot_token.file0=os.path.basename(input_files[0])
 
 			plot_save_oplot_file(config_file,plot_token)
 			self.plot_token=plot_token

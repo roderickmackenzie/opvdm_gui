@@ -308,7 +308,7 @@ class class_optical(gtk.Window):
 		    COLUMN_EDITABLE, new_item[COLUMN_EDITABLE]
 		)
 		self.save_model(model)
-		self.update_graph(model)
+		#self.update_graph(model)
 
 	def save_model(self, model):
 		a = open("optics_epitaxy.inp", "w")
@@ -343,7 +343,7 @@ class class_optical(gtk.Window):
 			del self.articles[ path ]
 
 			self.save_model(model)
-			self.update_graph(model)
+			#self.update_graph(model)
 
 
 	def callback_refresh(self, button,treeview):
@@ -428,7 +428,7 @@ class class_optical(gtk.Window):
 			model.set(iter, column, self.articles[path][COLUMN_DEVICE])
 
 		self.save_model(model)
-		self.update_graph(model)
+		#self.update_graph(model)
 #####################################
 	def callback_edit(self, widget, data=None):
 		line=self.line_number[data]
