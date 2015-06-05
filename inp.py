@@ -28,7 +28,6 @@ import subprocess
 from tempfile import mkstemp
 import logging
 import zipfile
-from encode import encode_now
 from encode import inp_set_encode
 from encode import inp_unset_encode
 
@@ -59,7 +58,6 @@ def inp_update_token_value(file_path, token, replace,line_number):
 		else:
 			return "0"
 
-	lines=encode_now(lines,False)	
 	lines=lines.split("\n")
 
 	for i in range(0, len(lines)):
@@ -81,7 +79,6 @@ def inp_update_token_value(file_path, token, replace,line_number):
 			dump=dump+item+"\n"
 
 		dump=dump.rstrip("\n")
-		dump=encode_now(dump,True)
 		f=open(abs_path, mode='wb')
 		lines = f.write(dump)
 		f.close()
@@ -139,7 +136,6 @@ def inp_load_file(lines,file_path):
 		else:
 			return False
 
-	read_lines=encode_now(read_lines,False)
 	read_lines=read_lines.split("\n")
 
 	del lines[:]
@@ -168,7 +164,6 @@ def inp_save_lines(file_path,lines):
 
 	dump=dump.rstrip("\n")
 
-	dump=encode_now(dump,True)
 	f=open(file_path, mode='wb')
 	lines = f.write(dump)
 	f.close()

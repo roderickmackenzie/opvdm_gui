@@ -25,38 +25,15 @@ import gtk
 import sys
 import os
 import shutil
-import signal
-import subprocess
-from tempfile import mkstemp
-import logging
-import zipfile
-import re
-from encode import inp_set_encode
-from encode import inp_unset_encode
-import hashlib
-import glob
-from win_lin import running_on_linux
+from scan_item import scan_item_add
+from token_lib import tokens
+from util import check_is_config_file
+from inp import inp_update_token_value
+from inp import inp_get_token_value
+from undo import undo_list_class
 
-def dlg_get_text( message, default=''):
-
-	d = gtk.MessageDialog(None,
-	          gtk.DIALOG_MODAL ,
-	          gtk.MESSAGE_QUESTION,
-	          gtk.BUTTONS_OK_CANCEL,
-	          message)
-	entry = gtk.Entry()
-	entry.set_text(default)
-	entry.show()
-	d.vbox.pack_end(entry)
-	entry.connect('activate', lambda _: d.response(gtk.RESPONSE_OK))
-	d.set_default_response(gtk.RESPONSE_OK)
-
-	r = d.run()
-	text = entry.get_text().decode('utf8')
-	d.destroy()
-	if r == gtk.RESPONSE_OK:
-		return text
-	else:
-		return None
+class photon_dist_class(gtk.VBox):
 
 
+	def init(self,filename,fullname):
+		print "Hello"

@@ -29,7 +29,6 @@ import logging
 import zipfile
 import re
 from numpy import zeros
-from encode import encode_now
 from encode import inp_set_encode
 from encode import inp_unset_encode
 import hashlib
@@ -396,8 +395,6 @@ def replace_file_in_zip_archive(zip_file_name,target,lines):
 	build=""
 	for i in range(0,len(lines)):
 		build=build+lines[i]+"\n"
-
-	build=encode_now(build,True)
 
 	zf.writestr(target, build)
 

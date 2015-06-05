@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 #    Organic Photovoltaic Device Model - a drift diffusion base/Shockley-Read-Hall
 #    model for organic solar cells. 
 #    Copyright (C) 2012 Roderick C. I. MacKenzie
@@ -19,44 +20,14 @@
 #    with this program; if not, write to the Free Software Foundation, Inc.,
 #    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
-import pygtk
-pygtk.require('2.0')
-import gtk
 import sys
 import os
-import shutil
-import signal
-import subprocess
-from tempfile import mkstemp
-import logging
-import zipfile
-import re
-from encode import inp_set_encode
-from encode import inp_unset_encode
-import hashlib
-import glob
-from win_lin import running_on_linux
+from os.path import expanduser
 
-def dlg_get_text( message, default=''):
-
-	d = gtk.MessageDialog(None,
-	          gtk.DIALOG_MODAL ,
-	          gtk.MESSAGE_QUESTION,
-	          gtk.BUTTONS_OK_CANCEL,
-	          message)
-	entry = gtk.Entry()
-	entry.set_text(default)
-	entry.show()
-	d.vbox.pack_end(entry)
-	entry.connect('activate', lambda _: d.response(gtk.RESPONSE_OK))
-	d.set_default_response(gtk.RESPONSE_OK)
-
-	r = d.run()
-	text = entry.get_text().decode('utf8')
-	d.destroy()
-	if r == gtk.RESPONSE_OK:
-		return text
+def debug_mode():
+	home = expanduser("~")
+	if os.path.isfile(os.path.join(home,".debugmode"))==True:
+		return True
 	else:
-		return None
-
+		return False
 
