@@ -32,14 +32,13 @@ def scan_delete_simulations(dirs_to_del):
 	for i in range(0, len(dirs_to_del)):
 		delete_link_tree(dirs_to_del[i])
 
-def scan_list_simulations(dirs_to_del,dir_to_search):
+def scan_list_simulations(dirs,dir_to_search):
 	ls=os.listdir(dir_to_search)
-	print ls
 	for i in range(0, len(ls)):
 		full_name=os.path.join(dir_to_search,ls[i])
 		if os.path.isdir(full_name):
 			if os.path.isfile(os.path.join(full_name,'scan.inp')):
-				dirs_to_del.append(full_name)
+				dirs.append(full_name)
 
 def scan_clean_dir(dir_to_clean):
 		dirs_to_del=[]

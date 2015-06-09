@@ -28,8 +28,6 @@ import subprocess
 from tempfile import mkstemp
 import logging
 import zipfile
-from encode import inp_set_encode
-from encode import inp_unset_encode
 
 
 def inp_update_token_value(file_path, token, replace,line_number):

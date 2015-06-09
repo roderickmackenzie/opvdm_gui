@@ -47,8 +47,22 @@ import webbrowser
 from util import find_data_file
 from search import find_fit_log
 from util import get_scan_dirs
+from hpc import hpc_class
+from debug import debug_mode
 
 class scan_class(gtk.Window):
+
+	def callback_cluster(self, widget, data=None):
+		if self.cluster_window==None:
+			self.cluster_window=hpc_class()
+			self.cluster_window.init(self.hpc_root_dir,self.myserver.terminal)
+
+		print self.cluster_window.get_property("visible")
+
+		if self.cluster_window.get_property("visible")==True:
+			self.cluster_window.hide()
+		else:
+			self.cluster_window.show()
 
 	def get_main_menu(self, window):
 		accel_group = gtk.AccelGroup()
@@ -175,6 +189,10 @@ class scan_class(gtk.Window):
 		tab = self.notebook.get_nth_page(pageNum)
 		tab.import_from_hpc()
 
+	def callback_push_to_hpc(self,widget,data):
+		pageNum = self.notebook.get_current_page()
+		tab = self.notebook.get_nth_page(pageNum)
+		tab.push_to_hpc()
 
 	def callback_rename_page(self,widget,data):
 		pageNum = self.notebook.get_current_page()
@@ -336,6 +354,7 @@ class scan_class(gtk.Window):
 		self.myserver.wake_nodes()
 
 	def init(self,exe_name,exe_command,progress,gui_sim_start,gui_sim_stop,terminal):
+		self.cluster_window=None
 		self.win_list=windows()
 		self.win_list.load()
 		self.win_list.set_window(self,"scan_window")
@@ -363,6 +382,8 @@ class scan_class(gtk.Window):
 		self.set_title("Parameter scan - opvdm")
 
 		n=0
+
+		self.hpc_root_dir= os.path.abspath(os.getcwd()+'/../')
 
 		self.number_of_tabs=0
 		items=0
@@ -392,11 +413,13 @@ class scan_class(gtk.Window):
 		    ( "/Simulations/_Delete simulaton",     None, self.callback_delete_page, 0, "<StockItem>", "gtk-delete" ),
 		    ( "/Simulations/_Rename simulation",     None, self.callback_rename_page, 0, "<StockItem>", "gtk-edit" ),
 		    ( "/Simulations/_Clone simulation",     None, self.callback_copy_page, 0, "<StockItem>", "gtk-copy" ),
+			( "/Simulations/sep1",     None, None, 0, "<Separator>" ),
 		    ( "/Simulations/_Run simulation",     None, self.callback_run_simulation, 0, "<StockItem>", "gtk-media-play" ),
 		    ( "/Simulations/_Build simulation",     None, self.callback_build_simulation, 0, "<StockItem>", "gtk-cdrom" ),
 			( "/Simulations/_Run (no build)",     None, self.callback_run_simulation_no_build, 0, "<StockItem>", "gtk-media-play" ),
 			( "/Simulations/_Clean simulation",     None, self.callback_clean_simulation, 0, "<StockItem>", "gtk-clear" ),
-			( "/Simulations/_Import from hpc",     None, self.callback_import_from_hpc, 0, "<StockItem>", "gtk-clear" ),
+			( "/Simulations/_Import from hpc",     None, self.callback_import_from_hpc, 0, "<StockItem>", "gtk-open" ),
+			( "/Simulations/_Push to hpc",     None, self.callback_push_to_hpc, 0, "<StockItem>", "gtk-save" ),
 		    ( "/Cluster/_Cluster sleep",     None, self.callback_cluster_sleep, 0, "<StockItem>", "gtk-copy" ),
 		    ( "/Cluster/_Cluster poweroff",     None, self.callback_cluster_poweroff, 0, "<StockItem>", "gtk-copy" ),
 		    ( "/Cluster/_Cluster wake",     None, self.callback_wol, 0, "<StockItem>", "gtk-copy" ),
@@ -500,6 +523,15 @@ class scan_class(gtk.Window):
 			toolbar.insert(tb_help, pos)
 			pos=pos+1
 
+		if debug_mode()==True:
+			image = gtk.Image()
+	   		image.set_from_file(find_data_file("gui/server.png"))
+			cluster = gtk.ToolButton(image)
+			cluster.connect("clicked", self.callback_cluster)
+			self.tooltips.set_tip(cluster, "Configure cluster")
+			toolbar.insert(cluster, pos)
+			cluster.show()
+			pos=pos+1
 
 		sep = gtk.SeparatorToolItem()
 		sep.set_draw(False)

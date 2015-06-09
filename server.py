@@ -42,6 +42,7 @@ from win_lin import running_on_linux
 import subprocess
 from util import gui_print_path
 from monitor_dir import _FooThread
+from progress import progress_class
 
 def server_find_simulations_to_run(commands,search_path):
 	for root, dirs, files in os.walk(search_path):
@@ -106,22 +107,12 @@ class server:
 		self.terminal=terminal
 	def gui_sim_start(self):
 		self.errors=""
-		s=gtk.gdk.screen_get_default()
-		w,h=self.progress_window.get_size()
-
-		x=s.get_width()-w
-		y=0
-
-		self.progress_window.move(x,y)
-
-		self.progress_window.show()
-		self.spin.start()
+		self.progress_window.start()
 
 		self.extern_gui_sim_start()
 
 	def gui_sim_stop(self):
-		self.progress_window.hide()
-		self.spin.stop()
+		self.progress_window.stop()
 		self.extern_gui_sim_stop("Finished simulation")
 		if self.errors!="":
 			message = gtk.MessageDialog(type=gtk.MESSAGE_ERROR, buttons=gtk.BUTTONS_OK)
@@ -134,54 +125,9 @@ class server:
 		self.enable_gui=True
 		self.extern_gui_sim_start=extern_gui_sim_start
 		self.extern_gui_sim_stop=extern_gui_sim_stop
-		self.progress_window=gtk.Window()
-		self.progress_window.set_decorated(False)
-		self.progress_window.set_title("opvdm progress")
-		self.progress_window.set_size_request(400, 50)
-		self.progress_window.set_position(gtk.WIN_POS_CENTER)
-		self.progress_window.set_keep_above(True)
-		main_hbox = gtk.HBox(False, 5)
-		main_hbox.set_border_width(1)
-		main_hbox.show()
+		self.progress_window=progress_class()
+		self.progress_window.init()
 
-		self.progress = gtk.ProgressBar(adjustment=None)
-		self.progress.show()
-
-		main_hbox.pack_start(self.progress, True, True, 0)
-
-		self.spin=gtk.Spinner()
-		self.spin.set_size_request(32, 32)
-		self.spin.show()
-		self.spin.stop()
-
-		main_hbox.pack_start(self.spin, False, False, 0)
-
-
-		main_vbox = gtk.VBox(False, 5)
-		main_vbox.show()
-		main_vbox.pack_start(main_hbox, True, True, 0)
-
-		self.progress_array = []
-		for i in range(0,10):
-			self.progress_array.append(gtk.ProgressBar(adjustment=None))
-			self.progress_array[i].hide()
-			self.progress_array[i].set_size_request(-1, 15)
-			self.progress_array[i].modify_bg(gtk.STATE_PRELIGHT, gtk.gdk.color_parse("green"))
-			main_vbox.pack_end(self.progress_array[i], True, False, 0)
-
-		self.label=gtk.Label("Running...")
-		#label.set_justify(gtk.JUSTIFY_LEFT)
-		self.label.show()
-
-		main_vbox.pack_start(main_hbox, True, True, 0)
-		main_vbox.pack_start(self.label, True, True, 4)
-
-
-		self.progress_window.add(main_vbox)
-
-		#self.progress_window.show()
-
-		#self.gtk.Window.set_keep_above
 
 	def add_job(self,command):
 		if self.cluster==False:
@@ -245,7 +191,8 @@ class server:
 			if data.startswith("percent"):
 				command=data.split("#")
 				percent=float(command[1])
-				self.progress.set_fraction(percent/100.0)
+				self.progress_window.set_fraction(percent/100.0)
+
 			if data.startswith("job_finished"):
 				command=data.split("#")
 				self.label.set_text(gui_print_path("Finished:  ",command[1],60))
@@ -267,9 +214,9 @@ class server:
 						print command[i]
 						height=height+15
 						percent=float(command[i])
-						if self.progress_array[i].get_property("visible")==False:
-							self.progress_array[i].show()
-						self.progress_array[i].set_fraction(percent)
+						if self.progress_window.progress_array[i].get_property("visible")==False:
+							self.progress_window.progress_array[i].show()
+						self.progress_window.progress_array[i].set_fraction(percent)
 
 					window_height=self.progress_window.get_size()
 					window_height=window_height[1]
@@ -363,7 +310,7 @@ class server:
 						self.status[i]=1
 						print "Running job",self.jobs[i]
 						if self.enable_gui==True:
-							self.label.set_text("Running job"+self.jobs[i])
+							self.progress_window.set_text("Running job"+self.jobs[i])
 
 						self.jobs_running=self.jobs_running+1
 						if running_on_linux()==True:
@@ -403,7 +350,7 @@ class server:
 		self.jobs_running=0
 		self.jobs_run=0
 		self.gui_sim_stop()
-		self.progress.set_fraction(0.0) 
+		self.progress_window.set_fraction(0.0) 
 		self.running=False
 		ls=os.listdir(self.sim_dir)
 
@@ -452,7 +399,7 @@ class server:
 				#self.print_jobs()
 				self.jobs_run=self.jobs_run+1
 				self.jobs_running=self.jobs_running-1
-				self.progress.set_fraction(float(self.jobs_run)/float(len(self.jobs)))
+				self.progress_window.set_fraction(float(self.jobs_run)/float(len(self.jobs)))
 				self.run_jobs()
 				if (self.jobs_run==len(self.jobs)):
 					self.stop()

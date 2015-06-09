@@ -54,7 +54,6 @@ from util import opvdm_clone
 from export_as import export_as
 from emesh import tab_electrical_mesh
 from copying import copying
-from hpc import hpc_class
 from tab_homo import tab_bands
 from tempfile import mkstemp
 from plot_gen import plot_gen
@@ -89,6 +88,7 @@ from win_lin import running_on_linux
 import webbrowser
 from debug import debug_mode
 from util import read_data_2d
+from progress import progress_class
 if running_on_linux()==True:
 	import pyinotify
 	import pynotify
@@ -210,7 +210,6 @@ class NotebookExample:
 	plot_after_run_file=""
 	electrical_mesh=None
 	scan_window=None
-	cluster_window=None
 	exe_command , exe_name  =  set_exe_command()
 	#print exe_command
 
@@ -373,7 +372,7 @@ class NotebookExample:
 				print "No gui_config.inp file found\n"
 
 			internal_names = ["Device","JV Curve","JV simple","Light","Output","CELIV","Numerics", "ToF", "stark", "Bands", "Pulse","Pulse voc", "imps","Exp. Optical Model","Terminal","Sun voc","TPC","fit","Thermal"]
-			internal_files = ["device.inp","jv.inp","jv_simple.inp","light.inp","dump.inp","celiv.inp","math.inp","tof.inp","stark.inp","lumo0.inp","server.inp","pulse_voc.inp","imps.inp","light_exp.inp","terminal.inp","sun_voc.inp","tpc.inp","fit.inp","thermal.inp"]
+			internal_files = ["device.inp","jv.inp","jv_simple.inp","light.inp","dump.inp","celiv.inp","math.inp","tof.inp","stark.inp","lumo0.inp","pulse.inp","pulse_voc.inp","imps.inp","light_exp.inp","terminal.inp","sun_voc.inp","tpc.inp","fit.inp","thermal.inp"]
 
 			i=0
 			while i<len(internal_names) :
@@ -392,6 +391,7 @@ class NotebookExample:
 
 			for i in range(0, len(names)):
 				self.progress.set_fraction(float(i)/float(len(names)))
+				self.progress.set_text("Loading "+names[i])
 				process_events()
 				cur_file=files[i]
 				cur_name=names[i]
@@ -496,7 +496,6 @@ class NotebookExample:
 		self.finished_loading=True
 		self.progress.hide()
 		self.progress.set_fraction(0.0)
-		logging.info('Added all pages to notebook')
 
 	def callback_plot_after_run_toggle(self, widget, data):
 		self.plot_after_run=data.get_active()
@@ -620,18 +619,6 @@ class NotebookExample:
 			cmd = self.exe_command+" --1fit"
 			subprocess.Popen([cmd])
 
-	def callback_cluster(self, widget, data=None):
-		if self.cluster_window==None:
-			self.cluster_window=hpc_class()
-			self.cluster_window.init(self.hpc_root_dir,self.exe_dir,self.terminal)
-
-		print self.cluster_window.get_property("visible")
-
-		if self.cluster_window.get_property("visible")==True:
-			self.cluster_window.hide()
-		else:
-			self.cluster_window.show()
-
 
 	def callback_scan(self, widget, data=None):
 		logging.info('callback_scan')
@@ -680,7 +667,7 @@ class NotebookExample:
 
 	def callback_last_menu_click(self, widget, data):
 		self.plot_open.set_sensitive(True)
-		file_to_load=os.path.join(data.path,data.file0)
+		file_to_load=os.path.join(os.getcwd(),data.file0)
 		plot_gen([file_to_load],[],"auto")
 		self.plot_after_run_file=file_to_load
 
@@ -1017,6 +1004,10 @@ class NotebookExample:
 	def __init__(self):
 		splash=splash_window()
 		splash.init()
+		self.progress=progress_class()
+		self.progress.init()
+		self.progress.start()
+		self.progress.set_text("Loading..")
 		self.undo_list=undo_list_class()
 		self.undo_list.init()
 		self.sim_dir=os.getcwd()
@@ -1028,7 +1019,6 @@ class NotebookExample:
 
 		logging.info('__init__')
 		self.exe_dir= os.path.dirname(os.path.abspath(__file__))
-		self.hpc_root_dir= os.path.dirname(os.path.abspath(__file__))+'/../'
 
 		print "opvdm exe in "+self.exe_dir
 		print "current directory "+os.getcwd()
@@ -1256,16 +1246,6 @@ class NotebookExample:
 			pos=pos+1
 
 
-		if debug_mode()==True:
-			image = gtk.Image()
-	   		image.set_from_file(find_data_file("gui/server.png"))
-			cluster = gtk.ToolButton(image)
-			cluster.connect("clicked", self.callback_cluster)
-			self.tooltips.set_tip(cluster, "Configure cluster")
-			toolbar.insert(cluster, pos)
-			cluster.show()
-			pos=pos+1
-
 
 		sep2 = gtk.SeparatorToolItem()
 		sep2.set_draw(False)
@@ -1396,11 +1376,11 @@ class NotebookExample:
 		handlebox.add(tb_vbox)
 
 		main_vbox.pack_start(handlebox, False, False, 0)
-		self.progress = gtk.ProgressBar(adjustment=None)
+		#self.progress = gtk.ProgressBar(adjustment=None)
 
-		self.progress.hide()
+		#self.progress.hide()
 
-		main_vbox.pack_start(self.progress, False, False, 0)#add(self.progress)
+		#main_vbox.pack_start(self.progress, False, False, 0)#add(self.progress)
 
 
 
@@ -1430,7 +1410,7 @@ class NotebookExample:
 		self.thread.daemon = True
 		self.thread.start()
 		logging.info('__init__6.6')
-
+		self.progress.stop()
 
 	def make_window2(self,main_vbox):
 		notebook.set_tab_pos(gtk.POS_TOP)

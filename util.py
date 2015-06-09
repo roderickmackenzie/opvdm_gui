@@ -29,8 +29,6 @@ import logging
 import zipfile
 import re
 from numpy import zeros
-from encode import inp_set_encode
-from encode import inp_unset_encode
 import hashlib
 import glob
 from win_lin import running_on_linux

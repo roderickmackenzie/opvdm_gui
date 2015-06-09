@@ -46,6 +46,7 @@ from plot_widget import plot_widget
 from plot_state import plot_state
 from plot_io import plot_load_info
 import webbrowser
+from progress import progress_class
 #   columns
 (
   COLUMN_LAYER,
@@ -147,6 +148,8 @@ class class_optical(gtk.Window):
 	def init(self):
 		self.config_file="optics_epitaxy.inp"
 		self.enabled=os.path.exists(self.config_file)
+		self.progress_window=progress_class()
+		self.progress_window.init()
 		
 	def onclick(self, event):
 		print 'button=%d, x=%d, y=%d, xdata=%f, ydata=%f'%(
@@ -810,6 +813,7 @@ class class_optical(gtk.Window):
 		plot_labels.append("Reflection")
 
 		self.plot_widgets=[]
+		self.progress_window.start()
 		for i in range(0,len(input_files)):
 			self.plot_widgets.append(plot_widget())
 			self.plot_widgets[i].init(self)
@@ -832,6 +836,6 @@ class class_optical(gtk.Window):
 		self.set_icon_from_file(find_data_file("gui/image.jpg"))
 		self.set_title("Optical Model - (www.opvdm.com)")
 		self.set_position(gtk.WIN_POS_CENTER)
-
+		self.progress_window.stop()
 
 

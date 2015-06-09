@@ -31,8 +31,6 @@ from tempfile import mkstemp
 import logging
 import zipfile
 import re
-from encode import inp_set_encode
-from encode import inp_unset_encode
 import hashlib
 import glob
 from win_lin import running_on_linux

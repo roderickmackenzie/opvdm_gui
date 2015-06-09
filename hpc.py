@@ -138,13 +138,6 @@ class hpc_class(gtk.Window):
 
 	def callback_hpc_build_job_local(self, widget, data=None):
 		curdir=os.getcwd()
-		print self.hpc_root_dir
-		os.chdir(self.hpc_root_dir)
-		try:
-			shutil.rmtree('./hpc')
-		except: 
-	  		print "No hpc dir to delete"
-		os.chdir(curdir)
 
 		self.terminal.feed_child("cd "+self.hpc_root_dir+"\n")
 		self.terminal.feed_child("./buildforhpc.sh scan\n")
@@ -190,7 +183,7 @@ class hpc_class(gtk.Window):
 		self.terminal.feed_child("cd "+curdir+"\n")
 
 	def callback_hpc_view_images(self, widget, data=None):
-		cmd = 'gnome-open '+self.exe_dir+'../'
+		cmd = 'gnome-open '+os.getcwd()+'../'
 		os.system(cmd)
 
 	def callback_hpc_run_jobs(self, widget, data=None):
@@ -201,18 +194,18 @@ class hpc_class(gtk.Window):
 
 
 	def callback_hpc_fitlog_plot(self, widget, data=None):
-		plot_script_file=os.path.join(self.exe_dir,"plot","hpc_fitlog.plot")
+		plot_script_file=os.path.join(os.getcwd(),"plot","hpc_fitlog.plot")
 		print plot_script_file
 		find_fit_log(plot_script_file,"../hpc/")
 		self.terminal.feed_child("gnuplot -persist "+plot_script_file+"\n")
 
 	def callback_hpc_fit_speed_log_plot(self, widget, data=None):
-		plot_script_file=os.path.join(self.exe_dir,"plot","hpc_fit_speed_log.plot")
+		plot_script_file=os.path.join(os.getcwd(),"plot","hpc_fit_speed_log.plot")
 		print plot_script_file
 		find_fit_speed_log(plot_script_file,"../hpc/")
 		self.terminal.feed_child("gnuplot -persist "+plot_script_file+"\n")
 
-		#cmd = 'gnuplot -persist '+self.exe_dir+'plot/hpc_fitlog.plot'
+		#cmd = 'gnuplot -persist '+os.getcwd()+'plot/hpc_fitlog.plot'
 		#os.system(cmd)
 
 
@@ -222,12 +215,13 @@ class hpc_class(gtk.Window):
 		self.terminal.feed_child("./autoonefit.sh\n")
 		self.terminal.feed_child("cd "+curdir+"\n")
 
-	def init(self, root_dir,exe_dir,terminal):
+
+	def init(self, root_dir,terminal):
+		print "ROOT=",root_dir
 		self.win_list=windows()
 		self.terminal=terminal
 		main_box=gtk.HBox()
 		self.hpc_root_dir=root_dir
-		self.exe_dir=exe_dir
 		vbox_l=gtk.VBox(False, 2)
 		vbox_l.show()
 		main_box.pack_start(vbox_l, False, False, 0)

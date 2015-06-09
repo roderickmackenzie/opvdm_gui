@@ -59,6 +59,9 @@ from scan_plot import scan_gen_plot_data
 from scan_io import scan_clean_dir
 from server import server_find_simulations_to_run
 from plot_io import plot_save_oplot_file
+from scan_io import scan_list_simulations
+from scan_io import scan_delete_simulations
+
 class scan_vbox(gtk.VBox):
 
 	icon_theme = gtk.icon_theme_get_default()
@@ -192,7 +195,7 @@ class scan_vbox(gtk.VBox):
 
 	def import_from_hpc(self):
 		scan_clean_dir(self.sim_dir)
-		hpc_path="../hpc_run_1/"
+		hpc_path="../hpc/"
 		hpc_path=os.path.abspath(hpc_path)
 		files=os.listdir(hpc_path)
 		for i in range(0,len(files)):
@@ -202,6 +205,27 @@ class scan_vbox(gtk.VBox):
 					dest=os.path.join(self.sim_dir,files[i])
 					shutil.copytree(full_name, dest, symlinks=False, ignore=None)
 					print full_name
+
+	def push_to_hpc(self):
+		hpc_path="../hpc/"
+		hpc_path=os.path.abspath(hpc_path)
+		hpc_files=[]
+		scan_list_simulations(hpc_files,hpc_path)
+		print "hpc files=",hpc_files
+		scan_delete_simulations(hpc_files)
+		files=[]
+		scan_list_simulations(files,self.sim_dir)
+
+		print "copy files=",files
+		for i in range(0,len(files)):
+			shutil.copytree(files[i], os.path.join(hpc_path,os.path.basename(files[i])),symlinks=True)
+		#
+		#	full_name=os.path.join(hpc_path,files[i])
+		#	if files[i]!="orig":
+		#		if os.path.isdir(full_name)==True:
+		#			dest=os.path.join(self.sim_dir,files[i])
+		#			shutil.copytree(full_name, dest, symlinks=False, ignore=None)
+		#			print full_name
  
 	def simulate(self,run_simulation,generate_simulations):
 
