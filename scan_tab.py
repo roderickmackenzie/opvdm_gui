@@ -275,6 +275,8 @@ class scan_vbox(gtk.VBox):
 			for i in range(0,len(self.liststore_combobox)):
 				program_list.append([self.liststore_combobox[i][0],self.liststore_combobox[i][1],self.liststore_combobox[i][2],self.liststore_combobox[i][3]])
 
+			print program_list
+
 			if generate_simulations==True:
 				tree_gen(program_list,base_dir,self.sim_dir)
 

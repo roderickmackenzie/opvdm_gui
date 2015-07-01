@@ -53,6 +53,7 @@ from util import get_orig_inp_file_path
 from util import opvdm_clone
 from export_as import export_as
 from emesh import tab_electrical_mesh
+from tmesh import tab_time_mesh
 from copying import copying
 from tab_homo import tab_bands
 from tempfile import mkstemp
@@ -798,6 +799,12 @@ class NotebookExample:
 			self.electrical_mesh=tab_electrical_mesh()
 			self.electrical_mesh.init()
 
+		if self.time_mesh!=None:
+			logging.info('Del scan_window')
+			del self.time_mesh
+			self.time_mesh=tab_electrical_mesh()
+			self.time_mesh.init()
+
 		myitem=self.item_factory.get_item("/Plots/One plot window")
 		myitem.set_active(self.config.get_value("#one_plot_window",False))
 		myitem=self.item_factory.get_item("/Plots/Plot after simulation")
@@ -923,6 +930,12 @@ class NotebookExample:
 			self.electrical_mesh.hide_all()
 		else:
 			self.electrical_mesh.show_all()
+
+	def callback_edit_time_mesh(self, widget, data=None):
+		if self.time_mesh.get_property("visible")==True:
+			self.time_mesh.hide_all()
+		else:
+			self.time_mesh.show_all()
 
 	def callback_undo(self, widget, data=None):
 		l=self.undo_list.get_list()
@@ -1228,12 +1241,20 @@ class NotebookExample:
 		toolbar.insert(sep, pos)
 		pos=pos+1
 
-	        image = gtk.Image()
+		image = gtk.Image()
    		image.set_from_file(find_data_file("gui/mesh.png"))
 		self.mesh = gtk.ToolButton(image)
 		self.tooltips.set_tip(self.mesh, "Edit the electrical mesh")
 		self.mesh.connect("clicked", self.callback_edit_mesh)
 		toolbar.insert(self.mesh, pos)
+		pos=pos+1
+
+		image = gtk.Image()
+   		image.set_from_file(find_data_file("gui/time.png"))
+		self.time_mesh = gtk.ToolButton(image)
+		self.tooltips.set_tip(self.mesh, "Edit the electrical mesh")
+		self.time_mesh.connect("clicked", self.callback_edit_time_mesh)
+		toolbar.insert(self.time_mesh, pos)
 		pos=pos+1
 
 		if os.path.isfile(find_data_file("optics_epitaxy.inp")):
@@ -1403,6 +1424,9 @@ class NotebookExample:
 
 		self.electrical_mesh=tab_electrical_mesh()
 		self.electrical_mesh.init()
+
+		self.time_mesh=tab_time_mesh()
+		self.time_mesh.init()
 
 		logging.info('__init__6.5')
 		self.thread = _FooThread()

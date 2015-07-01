@@ -121,6 +121,7 @@ class scan_class(gtk.Window):
 		new_sim_name=dlg_get_text( "New simulation name:", "Simulation "+str(self.number_of_tabs+1))
 
 		if new_sim_name!=None:
+			new_sim_name=self.remove_invalid(new_sim_name)
 			name=os.path.join(os.getcwd(),new_sim_name)
 			self.add_page(name)
 
@@ -157,6 +158,7 @@ class scan_class(gtk.Window):
 		old_dir=os.path.join(self.sim_dir,name)
 		new_sim_name=dlg_get_text( "Clone the current simulation to a new simulation called:", name)
 		if new_sim_name!=None:
+			new_sim_name=self.remove_invalid(new_sim_name)
 			new_dir=os.path.join(self.sim_dir,new_sim_name)
 
 			copy_scan_dir(new_dir,old_dir)
@@ -194,6 +196,9 @@ class scan_class(gtk.Window):
 		tab = self.notebook.get_nth_page(pageNum)
 		tab.push_to_hpc()
 
+	def remove_invalid(self,input_name):
+		return input_name.replace (" ", "_")
+
 	def callback_rename_page(self,widget,data):
 		pageNum = self.notebook.get_current_page()
 		tab = self.notebook.get_nth_page(pageNum)
@@ -202,6 +207,7 @@ class scan_class(gtk.Window):
 		new_sim_name=dlg_get_text( "Rename the simulation to be called:", name)
 
 		if new_sim_name!=None:
+			new_sim_name=self.remove_invalid(new_sim_name)
 			new_dir=os.path.join(self.sim_dir,new_sim_name)
 			shutil.move(old_dir, new_dir)
 			tab.rename(new_dir)

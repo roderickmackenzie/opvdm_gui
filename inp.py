@@ -29,6 +29,12 @@ from tempfile import mkstemp
 import logging
 import zipfile
 
+def inp_read_next_item(lines,pos):
+	token=lines[pos]
+	pos=pos+1
+	value=lines[pos]
+	pos=pos+1
+	return token,value,pos
 
 def inp_update_token_value(file_path, token, replace,line_number):
 	if token=="#Tll":

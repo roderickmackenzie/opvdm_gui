@@ -289,10 +289,11 @@ class plot_widget(gtk.VBox):
 								print "TICKS=",(max(s)-min(s))/4.0
 								self.ax[plot_number].yaxis.set_ticks(arange(min(s), max(s), (max(s)-min(s))/4.0 ))
 
-						if i<len(self.labels[i]) and self.labels[i]!="":
-							print self.labels[i]
+						#print self.labels,i,self.labels[i]
+						if self.labels[i]!="":
+							print "Rod=",self.labels[i]
 							print self.plot_token.key_units
-							files.append("$"+numbers_to_latex(str(self.labels[i]))+" "+self.plot_token.key_units+"$")
+							files.append("$"+numbers_to_latex(str(self.labels[i]))+" "+pygtk_to_latex_subscript(self.plot_token.key_units)+"$")
 
 							lines.append(Ec)
 
