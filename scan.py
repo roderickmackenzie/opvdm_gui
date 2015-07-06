@@ -274,7 +274,7 @@ class scan_class(gtk.Window):
 	def callback_run_all_simulations(self,widget):
 		for i in range(0,self.notebook.get_n_pages()):
 			tab = self.notebook.get_nth_page(i)
-			tab.simulate()
+			tab.simulate(True,True)
 
 
 	def callback_stop_simulation(self,widget):

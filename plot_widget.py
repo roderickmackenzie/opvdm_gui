@@ -586,6 +586,7 @@ class plot_widget(gtk.VBox):
 
 	def callback_key(self, data, widget):
 		self.plot_token.legend_pos=widget.get_label()
+		print self.config_file,self.plot_token
 		plot_save_oplot_file(self.config_file,self.plot_token)
 		self.do_plot()
 

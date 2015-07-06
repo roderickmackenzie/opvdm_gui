@@ -67,7 +67,7 @@ class tab_time_mesh(gtk.Window):
 	visible=1
 
 	def save_data(self):
-		a = open("time_mesh2.inp", "w")
+		a = open("time_mesh_config.inp", "w")
 		a.write("#start_time\n")
 		a.write(str(float(self.start_time))+"\n")
 		a.write("#time_segments\n")
@@ -89,6 +89,7 @@ class tab_time_mesh(gtk.Window):
 		a.write("#ver\n")
 		a.write("1.0\n")
 		a.write("#end\n")
+		a.close()
 
 
 	def on_remove_item_clicked(self, button, treeview):
@@ -174,16 +175,19 @@ class tab_time_mesh(gtk.Window):
 		layer=0
 		color =['r','g','b','y','o','r','g','b','y','o']
 
-		self.ax1.set_ylabel('Energy (eV)')
+		self.ax1.set_ylabel('Magnitude (au)')
 		#ax2.set_ylabel('Energy (eV)')
-		self.ax1.set_xlabel('Position (nm)')
-		voltage, = self.ax1.plot(self.time,self.voltage, 'ro-', linewidth=3 ,alpha=0.5)
-		sun, = self.ax1.plot(self.time,self.sun, 'go-', linewidth=3 ,alpha=0.5)
-		laser, = self.ax1.plot(self.time,self.laser, 'bo-', linewidth=3 ,alpha=0.5)
+		self.ax1.set_xlabel('Time (s)')
+		sun, = self.ax1.plot(self.time,self.sun, 'go-', linewidth=3 ,alpha=1.0)
+		laser, = self.ax1.plot(self.time,self.laser, 'bo-', linewidth=3 ,alpha=1.0)
 
+		self.ax1.ticklabel_format(style='sci', axis='x', scilimits=(0,0))
+
+		self.ax2 = self.ax1.twinx()
+		voltage, = self.ax2.plot(self.time,self.voltage, 'ro-', linewidth=3 ,alpha=1.0)
+		self.ax2.set_ylabel('Voltage (Volts)')
 		self.fig.legend((voltage, sun, laser), ('Voltage', 'Sun', 'Laser'), 'upper right')
 
-		
 	def save_image(self,file_name):
 		self.fig.savefig(file_name)	
 
@@ -279,7 +283,7 @@ class tab_time_mesh(gtk.Window):
 
 	def load_data(self):
 		lines=[]
-		inp_load_file(lines,"time_mesh2.inp")
+		inp_load_file(lines,"time_mesh_config.inp")
 
 		pos=0
 		token,value,pos=inp_read_next_item(lines,pos)
@@ -318,6 +322,13 @@ class tab_time_mesh(gtk.Window):
 				self.voltage.append(voltage)	
 				pos=pos+dt
 
+		a = open("time_mesh.inp", "w")
+		a.write(str(len(self.time))+"\n")
+		for i in range(0,len(self.time)):
+
+			a.write(str(self.time[i])+" "+str(self.laser[i])+" "+str(self.sun[i])+" "+str(self.voltage[i])+"\n")
+
+		a.close()
 	def init(self):
 		self.fig = Figure(figsize=(5,4), dpi=100)
 		self.ax1=None
@@ -405,13 +416,12 @@ class tab_time_mesh(gtk.Window):
 
 
 
-		canvas.set_size_request(600,400)
+		canvas.set_size_request(700,400)
 		self.vbox.pack_start(canvas, True, True, 0)
 
 		self.store = self.create_model()
 
 		treeview = gtk.TreeView(self.store)
-		#treeView.connect("row-activated", self.on_activated)
 		treeview.set_rules_hint(True)
 
 		self.create_columns(treeview)
@@ -426,39 +436,9 @@ class tab_time_mesh(gtk.Window):
 
 		self.save_data()
 
-		#frame.add(vbox_layers)
-		#frame.show()
-		#vbox.pack_start(frame, False, False, 0)
-
-		#spacer
-		#label=gtk.Label(" \n\n    ")
-		#self.attach(label, 4, 5, 1, 2,gtk.SHRINK ,gtk.SHRINK)
-		#vbox.pack_start(label, False, False, 0)
-
-		#label.show()
-
-
-		#gui_pos=3
-		#add_button = gtk.Button("Add",gtk.STOCK_ADD)
-		#add_button.connect("clicked", self.on_add_mesh_clicked, self.mesh_model)
-		#add_button.show()
-
-		#delete_button = gtk.Button("Delete",gtk.STOCK_DELETE)
-		#delete_button.connect("clicked", self.on_remove_from_mesh_click, treeview)
-		#delete_button.show()
-
-		#hbox = gtk.HBox(False, 2)
-	    
-		#hbox.pack_start(add_button, False, False, 0)
-		#hbox.pack_start(delete_button, False, False, 0)
-
-		#self.hbox.pack_start(vbox, False, False, 0)
-		#self.attach(vbox, 3, 4, 0, 1,gtk.SHRINK ,gtk.SHRINK)
-		#vbox.show()
-		#window_main_vbox.add(self.hbox)
 		self.add(self.vbox)
 		self.set_title("Time domain mesh editor - (www.opvdm.com)")
-		self.set_icon_from_file(find_data_file("gui/mesh.png"))
+		self.set_icon_from_file(find_data_file("gui/time.png"))
 		self.connect("delete-event", self.callback_close)
 		self.set_position(gtk.WIN_POS_CENTER)
 
