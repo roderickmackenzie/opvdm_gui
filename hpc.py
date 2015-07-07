@@ -44,11 +44,12 @@ class hpc_class(gtk.Window):
 
 	def callback_node(self, widget, data=None):
 		lines=[]
-		a = open("../clusterscripts/allowed_nodes", "w")
+		a = open("../hpc/allowed_nodes", "w")
 
 		if inp_load_file(lines,"./server.inp")==True:
 			cpus_per_job=int(inp_search_token_value(lines, "#server_cpus"))
 			print "CPUs per job=",cpus_per_job
+
 		a.write(str(cpus_per_job)+"\n")
 
 		for i in range(0, len(self.button)):

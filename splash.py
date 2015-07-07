@@ -52,7 +52,7 @@ class splash_window():
 		self.window.connect("show", self.show_cb)
 
 		self.window.set_decorated(False)
-		self.window.set_border_width(10)
+		self.window.set_border_width(0)
 		self.window.set_keep_above(True)
 		fixed = gtk.Fixed()
 		image = gtk.Image()
@@ -63,7 +63,7 @@ class splash_window():
 		label.show()
 		image.set_from_file(image_file)
 		image.show()
-		#fixed.put(image, 0, 0)
+		fixed.put(image, 0, 0)
 		fixed.put(label,40,40)
 
 		label = gtk.Label()

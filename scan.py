@@ -347,6 +347,11 @@ class scan_class(gtk.Window):
 	def callback_last_menu_click(self, widget, data):
 		print [data]
 
+	def switch_page(self,page, page_num, user_param1):
+		pageNum = self.notebook.get_current_page()
+		tab = self.notebook.get_nth_page(pageNum)
+		self.status_bar.push(self.context_id, tab.sim_dir)
+
 	def callback_remove_all_results(self, widget, data):
 		results=[]
 		return_file_list(results,self.sim_dir,"scan.inp")
@@ -575,7 +580,7 @@ class scan_class(gtk.Window):
 		main_vbox.pack_start(box, False, False, 0)
 
 		self.connect("delete-event", self.callback_close)
-
+		self.notebook.connect("switch-page",self.switch_page)
 		self.set_icon_from_file(find_data_file("gui/image.jpg"))
 
 		self.hide()

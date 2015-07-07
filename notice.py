@@ -28,6 +28,6 @@ import shutil
 from util import find_data_file
 
 def notice():
-	ret="opvdm (Organic Photovoltaic Device Model)\n"
-	ret=ret+"Copyright Roderick MacKenzie 2012, all rights reserved\n"
+	ret="opvdm (Organic Photovoltaic Device Model GUI)\n"
+	ret=ret+"Roderick MacKenzie, released under GPL 2012\n"
 	return ret

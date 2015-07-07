@@ -1012,7 +1012,128 @@ class NotebookExample:
 
 		#cmd = ['/bin/echo', 'File', ev.pathname, 'changed']
 	    #subprocess.Popen(cmd).communicate()
-		
+
+	def make_tool_box1(self):
+		pos=0
+		toolbar = gtk.Toolbar()
+		toolbar.set_style(gtk.TOOLBAR_ICONS)
+		toolbar.set_size_request(900, 50)
+		toolbar.show()
+
+		image = gtk.Image()
+   		image.set_from_file(find_data_file("gui/qe.png"))
+		self.qe = gtk.ToolButton(image)
+		self.tooltips.set_tip(self.qe, "Quantum efficiency")
+		#self.time_mesh.connect("clicked", self.callback_edit_time_mesh)
+		toolbar.insert(self.qe, pos)
+		self.qe.show_all()
+		pos=pos+1
+
+		if os.path.isfile(find_data_file("optics_epitaxy.inp")):
+			image = gtk.Image()
+	   		image.set_from_file(find_data_file("gui/optics.png"))
+			self.optics_button = gtk.ToolButton(image)
+			self.tooltips.set_tip(self.optics_button, "Optical simulation")
+			self.optics_button.connect("clicked", self.callback_optics_sim)
+			toolbar.insert(self.optics_button, pos)
+			self.optics_button.show_all()
+			pos=pos+1
+
+		self.sim_mode = gtk.combo_box_entry_new_text()
+		self.sim_mode.set_size_request(-1, 20)
+		f = open(find_data_file("sim_menu.inp"))
+		lines = f.readlines()
+		f.close()
+
+		for i in range(0, len(lines)):
+			self.sim_mode.append_text(lines[i].rstrip())
+
+		self.sim_mode.child.connect('changed', self.call_back_sim_mode_changed)
+		set_active_name(self.sim_mode, inp_get_token_value("sim.inp", "#simmode"))
+
+		lable=gtk.Label("Simulation mode:")
+		#lable.set_width_chars(15)
+		lable.show()
+
+		hbox = gtk.HBox(False, 2)
+
+		hbox.pack_start(lable, False, False, 0)
+		hbox.pack_start(self.sim_mode, False, False, 0)
+
+		tb_comboitem = gtk.ToolItem();
+		tb_comboitem.add(hbox);
+		tb_comboitem.show_all()
+		toolbar.insert(tb_comboitem, pos)
+		pos=pos+1
+
+		self.light = gtk.combo_box_entry_new_text()
+		self.sim_mode.set_size_request(-1, 20)
+		sun_values=["0.0","0.01","0.1","1.0","10"]
+		token=inp_get_token_value("light.inp", "#Psun")
+		if sun_values.count(token)==0:
+			sun_values.append(token)
+
+		for i in range(0,len(sun_values)):
+			self.light.append_text(sun_values[i])
+
+		self.light.child.connect('changed', self.call_back_light_changed)
+		set_active_name(self.light, token)
+
+		ti_light = gtk.ToolItem();
+		lable=gtk.Label("Light intensity:")
+		lable.show
+		hbox = gtk.HBox(False, 2)
+		hbox.pack_start(lable, False, False, 0)
+		hbox.pack_start(self.light, False, False, 0)
+
+		ti_light.add(hbox)
+		ti_light.show_all()
+
+		print "one"
+
+		print "two"
+
+		toolbar.insert(ti_light, pos)
+		pos=pos+1
+
+		ti_progress = gtk.ToolItem()
+		hbox = gtk.HBox(False, 2)
+
+		#logging.info('__init__6')
+		#hbox.set_child_packing(self.progress, False, False, 0, 0)
+
+		sep = gtk.SeparatorToolItem()
+
+		sep.set_draw(False)
+		sep.set_expand(True)
+		sep.show_all()
+
+		toolbar.insert(sep, pos)
+		pos=pos+1
+
+		self.spin=gtk.Spinner()
+		self.spin.set_size_request(32, 32)
+		self.spin.show()
+		self.spin.stop()
+
+
+		#logging.info('__init__6.1')
+		gap=gtk.Label(" ")
+		hbox.add(gap)
+		hbox.add(self.spin)	
+		hbox.set_child_packing(self.spin, False, False, 0, 0)
+
+
+		gap.show()
+		hbox.show()
+
+		#logging.info('__init__6.2')
+		ti_progress.add(hbox)
+
+		toolbar.insert(ti_progress, pos)
+		pos=pos+1
+		ti_progress.show()
+		return toolbar
 
 	def __init__(self):
 		splash=splash_window()
@@ -1112,10 +1233,6 @@ class NotebookExample:
 		toolbar = gtk.Toolbar()
 		toolbar.set_style(gtk.TOOLBAR_ICONS)
 		toolbar.set_size_request(-1, 50)
-
-		toolbar2 = gtk.Toolbar()
-		toolbar2.set_style(gtk.TOOLBAR_ICONS)
-		toolbar2.set_size_request(-1, 30)
 
 		#newtb = gtk.ToolButton(gtk.STOCK_NEW)
 		#opentb = gtk.ToolButton(gtk.STOCK_OPEN)
@@ -1252,19 +1369,10 @@ class NotebookExample:
 		image = gtk.Image()
    		image.set_from_file(find_data_file("gui/time.png"))
 		self.time_mesh = gtk.ToolButton(image)
-		self.tooltips.set_tip(self.mesh, "Edit the electrical mesh")
+		self.tooltips.set_tip(self.time_mesh, "Edit the electrical mesh")
 		self.time_mesh.connect("clicked", self.callback_edit_time_mesh)
 		toolbar.insert(self.time_mesh, pos)
 		pos=pos+1
-
-		if os.path.isfile(find_data_file("optics_epitaxy.inp")):
-			image = gtk.Image()
-	   		image.set_from_file(find_data_file("gui/optics.png"))
-			self.optics_button = gtk.ToolButton(image)
-			self.tooltips.set_tip(self.optics_button, "Optical simulation")
-			self.optics_button.connect("clicked", self.callback_optics_sim)
-			toolbar.insert(self.optics_button, pos)
-			pos=pos+1
 
 
 
@@ -1282,11 +1390,11 @@ class NotebookExample:
 		pos=pos+1
 
 
-		quittb = gtk.ToolButton(gtk.STOCK_QUIT)
-		self.tooltips.set_tip(quittb, "Quit")
-		toolbar.insert(quittb, pos)
-		quittb.connect("clicked", gtk.main_quit)
-		pos=pos+1
+		#quittb = gtk.ToolButton(gtk.STOCK_QUIT)
+		#self.tooltips.set_tip(quittb, "Quit")
+		#toolbar.insert(quittb, pos)
+		#quittb.connect("clicked", gtk.main_quit)
+		#pos=pos+1
 
 		new_sim.connect("clicked", self.callback_new)
 		open_sim.connect("clicked", self.callback_open)
@@ -1294,90 +1402,11 @@ class NotebookExample:
 
 		self.plot_open.connect("clicked", self.callback_plot_open)
 
-		self.sim_mode = gtk.combo_box_entry_new_text()
-
-		f = open(find_data_file("sim_menu.inp"))
-		lines = f.readlines()
-		f.close()
-
-		for i in range(0, len(lines)):
-			self.sim_mode.append_text(lines[i].rstrip())
-
-		self.sim_mode.child.connect('changed', self.call_back_sim_mode_changed)
-		set_active_name(self.sim_mode, inp_get_token_value("sim.inp", "#simmode"))
-
-		lable=gtk.Label("Simulation mode:")
-		#lable.set_width_chars(15)
-		lable.show
-	        hbox = gtk.HBox(False, 2)
-        	
-	        hbox.pack_start(lable, False, False, 0)
-	        hbox.pack_start(self.sim_mode, False, False, 0)
-
-		tb_comboitem = gtk.ToolItem();
-		tb_comboitem.add(hbox);
-		tb_comboitem.show_all()
-		toolbar2.insert(tb_comboitem, 0)
-		logging.info('__init__5')
-
-		self.light = gtk.combo_box_entry_new_text()
-		sun_values=["0.0","0.01","0.1","1.0","10"]
-		token=inp_get_token_value("light.inp", "#Psun")
-		if sun_values.count(token)==0:
-			sun_values.append(token)
-
-		for i in range(0,len(sun_values)):
-			self.light.append_text(sun_values[i])
-
-		self.light.child.connect('changed', self.call_back_light_changed)
-		set_active_name(self.light, token)
-
-		ti_light = gtk.ToolItem();
-		lable=gtk.Label("Light intensity:")
-		lable.show
-	        hbox = gtk.HBox(False, 2)
-	        hbox.pack_start(lable, False, False, 0)
-	        hbox.pack_start(self.light, False, False, 0)
-
-		ti_light.add(hbox)
-		ti_light.show_all()
-		toolbar2.insert(ti_light, 1)
-
-		sep = gtk.SeparatorToolItem()
-		sep.set_draw(False)
-		sep.set_expand(True)
-		sep.show_all()
-		toolbar2.insert(sep, 2)
-
-		ti_progress = gtk.ToolItem()
-		hbox = gtk.HBox(False, 2)
-
-		logging.info('__init__6')
-		#hbox.set_child_packing(self.progress, False, False, 0, 0)
-
-		self.spin=gtk.Spinner()
-		self.spin.set_size_request(32, 32)
-		self.spin.show()
-		self.spin.stop()
-
-		logging.info('__init__6.1')
-		gap=gtk.Label(" ")
-		hbox.add(gap)
-		hbox.add(self.spin)	
-		#hbox.set_child_packing(self.spin, False, False, 0, 0)
-
-
-
-		gap.show()
-		hbox.show()
-		logging.info('__init__6.2')
-		ti_progress.add(hbox)
-		toolbar2.insert(ti_progress, 3)
-		ti_progress.show()
+		toolbar1=self.make_tool_box1()
 
 
 		toolbar.show_all()
-		toolbar2.show()
+
 
 
 		main_vbox.pack_start(self.menubar, False, True, 0)
@@ -1386,10 +1415,10 @@ class NotebookExample:
 		handlebox.show()
 
 		toolbar.set_size_request(1000, -1)
-		toolbar2.set_size_request(900, -1)
+
 		tb_vbox=gtk.VBox()
 		tb_vbox.add(toolbar)
-		tb_vbox.add(toolbar2)
+		tb_vbox.add(toolbar1)
 		tb_vbox.show()
 
 
@@ -1402,9 +1431,6 @@ class NotebookExample:
 		#self.progress.hide()
 
 		#main_vbox.pack_start(self.progress, False, False, 0)#add(self.progress)
-
-
-
 
 
 		self.window.connect("delete-event", self.callback_close_window) 
