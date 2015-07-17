@@ -802,7 +802,7 @@ class NotebookExample:
 		if self.time_mesh!=None:
 			logging.info('Del scan_window')
 			del self.time_mesh
-			self.time_mesh=tab_electrical_mesh()
+			self.time_mesh=tab_time_mesh()
 			self.time_mesh.init()
 
 		myitem=self.item_factory.get_item("/Plots/One plot window")

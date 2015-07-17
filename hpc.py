@@ -53,14 +53,16 @@ class hpc_class(gtk.Window):
 		a.write(str(cpus_per_job)+"\n")
 
 		for i in range(0, len(self.button)):
+			print "cpus=",self.name[i]
 			if self.button[i].get_active()==True:
+				print "active=",self.name[i]
 				a.write(self.name[i]+"\n")
 				a.write(str(self.cpus[i])+"\n")
 		a.close()
 
 		now_dir=os.getcwd()
 
-		os.chdir("../clusterscripts")
+		os.chdir("../hpc")
 		os.system("./make_node_list.py")
 
 		os.chdir(now_dir)

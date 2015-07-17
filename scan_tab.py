@@ -61,6 +61,7 @@ from server import server_find_simulations_to_run
 from plot_io import plot_save_oplot_file
 from scan_io import scan_list_simulations
 from scan_io import scan_delete_simulations
+from notes import notes
 
 class scan_vbox(gtk.VBox):
 
@@ -75,6 +76,11 @@ class scan_vbox(gtk.VBox):
 		self.reload_liststore()
 		self.plotted_graphs.init(self.sim_dir,self.callback_last_menu_click)
 		
+	def callback_notes(self, widget, data=None):
+
+		note=notes()
+		note.init(self.sim_dir)
+		note.show()
 
 	def callback_move_down(self, widget, data=None):
 
@@ -102,10 +108,11 @@ class scan_vbox(gtk.VBox):
 
 	def add_line(self,data):
 		selection = self.treeview.get_selection()
-		model, iter = selection.get_selected()
+		model, pathlist = selection.get_selected_rows()
 
-		if iter:
-			path = model.get_path(iter)[0]
+		if len(pathlist)!=0:
+			path = pathlist[0][0]
+			#path = model.get_path(iter)[0]
 			self.liststore_combobox.insert(path+1,data)
 		else:
 			self.liststore_combobox.append(data)
@@ -118,12 +125,14 @@ class scan_vbox(gtk.VBox):
 
 	def callback_copy_item(self, widget, data=None):
 		selection = self.treeview.get_selection()
-		model, iter = selection.get_selected()
-
-		if iter:
-			path = model.get_path(iter)[0]
-			build=model[path][0]+"\n"+model[path][1]+"\n"+model[path][2]
-			self.clipboard.set_text(build, -1)
+		model, pathlist = selection.get_selected_rows()
+		build=""
+		for path in pathlist:
+			tree_iter = model.get_iter(path)
+			print "path=",tree_iter
+			build=build+model.get_value(tree_iter,0)+"\n"+model.get_value(tree_iter,1)+"\n"+model.get_value(tree_iter,2)+"\n"+str(model.get_value(tree_iter,3))
+			print build
+		self.clipboard.set_text(build, -1)
 
 	def callback_paste_item(self, widget, data=None):
 		selection = self.treeview.get_selection()
@@ -140,16 +149,14 @@ class scan_vbox(gtk.VBox):
 		self.select_param_window.select_window.show()
 
 	def callback_delete_item(self, widget, data=None):
-		#self.liststore_combobox.append(["Television", "Samsung"])
-
 		selection = self.treeview.get_selection()
-		model, iter = selection.get_selected()
+		model, pathlist = selection.get_selected_rows()
 
-		if iter:
-			path = model.get_path(iter)[0]
+		iters = [model.get_iter(path) for path in pathlist]
+		for iter in iters:
 			model.remove(iter)
-			self.save_combo()
 
+		self.save_combo()
 		self.rebuild_liststore_op_type()
 
 	def plot_results(self,plot_token):
@@ -598,6 +605,12 @@ class scan_vbox(gtk.VBox):
 		toolbar.insert(move, pos)
 		pos=pos+1
 
+		notes = gtk.ToolButton(gtk.STOCK_EDIT)
+		notes.connect("clicked", self.callback_notes)
+		self.tooltips.set_tip(notes, "Edit notes")
+		toolbar.insert(notes, pos)
+		pos=pos+1
+
 		sep = gtk.SeparatorToolItem()
 		sep.set_draw(True)
 		sep.set_expand(False)
@@ -638,6 +651,7 @@ class scan_vbox(gtk.VBox):
 
 
 		self.treeview = gtk.TreeView(self.liststore_combobox)
+		self.treeview.get_selection().set_mode(gtk.SELECTION_MULTIPLE)
 		self.treeview.connect("button-press-event", self.on_treeview_button_press_event)
 
 

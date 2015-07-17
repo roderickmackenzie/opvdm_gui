@@ -509,32 +509,13 @@ class scan_class(gtk.Window):
 		toolbar.insert(tb_simulate, pos)
 		pos=pos+1
 
-		if os.path.isfile("fit.inp"):
+		if debug_mode()==True:
 			sep = gtk.SeparatorToolItem()
 			sep.set_draw(True)
 			sep.set_expand(False)
 			toolbar.insert(sep, pos)
 			pos=pos+1
 
-			tb_help = gtk.ToolButton(gtk.STOCK_HARDDISK)
-			tb_help.connect("clicked", self.callback_cluster_get_data)
-			self.tooltips.set_tip(tb_help, "Get data from cluster")
-			toolbar.insert(tb_help, pos)
-			pos=pos+1
-
-			tb_help = gtk.ToolButton(gtk.STOCK_FIND)
-			tb_help.connect("clicked", self.callback_cluster_print_jobs)
-			self.tooltips.set_tip(tb_help, "Get data from cluster")
-			toolbar.insert(tb_help, pos)
-			pos=pos+1
-
-			tb_help = gtk.ToolButton(gtk.STOCK_FIND)
-			tb_help.connect("clicked", self.callback_cluster_fit_log)
-			self.tooltips.set_tip(tb_help, "Show fitlog")
-			toolbar.insert(tb_help, pos)
-			pos=pos+1
-
-		if debug_mode()==True:
 			image = gtk.Image()
 	   		image.set_from_file(find_data_file("gui/server.png"))
 			cluster = gtk.ToolButton(image)

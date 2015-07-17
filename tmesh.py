@@ -36,23 +36,21 @@ from util import find_data_file
 from scan_item import scan_item_add
 from inp import inp_load_file
 from inp import inp_read_next_item
+from gui_util import dlg_get_text
+from inp import inp_get_token_value
+import matplotlib.mlab as mlab
+from debug import debug_mode
+from inp import inp_write_lines_to_file
 
 (
 SEG_LENGTH,
 SEG_DT,
 SEG_VOLTAGE,
+SEG_MUL,
 SEG_SUN,
 SEG_LASER
-) = range(5)
+) = range(6)
 
-class time_segment:
-	length=0.0
-	dt=0.0
-	voltage=0.0
-	sun=0.0
-	laser=0.0
-
-articles = []
 mesh_articles = []
 
 class tab_time_mesh(gtk.Window):
@@ -67,32 +65,52 @@ class tab_time_mesh(gtk.Window):
 	visible=1
 
 	def save_data(self):
-		a = open("time_mesh_config.inp", "w")
-		a.write("#start_time\n")
-		a.write(str(float(self.start_time))+"\n")
-		a.write("#time_segments\n")
-		a.write(str(int(len(self.store)))+"\n")
+		out_text=[]
+		out_text.append("#start_time")
+		out_text.append(str(float(self.start_time)))
+		out_text.append("#fs_laser_time")
+		out_text.append(str(float(self.fs_laser_time)))
+		out_text.append("#time_segments")
+		out_text.append(str(int(len(self.store))))
 		i=0
 		for line in self.store:
-			a.write("#time_segment"+str(i)+"_len"+"\n")
-			a.write(str(line[SEG_LENGTH])+"\n")
-			a.write("#time_segment"+str(i)+"_dt"+"\n")
-			a.write(str(line[SEG_DT])+"\n")
-			a.write("#time_segment"+str(i)+"_voltage"+"\n")
-			a.write(str(line[SEG_VOLTAGE])+"\n")
-			a.write("#time_segment"+str(i)+"_sun"+"\n")
-			a.write(str(line[SEG_SUN])+"\n")
-			a.write("#time_segment"+str(i)+"_laser"+"\n")
-			a.write(str(line[SEG_LASER])+"\n")
+			out_text.append("#time_segment"+str(i)+"_len")
+			out_text.append(str(line[SEG_LENGTH]))
+			out_text.append("#time_segment"+str(i)+"_dt")
+			out_text.append(str(line[SEG_DT]))
+			out_text.append("#time_segment"+str(i)+"_voltage")
+			out_text.append(str(line[SEG_VOLTAGE]))
+			out_text.append("#time_segment"+str(i)+"_mul")
+			out_text.append(str(line[SEG_MUL]))
+			out_text.append("#time_segment"+str(i)+"_sun")
+			out_text.append(str(line[SEG_SUN]))
+			out_text.append("#time_segment"+str(i)+"_laser")
+			out_text.append(str(line[SEG_LASER]))
 			i=i+1
 
-		a.write("#ver\n")
-		a.write("1.0\n")
-		a.write("#end\n")
-		a.close()
+		out_text.append("#ver")
+		out_text.append("1.0")
+		out_text.append("#end")
+		
+		inp_write_lines_to_file(os.path.join(os.getcwd(),"time_mesh_config.inp"),out_text)
 
+	def callback_add_section(self, widget, treeview):
+		data=["0.0", "0.0", "0.0", "0.0", "0.0", "0.0"]
+		selection = treeview.get_selection()
+		model, iter = selection.get_selected()
 
-	def on_remove_item_clicked(self, button, treeview):
+		if iter:
+			path = model.get_path(iter)[0]
+			self.store.insert(path+1,data)
+		else:
+			self.store.append(data)
+
+		self.update_mesh()
+		self.draw_graph()
+		self.fig.canvas.draw()
+		self.save_data()
+
+	def callback_remove_item(self, button, treeview):
 
 		selection = treeview.get_selection()
 		model, iter = selection.get_selected()
@@ -101,25 +119,48 @@ class tab_time_mesh(gtk.Window):
 			path = model.get_path(iter)[0]
 			model.remove(iter)
 
-			del articles[ path ]
+		self.update_mesh()
+		self.draw_graph()
+		self.fig.canvas.draw()
+		self.save_data()
 
-		self.save_model()
-
-	def on_remove_from_mesh_click(self, button, treeview):
+	def callback_move_down(self, widget, treeview):
 
 		selection = treeview.get_selection()
 		model, iter = selection.get_selected()
 
 		if iter:
 			path = model.get_path(iter)[0]
-			model.remove(iter)
+ 			self.store.move_after( iter,self.store.iter_next(iter))
 
-			del mesh_articles[ path ]
+		self.update_mesh()
+		self.draw_graph()
+		self.fig.canvas.draw()
+		self.save_data()
 
-		self.save_model()
+	def callback_start_time(self, widget, treeview):
+		new_time=dlg_get_text( "Enter the start time of the simulation", str(self.start_time))
+
+		if new_time!=None:
+			self.start_time=float(new_time)
+			self.update_mesh()
+			self.draw_graph()
+			self.fig.canvas.draw()
+			self.save_data()
+
+
+	def callback_laser(self, widget, treeview):
+		new_time=dlg_get_text( "Enter the time at which the laser pulse will fire (-1) to turn it off", str(self.fs_laser_time))
+
+		if new_time!=None:
+			self.fs_laser_time=float(new_time)
+			self.update_mesh()
+			self.draw_graph()
+			self.fig.canvas.draw()
+			self.save_data()
 
 	def on_cell_edited_length(self, cell, path, new_text, model):
-		model[path][0] = new_text
+		model[path][SEG_LENGTH] = new_text
 		self.update_mesh()
 		self.draw_graph()
 		self.fig.canvas.draw()
@@ -127,28 +168,35 @@ class tab_time_mesh(gtk.Window):
 
 	def on_cell_edited_dt(self, cell, path, new_text, model):
 		print "Rod",path
-		model[path][1] = new_text
+		model[path][SEG_DT] = new_text
 		self.update_mesh()
 		self.draw_graph()
 		self.fig.canvas.draw()
 		self.save_data()
 
 	def on_cell_edited_voltage(self, cell, path, new_text, model):
-		model[path][2] = new_text
+		model[path][SEG_VOLTAGE] = new_text
 		self.update_mesh()
 		self.draw_graph()
 		self.fig.canvas.draw()
 		self.save_data()
 
 	def on_cell_edited_sun(self, cell, path, new_text, model):
-		model[path][3] = new_text
+		model[path][SEG_SUN] = new_text
 		self.update_mesh()
 		self.draw_graph()
 		self.fig.canvas.draw()
 		self.save_data()
 
 	def on_cell_edited_laser(self, cell, path, new_text, model):
-		model[path][4] = new_text
+		model[path][SEG_LASER] = new_text
+		self.update_mesh()
+		self.draw_graph()
+		self.fig.canvas.draw()
+		self.save_data()
+
+	def on_cell_edited_mul(self, cell, path, new_text, model):
+		model[path][SEG_MUL] = new_text
 		self.update_mesh()
 		self.draw_graph()
 		self.fig.canvas.draw()
@@ -160,6 +208,9 @@ class tab_time_mesh(gtk.Window):
 		self.fig.clf()
 		self.draw_graph()
 		self.fig.canvas.draw()
+
+	def gaussian(self,x, mu, sig):
+		return exp(-power(x - mu, 2.) / (2 * power(sig, 2.)))
 
 	def draw_graph(self):
 
@@ -181,6 +232,16 @@ class tab_time_mesh(gtk.Window):
 		sun, = self.ax1.plot(self.time,self.sun, 'go-', linewidth=3 ,alpha=1.0)
 		laser, = self.ax1.plot(self.time,self.laser, 'bo-', linewidth=3 ,alpha=1.0)
 
+		if self.fs_laser_time!=-1:
+			if len(self.time)>2:
+				dt=(self.time[len(self.time)-1]-self.time[0])/100
+				start=self.fs_laser_time-dt*5
+				stop=self.fs_laser_time+dt*5
+				x = linspace(start,stop,100)
+				y=self.gaussian(x,self.fs_laser_time,dt)
+				#print y
+				fs_laser, = self.ax1.plot(x,y, 'g-', linewidth=3 ,alpha=1.0)
+
 		self.ax1.ticklabel_format(style='sci', axis='x', scilimits=(0,0))
 
 		self.ax2 = self.ax1.twinx()
@@ -188,20 +249,14 @@ class tab_time_mesh(gtk.Window):
 		self.ax2.set_ylabel('Voltage (Volts)')
 		self.fig.legend((voltage, sun, laser), ('Voltage', 'Sun', 'Laser'), 'upper right')
 
+
 	def save_image(self,file_name):
 		self.fig.savefig(file_name)	
-
-	def callback_refresh(self, widget, data=None):
-		self.update_graph()
 		
 
 	def callback_close(self, widget, data=None):
 		self.hide()
 		return True
-
-	def callback_hide_key(self, widget, data=None):
-		self.show_key=not self.show_key
-		self.draw_graph()
 
 	def callback_save(self, widget, data=None):
 		dialog = gtk.FileChooserDialog("Save as..",
@@ -235,11 +290,10 @@ class tab_time_mesh(gtk.Window):
 		os.system(cmd)
 
 	def create_model(self):
-		store = gtk.ListStore(str, str, str,str,str)
+		store = gtk.ListStore(str, str, str, str, str, str)
 
 		for line in self.list:
-			print str(line[2]), str(line[3]), str(line[4])
-			store.append([str(line[0]), str(line[1]), str(line[2]), str(line[3]), str(line[4])])
+			store.append([str(line[SEG_LENGTH]), str(line[SEG_DT]), str(line[SEG_VOLTAGE]), str(line[SEG_MUL]), str(line[SEG_SUN]), str(line[SEG_LASER])])
 
 		return store
 
@@ -249,36 +303,47 @@ class tab_time_mesh(gtk.Window):
 		renderer = gtk.CellRendererText()
 		renderer.connect("edited", self.on_cell_edited_length, model)
 		renderer.set_property('editable', True)
-		column = gtk.TreeViewColumn("Length", renderer, text=0)
-		column.set_sort_column_id(0)
+		column = gtk.TreeViewColumn("Length", renderer, text=SEG_LENGTH)
+		column.set_sort_column_id(SEG_LENGTH)
 		treeview.append_column(column)
 
 		renderer = gtk.CellRendererText()
 		renderer.connect("edited", self.on_cell_edited_dt, model)
-		column = gtk.TreeViewColumn("dt", renderer, text=1)
+		column = gtk.TreeViewColumn("dt", renderer, text=SEG_DT)
 		renderer.set_property('editable', True)
-		column.set_sort_column_id(1)
+		column.set_sort_column_id(SEG_DT)
 		treeview.append_column(column)
 
 		renderer = gtk.CellRendererText()
 		renderer.connect("edited", self.on_cell_edited_voltage, model)
-		column = gtk.TreeViewColumn("Voltage", renderer, text=2)
+		column = gtk.TreeViewColumn("Voltage", renderer, text=SEG_VOLTAGE)
 		renderer.set_property('editable', True)
-		column.set_sort_column_id(2)
+		column.set_sort_column_id(SEG_VOLTAGE)
+		treeview.append_column(column)
+
+		renderer = gtk.CellRendererText()
+		renderer.connect("edited", self.on_cell_edited_mul, model)
+		renderer.set_property('editable', True)
+		column = gtk.TreeViewColumn("Multiply", renderer, text=SEG_MUL)
+		column.set_sort_column_id(SEG_MUL)
 		treeview.append_column(column)
 
 		renderer = gtk.CellRendererText()
 		renderer.connect("edited", self.on_cell_edited_sun, model)
 		renderer.set_property('editable', True)
-		column = gtk.TreeViewColumn("Sun", renderer, text=3)
-		column.set_sort_column_id(3)
+		column = gtk.TreeViewColumn("Sun", renderer, text=SEG_SUN)
+		column.set_sort_column_id(SEG_SUN)
+		if debug_mode()==False:
+			column.set_visible(False)
 		treeview.append_column(column)
 
 		renderer = gtk.CellRendererText()
 		renderer.connect("edited", self.on_cell_edited_laser, model)
 		renderer.set_property('editable', True)
-		column = gtk.TreeViewColumn("Laser", renderer, text=4)
-		column.set_sort_column_id(4)
+		column = gtk.TreeViewColumn("Laser", renderer, text=SEG_LASER)
+		column.set_sort_column_id(SEG_LASER)
+		if debug_mode()==False:
+			column.set_visible(False)
 		treeview.append_column(column)
 
 	def load_data(self):
@@ -288,6 +353,10 @@ class tab_time_mesh(gtk.Window):
 		pos=0
 		token,value,pos=inp_read_next_item(lines,pos)
 		self.start_time=float(value)
+
+		token,value,pos=inp_read_next_item(lines,pos)
+		self.fs_laser_time=float(value)
+
 		token,value,pos=inp_read_next_item(lines,pos)
 		self.segments=int(value)
 
@@ -296,9 +365,10 @@ class tab_time_mesh(gtk.Window):
 			token,length,pos=inp_read_next_item(lines,pos)
 			token,dt,pos=inp_read_next_item(lines,pos)
 			token,voltage,pos=inp_read_next_item(lines,pos)
+			token,mul,pos=inp_read_next_item(lines,pos)
 			token,sun,pos=inp_read_next_item(lines,pos)
 			token,laser,pos=inp_read_next_item(lines,pos)
-			self.list.append((length,dt,voltage,sun,laser))
+			self.list.append((length,dt,voltage,mul,sun,laser))
 
 		print self.list
 
@@ -307,26 +377,42 @@ class tab_time_mesh(gtk.Window):
 		self.sun=[]
 		self.voltage=[]
 		self.time=[]
+		self.fs_laser=[]
 		pos=self.start_time
+		fired=False
+
+		laser_pulse_width=float(inp_get_token_value("optics.inp", "#laser_pulse_width"))
+
+
 		for line in self.store:
 			end_time=pos+float(line[SEG_LENGTH])
 			dt=float(line[SEG_DT])
 			voltage=float(line[SEG_VOLTAGE])
+			mul=float(line[SEG_MUL])
 			sun=float(line[SEG_SUN])
 			laser=float(line[SEG_LASER])
 
-			while(pos<end_time):
-				self.time.append(pos)
-				self.laser.append(laser)
-				self.sun.append(sun)
-				self.voltage.append(voltage)	
-				pos=pos+dt
+			if dt!=0.0 and mul!=0.0:
+				while(pos<end_time):
+					self.time.append(pos)
+					self.laser.append(laser)
+					self.sun.append(sun)
+					self.voltage.append(voltage)
+					self.fs_laser.append(0.0)
+					pos=pos+dt
+
+					if fired==False:
+						if pos>self.fs_laser_time:
+							fired=True
+							self.fs_laser[len(self.fs_laser)-1]=laser_pulse_width/dt
+
+					dt=dt*mul
 
 		a = open("time_mesh.inp", "w")
 		a.write(str(len(self.time))+"\n")
 		for i in range(0,len(self.time)):
 
-			a.write(str(self.time[i])+" "+str(self.laser[i])+" "+str(self.sun[i])+" "+str(self.voltage[i])+"\n")
+			a.write(str(self.time[i])+" "+str(self.laser[i])+" "+str(self.sun[i])+" "+str(self.voltage[i])+" "+str(self.fs_laser[i])+"\n")
 
 		a.close()
 	def init(self):
@@ -359,6 +445,9 @@ class tab_time_mesh(gtk.Window):
 		toolbar.set_style(gtk.TOOLBAR_ICONS)
 		toolbar.set_size_request(-1, 50)
 
+		self.store = self.create_model()
+		treeview = gtk.TreeView(self.store)
+
 		tool_bar_pos=0
 		save = gtk.ToolButton(gtk.STOCK_SAVE)
 		tooltips.set_tip(save, "Save image")
@@ -366,17 +455,40 @@ class tab_time_mesh(gtk.Window):
 		toolbar.insert(save, tool_bar_pos)
 		tool_bar_pos=tool_bar_pos+1
 
-		hide_key = gtk.ToolButton(gtk.STOCK_INFO)
-		tooltips.set_tip(hide_key, "Hide key")
-		hide_key.connect("clicked", self.callback_hide_key)
-		toolbar.insert(hide_key, tool_bar_pos)
+		add_section = gtk.ToolButton(gtk.STOCK_ADD)
+		tooltips.set_tip(add_section, "Add section")
+		add_section.connect("clicked", self.callback_add_section,treeview)
+		toolbar.insert(add_section, tool_bar_pos)
 		tool_bar_pos=tool_bar_pos+1
 
-		save = gtk.ToolButton(gtk.STOCK_REFRESH)
-		tooltips.set_tip(save, "Refresh mesh")
-		save.connect("clicked", self.callback_refresh)
-		toolbar.insert(save, tool_bar_pos)
+		add_section = gtk.ToolButton(gtk.STOCK_CLEAR)
+		tooltips.set_tip(add_section, "Add section")
+		add_section.connect("clicked", self.callback_remove_item,treeview)
+		toolbar.insert(add_section, tool_bar_pos)
 		tool_bar_pos=tool_bar_pos+1
+
+		move_down = gtk.ToolButton(gtk.STOCK_GO_DOWN)
+		tooltips.set_tip(move_down, "Move down")
+		move_down.connect("clicked", self.callback_move_down,treeview)
+		toolbar.insert(move_down, tool_bar_pos)
+		tool_bar_pos=tool_bar_pos+1
+
+		if debug_mode()==True:
+			image = gtk.Image()
+	   		image.set_from_file(find_data_file("gui/laser.png"))
+			laser = gtk.ToolButton(image)
+			tooltips.set_tip(laser, "Laser start time")
+			laser.connect("clicked", self.callback_laser,treeview)
+			toolbar.insert(laser, tool_bar_pos)
+			tool_bar_pos=tool_bar_pos+1
+
+			image = gtk.Image()
+	   		image.set_from_file(find_data_file("gui/start.png"))
+			start = gtk.ToolButton(image)
+			tooltips.set_tip(start, "Simulation start time")
+			start.connect("clicked", self.callback_start_time,treeview)
+			toolbar.insert(start, tool_bar_pos)
+			tool_bar_pos=tool_bar_pos+1
 
 		plot_toolbar = NavigationToolbar(canvas, self)
 		plot_toolbar.show()
@@ -419,9 +531,7 @@ class tab_time_mesh(gtk.Window):
 		canvas.set_size_request(700,400)
 		self.vbox.pack_start(canvas, True, True, 0)
 
-		self.store = self.create_model()
 
-		treeview = gtk.TreeView(self.store)
 		treeview.set_rules_hint(True)
 
 		self.create_columns(treeview)
