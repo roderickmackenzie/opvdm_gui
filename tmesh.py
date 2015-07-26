@@ -408,6 +408,8 @@ class tab_time_mesh(gtk.Window):
 
 					dt=dt*mul
 
+		self.statusbar.push(0, str(len(self.time))+" mesh points")
+
 		a = open("time_mesh.inp", "w")
 		a.write(str(len(self.time))+"\n")
 		for i in range(0,len(self.time)):
@@ -537,6 +539,11 @@ class tab_time_mesh(gtk.Window):
 		self.create_columns(treeview)
 
 		self.vbox.pack_start(treeview, False, False, 0)
+
+		self.statusbar = gtk.Statusbar()
+		self.statusbar.show()
+		self.vbox.pack_start(self.statusbar, False, False, 0)
+
 		#treeview.show()
 
 		self.vbox.show()

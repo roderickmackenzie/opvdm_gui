@@ -48,9 +48,6 @@ from scan_item import scan_item_add
 ) = range(3)
 
 
-articles = []
-mesh_articles = []
-
 class tab_electrical_mesh(gtk.Window):
 	lines=[]
 	edit_list=[]
@@ -72,7 +69,7 @@ class tab_electrical_mesh(gtk.Window):
 		)
 
 		# add items
-		for item in articles:
+		for item in self.articles:
 			iter = model.append()
 
 			model.set (iter,
@@ -92,7 +89,7 @@ class tab_electrical_mesh(gtk.Window):
 		)
 
 
-		for item in mesh_articles:
+		for item in self.mesh_articles:
 			iter = model_mesh.append()
 
 			model_mesh.set (iter,
@@ -151,7 +148,7 @@ class tab_electrical_mesh(gtk.Window):
 
 	def on_add_item_clicked(self, button, model):
 		new_item = ["#layerN","0e-9" ,True]
-		articles.append(new_item)
+		self.articles.append(new_item)
 
 		iter = model.append()
 		model.set (iter,
@@ -162,7 +159,7 @@ class tab_electrical_mesh(gtk.Window):
 
 	def on_add_mesh_clicked(self, button, model):
 		new_item = ["0e-9","0" ,True]
-		mesh_articles.append(new_item)
+		self.mesh_articles.append(new_item)
 
 		iter = model.append()
 		model.set (iter,
@@ -203,7 +200,7 @@ class tab_electrical_mesh(gtk.Window):
 			path = model.get_path(iter)[0]
 			model.remove(iter)
 
-			del articles[ path ]
+			del self.articles[ path ]
 
 		self.save_model()
 
@@ -216,7 +213,7 @@ class tab_electrical_mesh(gtk.Window):
 			path = model.get_path(iter)[0]
 			model.remove(iter)
 
-			del mesh_articles[ path ]
+			del self.mesh_articles[ path ]
 
 		self.save_model()
 
@@ -227,14 +224,14 @@ class tab_electrical_mesh(gtk.Window):
 		column = cell.get_data("column")
 
 		if column == COLUMN_LAYER:
-			articles[path][COLUMN_LAYER] = new_text
+			self.articles[path][COLUMN_LAYER] = new_text
 
-			model.set(iter, column, articles[path][COLUMN_LAYER])
+			model.set(iter, column, self.articles[path][COLUMN_LAYER])
 
 		if column == COLUMN_THICKNES:
 			#old_text = model.get_value(iter, column)
-			articles[path][COLUMN_THICKNES] = new_text
-			model.set(iter, column, articles[path][COLUMN_THICKNES])
+			self.articles[path][COLUMN_THICKNES] = new_text
+			model.set(iter, column, self.articles[path][COLUMN_THICKNES])
 
 		self.save_model()
 
@@ -246,14 +243,14 @@ class tab_electrical_mesh(gtk.Window):
 
 
 		if column == MESH_THICKNES:
-			mesh_articles[path][MESH_THICKNES] = new_text
+			self.mesh_articles[path][MESH_THICKNES] = new_text
 
-			model.set(iter, column, mesh_articles[path][MESH_THICKNES])
+			model.set(iter, column, self.mesh_articles[path][MESH_THICKNES])
 
 		if column == MESH_POINTS:
 			#old_text = model.get_value(iter, column)
-			mesh_articles[path][MESH_POINTS] = new_text
-			model.set(iter, column, mesh_articles[path][MESH_POINTS])
+			self.mesh_articles[path][MESH_POINTS] = new_text
+			model.set(iter, column, self.mesh_articles[path][MESH_POINTS])
 
 		self.save_model()
 		self.update_graph()
@@ -352,6 +349,8 @@ class tab_electrical_mesh(gtk.Window):
 		os.system(cmd)
 
 	def init(self):
+		self.articles = []
+		self.mesh_articles = []
 		print "INIT!!"
 		self.save_file_name="device_epitaxy.inp"
 
@@ -385,7 +384,7 @@ class tab_electrical_mesh(gtk.Window):
 				pos=pos+1
 				layer_ticknes=self.lines[pos] 	#read thicknes
 
-				articles.append([ token, str(layer_ticknes), True ])
+				self.articles.append([ token, str(layer_ticknes), True ])
 				scan_item_add("device_epitaxy.inp",token,token,1)
 
 			pos=pos+1
@@ -406,7 +405,7 @@ class tab_electrical_mesh(gtk.Window):
 				pos=pos+1
 				points=self.lines[pos] 		#read value
 
-				mesh_articles.append([ str(thicknes), str(points), True ])
+				self.mesh_articles.append([ str(thicknes), str(points), True ])
 
 				n=n+1
 

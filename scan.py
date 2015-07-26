@@ -38,7 +38,7 @@ import multiprocessing
 import time
 import glob
 from window_list import windows
-from util import delete_link_tree
+from util import opvdm_delete_file
 from util import delete_second_level_link_tree
 from util import copy_scan_dir
 from search import return_file_list
@@ -49,7 +49,8 @@ from search import find_fit_log
 from util import get_scan_dirs
 from hpc import hpc_class
 from debug import debug_mode
-
+from inp import inp_update_token_value
+from inp import inp_get_token_value
 class scan_class(gtk.Window):
 
 	def callback_cluster(self, widget, data=None):
@@ -180,11 +181,26 @@ class scan_class(gtk.Window):
 		tab = self.notebook.get_nth_page(pageNum)
 		tab.simulate(True,False)
 
+	def callback_nested_simulation(self,widget,data):
+		pageNum = self.notebook.get_current_page()
+		tab = self.notebook.get_nth_page(pageNum)
+		tab.nested_simulation()
+
 
 	def callback_clean_simulation(self,widget,data):
 		pageNum = self.notebook.get_current_page()
 		tab = self.notebook.get_nth_page(pageNum)
 		tab.clean_scan_dir()
+
+	def callback_clean_unconverged_simulation(self,widget,data):
+		pageNum = self.notebook.get_current_page()
+		tab = self.notebook.get_nth_page(pageNum)
+		tab.scan_clean_unconverged()
+
+	def callback_clean_simulation_output(self,widget,data):
+		pageNum = self.notebook.get_current_page()
+		tab = self.notebook.get_nth_page(pageNum)
+		tab.scan_clean_simulation_output()
 
 	def callback_import_from_hpc(self,widget,data):
 		pageNum = self.notebook.get_current_page()
@@ -195,6 +211,37 @@ class scan_class(gtk.Window):
 		pageNum = self.notebook.get_current_page()
 		tab = self.notebook.get_nth_page(pageNum)
 		tab.push_to_hpc()
+
+	def callback_push_unconverged_to_hpc(self,widget,data):
+		pageNum = self.notebook.get_current_page()
+		tab = self.notebook.get_nth_page(pageNum)
+		tab.push_unconverged_to_hpc()
+
+	def callback_set_hpc_dir(self,widget,data):
+		config_file=os.path.join(self.sim_dir,"server.inp")
+		hpc_path=inp_get_token_value(config_file, "#hpc_dir")
+
+		dialog = gtk.FileChooserDialog("Select HPC dir",
+                               None,
+                               gtk.FILE_CHOOSER_ACTION_OPEN,
+                               (gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL,
+                                gtk.STOCK_OK, gtk.RESPONSE_OK))
+		dialog.set_default_response(gtk.RESPONSE_OK)
+		dialog.set_action(gtk.FILE_CHOOSER_ACTION_SELECT_FOLDER)
+		if os.path.isdir(hpc_path):
+			dialog.set_current_folder(hpc_path)
+
+		filter = gtk.FileFilter()
+		filter.set_name("All files")
+		filter.add_pattern("*")
+		dialog.add_filter(filter)
+
+
+		response = dialog.run()
+		if response == gtk.RESPONSE_OK:
+			inp_update_token_value(config_file, "#hpc_dir", dialog.get_filename(),1)
+
+		dialog.destroy()
 
 	def remove_invalid(self,input_name):
 		return input_name.replace (" ", "_")
@@ -359,7 +406,7 @@ class scan_class(gtk.Window):
 			dir_name=os.path.dirname(results[i])
 			if os.path.isdir(dir_name):
 				print "delete:",dir_name
-				#delete_link_tree(dir_name)
+				#opvdm_delete_file(dir_name)
 
 	def callback_wol(self, widget, data):
 		self.myserver.wake_nodes()
@@ -428,9 +475,16 @@ class scan_class(gtk.Window):
 		    ( "/Simulations/_Run simulation",     None, self.callback_run_simulation, 0, "<StockItem>", "gtk-media-play" ),
 		    ( "/Simulations/_Build simulation",     None, self.callback_build_simulation, 0, "<StockItem>", "gtk-cdrom" ),
 			( "/Simulations/_Run (no build)",     None, self.callback_run_simulation_no_build, 0, "<StockItem>", "gtk-media-play" ),
+			( "/Simulations/_Run nested simulation",     None, self.callback_nested_simulation, 0, "<StockItem>", "gtk-media-play" ),
 			( "/Simulations/_Clean simulation",     None, self.callback_clean_simulation, 0, "<StockItem>", "gtk-clear" ),
+			( "/Simulations/_Clean unconverged simulation",     None, self.callback_clean_unconverged_simulation, 0, "<StockItem>", "gtk-clear" ),
+			( "/Simulations/_Clean simulation output",     None, self.callback_clean_simulation_output, 0, "<StockItem>", "gtk-clear" ),
+			( "/Simulations/sep2",     None, None, 0, "<Separator>" ),
 			( "/Simulations/_Import from hpc",     None, self.callback_import_from_hpc, 0, "<StockItem>", "gtk-open" ),
 			( "/Simulations/_Push to hpc",     None, self.callback_push_to_hpc, 0, "<StockItem>", "gtk-save" ),
+			( "/Simulations/_Push unconverged to hpc",     None, self.callback_push_unconverged_to_hpc, 0, "<StockItem>", "gtk-save" ),
+			( "/Simulations/_Set hpc dir",     None, self.callback_set_hpc_dir, 0, "<StockItem>", "gtk-open" ),
+
 		    ( "/Cluster/_Cluster sleep",     None, self.callback_cluster_sleep, 0, "<StockItem>", "gtk-copy" ),
 		    ( "/Cluster/_Cluster poweroff",     None, self.callback_cluster_poweroff, 0, "<StockItem>", "gtk-copy" ),
 		    ( "/Cluster/_Cluster wake",     None, self.callback_wol, 0, "<StockItem>", "gtk-copy" ),

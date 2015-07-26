@@ -58,4 +58,11 @@ class plot_state():
 		self.section_one=""
 		self.section_two=""
 
+		self.x_start=0
+		self.x_stop=1
+		self.x_points=25
+		self.y_start=0
+		self.y_stop=1
+		self.y_points=25
+
 

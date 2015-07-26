@@ -57,4 +57,30 @@ def dlg_get_text( message, default=''):
 	else:
 		return None
 
+def dlg_get_multi_text( title_text,info, default=''):
+	ret=[]
+	d = gtk.Dialog( title=title_text,flags=gtk.DIALOG_DESTROY_WITH_PARENT,buttons=("OK",True,"Cancel",False))
+	d.set_default_response(gtk.RESPONSE_OK)
+	entry=[]
+	for i in range(0,len(info)):
+		hbox=gtk.HBox()
+		entry.append(gtk.Entry())
+		entry[len(entry)-1].set_text(info[i][1])
+		l = gtk.Label( info[i][0])
+		hbox.pack_start(l)
+		hbox.pack_start(entry[len(entry)-1])
+		hbox.show_all()
+		d.vbox.pack_start( hbox)
 
+
+	r = d.run()
+
+	if r == True:
+		for i in range(0,len(info)):
+			ret.append(entry[i].get_text().decode('utf8'))
+	else:
+		for i in range(0,len(info)):
+			ret.append(info[i][1])
+
+	d.destroy()
+	return ret

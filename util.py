@@ -33,6 +33,7 @@ import hashlib
 import glob
 from win_lin import running_on_linux
 
+
 if running_on_linux() == True:
 	inp_dir='/usr/share/opvdm/'
 else:
@@ -132,23 +133,35 @@ def delete_second_level_link_tree(path):
 		full_name=os.path.join(path,filename)
 		if os.path.isdir(full_name):
 			print "Deleteing",full_name
-			delete_link_tree(full_name)
+			opvdm_delete_file(full_name)
 
-	delete_link_tree(path)
+	opvdm_delete_file(path)
 
-def delete_link_tree(path):
+def opvdm_delete_file(path):
 	if os.path.islink(path):
 		real_path=os.path.realpath(path)
 		print "Deleting link:",path
 		os.unlink(path)
 		print "check",real_path,get_cache_path(path)
 		if real_path==get_cache_path(path):	#only delete the cache directory if it is the one we are intending to delete 
-			print "Delete tree",real_path
-			shutil.rmtree(real_path)
 
+			if os.path.isdir(real_path)==True:
+				print "Delete",real_path
+				if real_path!="/":
+					if real_path!="/home/rod":
+						if real_path!="/home/rod/":
+							shutil.rmtree(real_path)
+
+			elif os.path.isfile(real_path)==True:
+				print "Delete",real_path
+				os.remove(real_path)
 	else:
-		print "Deleting file:",path
-		shutil.rmtree(path)
+		if os.path.isdir(path)==True:
+			print "Delete",path
+			shutil.rmtree(path)
+		elif os.path.isfile(path)==True:
+			print "Delete",path
+			os.remove(path)
 
 def numbers_to_latex(data):
 	out=""
@@ -250,7 +263,11 @@ def zip_get_data_file(file_name):
 
 def time_with_units(time):
 	ret=str(time)
-	if (time<1000e-9):
+	if (time<1000e-15):
+		ret=str(time*1e15)+" fs"
+	elif (time<1000e-12):
+		ret=str(time*1e12)+" ps"
+	elif (time<1000e-9):
 		ret=str(time*1e9)+" ns"
 	elif (time<1000e-6):
 		ret=str(time*1e6)+" us"

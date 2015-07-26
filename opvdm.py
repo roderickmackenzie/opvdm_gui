@@ -90,6 +90,9 @@ import webbrowser
 from debug import debug_mode
 from util import read_data_2d
 from progress import progress_class
+from qe import qe_window
+from opvdm_open import opvdm_open
+
 if running_on_linux()==True:
 	import pyinotify
 	import pynotify
@@ -502,6 +505,12 @@ class NotebookExample:
 		self.plot_after_run=data.get_active()
 		self.config.set_value("#plot_after_simulation",data.get_active())
 
+	def callback_qe_window(self, widget):
+		if self.qe.get_property("visible")==True:
+			self.qe.hide_all()
+		else:
+			self.qe.show_all()
+
 	def callback_set_plot_auto_close(self, widget, data):
 		set_plot_auto_close(data.get_active())
 		self.config.set_value("#one_plot_window",data.get_active())
@@ -805,6 +814,11 @@ class NotebookExample:
 			self.time_mesh=tab_time_mesh()
 			self.time_mesh.init()
 
+		if self.qe!=None:
+			del self.qe
+			self.qe=qe_window()
+			self.qe.init()
+
 		myitem=self.item_factory.get_item("/Plots/One plot window")
 		myitem.set_active(self.config.get_value("#one_plot_window",False))
 		myitem=self.item_factory.get_item("/Plots/Plot after simulation")
@@ -1022,11 +1036,11 @@ class NotebookExample:
 
 		image = gtk.Image()
    		image.set_from_file(find_data_file("gui/qe.png"))
-		self.qe = gtk.ToolButton(image)
-		self.tooltips.set_tip(self.qe, "Quantum efficiency")
-		#self.time_mesh.connect("clicked", self.callback_edit_time_mesh)
-		toolbar.insert(self.qe, pos)
-		self.qe.show_all()
+		self.qe_button = gtk.ToolButton(image)
+		self.tooltips.set_tip(self.qe_button, "Quantum efficiency")
+		self.qe_button.connect("clicked", self.callback_qe_window)
+		toolbar.insert(self.qe_button, pos)
+		self.qe_button.show_all()
 		pos=pos+1
 
 		if os.path.isfile(find_data_file("optics_epitaxy.inp")):
@@ -1150,6 +1164,15 @@ class NotebookExample:
 		#self.statusicon.connect("popup-menu", self.right_click_event)
 		self.statusicon.set_tooltip("opvdm")
 		self.statusicon.connect('popup-menu', self.on_status_icon_right_click)
+
+		self.electrical_mesh=tab_electrical_mesh()
+		self.electrical_mesh.init()
+
+		self.time_mesh=tab_time_mesh()
+		self.time_mesh.init()
+
+		self.qe=qe_window()
+		self.qe.init()
 
 		logging.info('__init__')
 		self.exe_dir= os.path.dirname(os.path.abspath(__file__))
@@ -1311,7 +1334,7 @@ class NotebookExample:
 		toolbar.insert(sep, pos)
 		pos=pos+1
 
-	        image = gtk.Image()
+		image = gtk.Image()
    		image.set_from_file(find_data_file("gui/scan.png"))
 		self.param_scan = gtk.ToolButton(image)
 		self.param_scan.connect("clicked", self.callback_scan)
@@ -1368,10 +1391,10 @@ class NotebookExample:
 
 		image = gtk.Image()
    		image.set_from_file(find_data_file("gui/time.png"))
-		self.time_mesh = gtk.ToolButton(image)
-		self.tooltips.set_tip(self.time_mesh, "Edit the electrical mesh")
-		self.time_mesh.connect("clicked", self.callback_edit_time_mesh)
-		toolbar.insert(self.time_mesh, pos)
+		self.time_mesh_button = gtk.ToolButton(image)
+		self.tooltips.set_tip(self.time_mesh_button, "Edit the electrical mesh")
+		self.time_mesh_button.connect("clicked", self.callback_edit_time_mesh)
+		toolbar.insert(self.time_mesh_button, pos)
 		pos=pos+1
 
 
@@ -1446,13 +1469,7 @@ class NotebookExample:
 
 		self.window.show()
 
-		process_events()		
-
-		self.electrical_mesh=tab_electrical_mesh()
-		self.electrical_mesh.init()
-
-		self.time_mesh=tab_time_mesh()
-		self.time_mesh.init()
+		process_events()
 
 		logging.info('__init__6.5')
 		self.thread = _FooThread()

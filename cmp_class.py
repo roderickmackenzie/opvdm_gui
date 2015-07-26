@@ -364,8 +364,8 @@ class cmp_class(gtk.Window):
 
 
 
-	        image = gtk.Image()
-   		image.set_from_file(self.icon_theme.lookup_icon("video", 32, 0).get_filename())
+		image = gtk.Image()
+   		image.set_from_file(find_data_file(os.path.join("gui","video.png")))
 		self.video = gtk.ToolButton(image)
 		self.plot.toolbar.add(self.video)
 		self.video.show()
