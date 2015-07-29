@@ -54,7 +54,6 @@ from plot_state import plot_state
 from plot import plot_populate_plot_token
 from plot_io import plot_save_oplot_file
 from plot_state import plot_state
-from gui_util import dlg_get_multi_text
 
 class NavigationToolbar(NavigationToolbar2GTKAgg):
     # only display the buttons we need
@@ -326,16 +325,21 @@ class plot_widget(gtk.VBox):
 				x=[]
 				y=[]
 				z=[]
-
-				pos=float(self.plot_token.x_start)
-				x_step=(float(self.plot_token.x_stop)-float(self.plot_token.x_start))/self.plot_token.x_points
-				while(pos<float(self.plot_token.x_stop)):
+				x_start=450
+				x_stop=600
+				x_points=25.0
+				pos=x_start
+				x_step=(x_stop-x_start)/x_points
+				while(pos<x_stop):
 					x.append(pos)
 					pos=pos+x_step
 
-				pos=float(self.plot_token.y_start)
-				y_step=(float(self.plot_token.y_stop)-float(self.plot_token.y_start))/self.plot_token.y_points
-				while(pos<float(self.plot_token.y_stop)):
+				y_start=-1
+				y_stop=1
+				y_points=30.0
+				pos=y_start
+				y_step=(y_stop-y_start)/y_points
+				while(pos<y_stop):
 					y.append(pos)
 					pos=pos+y_step
 
@@ -349,29 +353,26 @@ class plot_widget(gtk.VBox):
 						print self.input_files[ii]
 						for points in range(0,len(t)):
 							found=0
-							if t[points]>x[0]:
-								for x_pos in range(0,len(x)):
-									if x[x_pos]>t[points]:
+							for x_pos in range(0,len(x)):
+								if x[x_pos]>t[points]:
+									found=found+1
+									break
+
+							if y[0]<=s[points]:
+								for y_pos in range(0,len(y)):
+									if y[y_pos]>s[points]:
 										found=found+1
 										break
-
-							if s[points]>y[0]:
-								for y_pos in range(0,len(y)):
-									if y_pos!=0:
-										if y[y_pos]>s[points]:
-											found=found+1
-											break
 							if found==2:
 								print "adding data at",x_pos,y_pos
-								if data[y_pos][x_pos]<10.0:
-									data[y_pos][x_pos]=data[y_pos][x_pos]+1
+								data[y_pos][x_pos]=data[y_pos][x_pos]+1
 							else:
 								print "not adding point",t[points],s[points]
 
 				print x
 				print y
 				print data
-				x_grid, y_grid = mgrid[float(self.plot_token.y_start):float(self.plot_token.y_stop):complex(0, len(y)), float(self.plot_token.x_start):float(self.plot_token.x_stop):complex(0, len(x))]
+				x_grid, y_grid = mgrid[y_start:y_stop:complex(0, len(y)), x_start:x_stop:complex(0, len(x))]
 				self.ax[0].pcolor(y_grid,x_grid,data)
 
 			else:
@@ -536,12 +537,39 @@ class plot_widget(gtk.VBox):
 		marker_base=["","x","o"]
 		mul=1.0
 		self.color=[]
-		for rounds in range(0,10):
-			for i in range(0,len(base)):
-				for n in range(0,repeat_lines):
-					c_tot.append([base[i][0]*mul,base[i][1]*mul,base[i][2]*mul])
-					self.marker.append(marker_base[n])
-			mul=mul*0.5
+		for i in range(0,len(base)):
+			for n in range(0,repeat_lines):
+				c_tot.append([base[i][0]*mul,base[i][1]*mul,base[i][2]*mul])
+				self.marker.append(marker_base[n])
+		mul=0.5
+		for i in range(0,len(base)):
+			for n in range(0,repeat_lines):
+				c_tot.append([base[i][0]*mul,base[i][1]*mul,base[i][2]*mul])
+				self.marker.append(marker_base[n])
+
+		mul=0.7
+		for i in range(0,len(base)):
+			for n in range(0,repeat_lines):
+				c_tot.append([base[i][0]*mul,base[i][1]*mul,base[i][2]*mul])
+				self.marker.append(marker_base[n])
+
+		mul=0.25
+		for i in range(0,len(base)):
+			for n in range(0,repeat_lines):
+				c_tot.append([base[i][0]*mul,base[i][1]*mul,base[i][2]*mul])
+				self.marker.append(marker_base[n])
+
+		mul=0.165
+		for i in range(0,len(base)):
+			for n in range(0,repeat_lines):
+				c_tot.append([base[i][0]*mul,base[i][1]*mul,base[i][2]*mul])
+				self.marker.append(marker_base[n])
+
+		mul=0.082500
+		for i in range(0,len(base)):
+			for n in range(0,repeat_lines):
+				c_tot.append([base[i][0]*mul,base[i][1]*mul,base[i][2]*mul])
+				self.marker.append(marker_base[n])
 
 		self.color=c_tot
 
@@ -615,26 +643,10 @@ class plot_widget(gtk.VBox):
 	def callback_set_heat_map(self, widget, data):
 		self.plot_token.type="heat"
 		plot_save_oplot_file(self.config_file,self.plot_token)
-		plot_save_oplot_file(self.config_file,self.plot_token)
-		self.do_plot()
-
-	def callback_heat_map_edit(self, widget, data):
-		[a,b,c,d,e,f] = dlg_get_multi_text("2D plot editor", [["x start",str(self.plot_token.x_start)],["x stop",str(self.plot_token.x_stop)],["x points",str(self.plot_token.x_points)],["y start",str(self.plot_token.y_start)],["y stop",str(self.plot_token.y_stop)],["y points",str(self.plot_token.y_points)]])
-		print "---------",a,b,c,d,e,f
-		self.plot_token.x_start=float(a)
-		self.plot_token.x_stop=float(b)
-		self.plot_token.x_points=float(c)
-
-		self.plot_token.y_start=float(d)
-		self.plot_token.y_stop=float(e)
-		self.plot_token.y_points=float(f)
-
-		plot_save_oplot_file(self.config_file,self.plot_token)
 		self.do_plot()
 
 	def callback_set_xy_plot(self, widget, data):
 		self.plot_token.type="xy"
-		plot_save_oplot_file(self.config_file,self.plot_token)
 		plot_save_oplot_file(self.config_file,self.plot_token)
 		self.do_plot()
 
@@ -711,9 +723,9 @@ class plot_widget(gtk.VBox):
 		    ( "/_Math/_Norm to 1.0 y",     None, self.callback_normtoone_y, 0, "<ToggleItem>", "gtk-save" ),
 		    ( "/_Math/_Norm to peak of all data",     None, self.callback_norm_to_peak_of_all_data, 0, "<ToggleItem>", "gtk-save" ),
 		    ( "/_Math/_Heat map",     None, self.callback_set_heat_map, 0, "<ToggleItem>", "gtk-save" ),
-		    ( "/_Math/_Heat map edit",     None, self.callback_heat_map_edit, 0, "<ToggleItem>", "gtk-save" ),
 		    ( "/_Math/_xy plot",     None, self.callback_set_xy_plot, 0, "<ToggleItem>", "gtk-save" ),
 		    )
+
 
 		self.item_factory.create_items(menu_items)
 

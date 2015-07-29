@@ -35,38 +35,6 @@ from inp import inp_get_token_value
 from inp import inp_get_token_array
 from util import str2bool
 
-def tree_load_flat_list(sim_dir):
-	config=[]
-	file_name=os.path.join(sim_dir,'flat_list.inp')
-
-	f = open(file_name)
-	lines = f.readlines()
-	f.close()
-
-	for i in range(0, len(lines)):
-		lines[i]=lines[i].rstrip()
-
-	number=int(lines[0])
-
-	for i in range(1,number):
-		if os.path.isdir(lines[i]):
-			config.append(lines[i])
-
-	return config
-
-def tree_save_flat_list(sim_dir,flat_list):
-	config=[]
-	file_name=os.path.join(sim_dir,'flat_list.inp')
-
-	a = open(file_name, "w")
-	a.write(str(len(flat_list))+"\n")
-	for i in range(0,len(flat_list)):
-		a.write(flat_list[i]+"\n")
-
-	a.close()
-
-	return config
-
 def tree_load_program(program_list,sim_dir):
 	file_name=os.path.join(sim_dir,'opvdm_gui_config.inp')
 
@@ -86,7 +54,7 @@ def tree_load_program(program_list,sim_dir):
 			program_list.append([config[pos], config[pos+1], config[pos+2], str2bool(config[pos+3])])
 			pos=pos+4
 
-def tree_gen(flat_simulation_list,program_list,base_dir,sim_dir):
+def tree_gen(program_list,base_dir,sim_dir):
 	sim_dir=os.path.abspath(sim_dir)	# we are about to traverse the directory structure better to have the abs path
 	print "here",program_list
 	tree_items=[[],[],[]]
@@ -115,7 +83,7 @@ def tree_gen(flat_simulation_list,program_list,base_dir,sim_dir):
 			tree_items[2].append(program_list[i][2])
 
 	print "tree items=",tree_items
-	tree(flat_simulation_list,program_list,tree_items,base_dir,0,sim_dir,"","")
+	tree(program_list,tree_items,base_dir,0,sim_dir,"","")
 	return True
 
 def tree_apply_mirror(program_list):
@@ -157,7 +125,7 @@ def tree_apply_python_script(program_list):
 def copy_simulation(base_dir,cur_dir):
 	param_list=scan_items_get_list()
 	cache=int(inp_get_token_value("server.inp","#use_cache"))
-
+	print "cache status",cache
 	if cache==True:
 		cache_path=get_cache_path(cur_dir)
 		d = os.path.dirname(cache_path)
@@ -195,7 +163,7 @@ def copy_simulation(base_dir,cur_dir):
 
 	shutil.copy(os.path.join(base_dir, "sim.opvdm"), cur_dir)
 
-def tree(flat_simulation_list,program_list,tree_items,base_dir,level,path,var_to_change,value_to_change):
+def tree(program_list,tree_items,base_dir,level,path,var_to_change,value_to_change):
 		param_list=scan_items_get_list()
 		print level,tree_items
 		i=tree_items[1][level]
@@ -211,9 +179,8 @@ def tree(flat_simulation_list,program_list,tree_items,base_dir,level,path,var_to
 			pass_value_to_change=value_to_change+" "+ii
 
 			if ((level+1)<len(tree_items[0])):
-					tree(flat_simulation_list,program_list,tree_items,base_dir,level+1,cur_dir,pass_var_to_change,pass_value_to_change)
+					tree(program_list,tree_items,base_dir,level+1,cur_dir,pass_var_to_change,pass_value_to_change)
 			else:
-				flat_simulation_list.append(cur_dir)
 				new_values=pass_value_to_change.split()
 				pos=pass_var_to_change.split()
 				

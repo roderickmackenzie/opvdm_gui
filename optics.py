@@ -47,16 +47,6 @@ from plot_state import plot_state
 from plot_io import plot_load_info
 import webbrowser
 from progress import progress_class
-#   columns
-(
-  COLUMN_LAYER,
-  COLUMN_THICKNES,
-  COLUMN_MATERIAL,
-  COLUMN_DEVICE,
-  COLUMN_EDITABLE
-) = range(5)
-
-# data
 
 
 def find_modes(path):
@@ -143,8 +133,6 @@ class class_optical(gtk.Window):
 	name=""
 	visible=1
 
-	articles = []
-
 	def init(self):
 		self.config_file="optics_epitaxy.inp"
 		self.enabled=os.path.exists(self.config_file)
@@ -201,71 +189,6 @@ class class_optical(gtk.Window):
 		scan_item_add("optics.inp","#sun","Light source",1)
 
 
-	def __create_model(self):
-
-		# create list store
-		model = gtk.ListStore(
-		    gobject.TYPE_STRING,
-		    gobject.TYPE_STRING,
-		    gobject.TYPE_STRING,
-		    gobject.TYPE_STRING,
-		    gobject.TYPE_BOOLEAN
-		)
-
-		# add items
-		for item in self.articles:
-			iter = model.append()
-
-			model.set (iter,
-			  COLUMN_LAYER, item[COLUMN_LAYER],
-			  COLUMN_THICKNES, item[COLUMN_THICKNES],
-			  COLUMN_MATERIAL, item[COLUMN_MATERIAL],
-			  COLUMN_DEVICE, item[COLUMN_DEVICE],
-			  COLUMN_EDITABLE, item[COLUMN_EDITABLE]
-			)
-		return model
-
-
-	def __add_columns(self, treeview):
-
-		model = treeview.get_model()
-
-		# Layer tag
-		renderer = gtk.CellRendererText()
-		renderer.connect("edited", self.on_cell_edited, model)
-		renderer.set_data("column", COLUMN_LAYER)
-
-		column = gtk.TreeViewColumn("Layer", renderer, text=COLUMN_LAYER,
-				       editable=COLUMN_EDITABLE)
-		treeview.append_column(column)
-
-		# Thicknes
-		renderer = gtk.CellRendererText()
-		renderer.connect("edited", self.on_cell_edited, model)
-		renderer.set_data("column", COLUMN_THICKNES)
-
-		column = gtk.TreeViewColumn("Thicknes", renderer, text=COLUMN_THICKNES,
-				       editable=COLUMN_EDITABLE)
-		treeview.append_column(column)
-
-		# Material file
-		renderer = gtk.CellRendererText()
-		renderer.connect("edited", self.on_cell_edited, model)
-		renderer.set_data("column", COLUMN_MATERIAL)
-
-		column = gtk.TreeViewColumn("Material", renderer, text=COLUMN_MATERIAL,
-				       editable=COLUMN_EDITABLE)
-		treeview.append_column(column)
-
-		# Device
-		renderer = gtk.CellRendererText()
-		renderer.connect("edited", self.on_cell_edited, model)
-		renderer.set_data("column", COLUMN_DEVICE)
-
-		column = gtk.TreeViewColumn("Active layer", renderer, text=COLUMN_DEVICE,
-				       editable=COLUMN_EDITABLE)
-		treeview.append_column(column)
-
 	def callback_save_image(self, widget):
 		dialog = gtk.FileChooserDialog("Save plot",
                                None,
@@ -289,73 +212,14 @@ class class_optical(gtk.Window):
 		dialog.destroy()
 
 
-	def on_add_item_clicked(self, button, treeview):
-		new_item = ["#mat", "100e-9", "pcbm","0","1",True]
-
-		selection = treeview.get_selection()
-		model, iter = selection.get_selected()
-
-		path = model.get_path(iter)[0]
-		#model.remove(iter)
-
-		#del articles[ path ]
-
-		self.articles.insert(path, new_item) #append(new_item)
-
-		iter = model.insert(path) #append()
-		model.set (iter,
-		    COLUMN_LAYER, new_item[COLUMN_LAYER],
-		    COLUMN_THICKNES, new_item[COLUMN_THICKNES],
-		    COLUMN_MATERIAL, new_item[COLUMN_MATERIAL],
-		    COLUMN_DEVICE, new_item[COLUMN_DEVICE],
-		    COLUMN_EDITABLE, new_item[COLUMN_EDITABLE]
-		)
-		self.save_model(model)
-		#self.update_graph(model)
-
-	def save_model(self, model):
-		a = open("optics_epitaxy.inp", "w")
-		a.write("#layers\n")
-		a.write(str(len(model))+"\n")
-
-
-		for item in model:
-			a.write(item[COLUMN_LAYER]+"\n")
-			a.write(item[COLUMN_THICKNES]+"\n")
-			a.write(item[COLUMN_MATERIAL]+"\n")
-			a.write(item[COLUMN_DEVICE]+"\n")
-
-		a.write("#ver\n")			
-		a.write("1.11\n")			
-		a.write("#end\n")			
-		a.close()
-
 	def callback_close(self, widget, data=None):
 		self.hide()
 		return True
 
-	def on_remove_item_clicked(self, button, treeview):
 
-		selection = treeview.get_selection()
-		model, iter = selection.get_selected()
+	def callback_refresh(self, button):
 
-		if iter:
-			path = model.get_path(iter)[0]
-			model.remove(iter)
-
-			del self.articles[ path ]
-
-			self.save_model(model)
-			#self.update_graph(model)
-
-
-	def callback_refresh(self, button,treeview):
-
-		selection = treeview.get_selection()
-		model, iter = selection.get_selected()
-
-		self.save_model(model)
-		self.update_graph(model)
+		self.update_graph()
 		self.update_cb()
 
 
@@ -397,50 +261,11 @@ class class_optical(gtk.Window):
 		cmd = self.exe_command+' --optics'
 		ret= os.system(cmd)
 		self.fig.clf()
-		self.draw_graph(model)
+		self.draw_graph()
 		self.fig.canvas.draw()
 		for i in range(0,len(self.plot_widgets)):
 			self.plot_widgets[i].update()
 
-	def on_cell_edited(self, cell, path_string, new_text, model):
-
-		iter = model.get_iter_from_string(path_string)
-		path = model.get_path(iter)[0]
-		column = cell.get_data("column")
-
-		if column == COLUMN_LAYER:
-			self.articles[path][COLUMN_LAYER] = new_text
-
-			model.set(iter, column, self.articles[path][COLUMN_LAYER])
-
-		if column == COLUMN_THICKNES:
-			#old_text = model.get_value(iter, column)
-			self.articles[path][COLUMN_THICKNES] = new_text
-			model.set(iter, column, self.articles[path][COLUMN_THICKNES])
-
-		if column == COLUMN_MATERIAL:
-			#old_text = model.get_value(iter, column)
-			self.articles[path][COLUMN_MATERIAL] = new_text
-
-			model.set(iter, column, self.articles[path][COLUMN_MATERIAL])
-
-		if column == COLUMN_DEVICE:
-			#old_text = model.get_value(iter, column)
-			self.articles[path][COLUMN_DEVICE] = new_text
-
-			model.set(iter, column, self.articles[path][COLUMN_DEVICE])
-
-		self.save_model(model)
-		#self.update_graph(model)
-#####################################
-	def callback_edit(self, widget, data=None):
-		line=self.line_number[data]
-		self.lines[line]=self.edit_list[data].get_text()
-		self.edit_list[data].set_text(self.lines[line])
-		a = open(self.config_file, "w")
-		for i in range(0,len(self.lines)):
-			a.write(self.lines[i]+"\n")
-		a.close()
 
 	def do_clip(self):
 		snap = self.canvas.get_snapshot()
@@ -448,7 +273,7 @@ class class_optical(gtk.Window):
 		clip = gtk.Clipboard()
 		clip.set_image(pixbuf)
 
-	def draw_graph(self,model):
+	def draw_graph(self):
 
 
 		self.layer_end=[]
@@ -463,20 +288,20 @@ class class_optical(gtk.Window):
 		color =['r','g','b','y','o','r','g','b','y','o']
 		start=0.0
 
-		for item in model:
-			if item[COLUMN_DEVICE]=="0":
-				start=start-float(item[COLUMN_THICKNES])
+		for i in range(0,len(self.material)):
+			if self.device[i]=="0":
+				start=start-self.thick[i]
 			else:
 				break
 		start=start*1e9
 
 		x_pos=start
-		for item in model:
+		for i in range(0,len(self.material)):
 
-			label=item[COLUMN_LAYER]
-			layer_ticknes=item[COLUMN_THICKNES]
-			layer_material=item[COLUMN_MATERIAL]
-			device=item[COLUMN_DEVICE]
+			label=self.material[i]
+			layer_ticknes=self.thick[i]
+			layer_material=self.material[i]
+			device=self.device[i]
 
 			delta=float(layer_ticknes)*1e9
 			mat_file='./phys/'+layer_material+'/mat.inp'
@@ -544,13 +369,12 @@ class class_optical(gtk.Window):
 
 		self.fig.tight_layout()
 
-	def on_changed(self, widget, model):
+	def on_changed(self, widget):
 		cb_text=widget.get_active_text()
 		if cb_text=="all":
 			self.optical_mode_file="light_1d_photons_tot_norm.dat"
 		else:
 			self.optical_mode_file="light_1d_"+cb_text[:-3]+"_photons_norm.dat"
-		self.draw_graph(model)
 		self.fig.canvas.draw()
 
 	def on_cb_model_changed(self, widget):
@@ -565,7 +389,43 @@ class class_optical(gtk.Window):
 	def callback_help(self, widget, data=None):
 		webbrowser.open('firefox http://www.roderickmackenzie.eu/opvdm_wiki.html')
 
+	def load(self):
+		f = open("optics_epitaxy.inp")
+		self.lines = f.readlines()
+		f.close()
+
+		for i in range(0, len(self.lines)):
+			self.lines[i]=self.lines[i].rstrip()
+
+		pos=0
+		pos=pos+1
+		items=int(self.lines[pos])
+
+		self.edit_list=[]
+		self.line_number=[]
+
+		layer=0
+		self.thick=[]
+		self.material=[]
+		self.device=[]
+
+		for i in range(0, items):
+			pos=pos+1
+			label=self.lines[pos]	#read label
+
+			pos=pos+1
+			self.thick.append(float(self.lines[pos]))
+
+			pos=pos+1
+			self.material.append(self.lines[pos])
+
+			pos=pos+1
+			self.device.append(self.lines[pos]) 	#value
+			
+			layer=layer+1
+
 	def wow(self,exe_command):
+		self.load()
 		self.articles=[]
 		self.dump_dir=os.path.join(os.getcwd(),"light_dump")
 		find_models()
@@ -585,48 +445,10 @@ class class_optical(gtk.Window):
 		self.edit_list=[]
 		self.line_number=[]
 
-		f = open(self.config_file)
-		self.lines = f.readlines()
-		f.close()
-		pos=0
-		for i in range(0, len(self.lines)):
-			self.lines[i]=self.lines[i].rstrip()
-
-		n=0
-		gui_pos=0
-		pos=0
-		pos=pos+1	#first comment
-		items=int(self.lines[pos])
-
-		layer=0
-
-		for i in range(0, items):
-			pos=pos+1
-			label=self.lines[pos]	#read label
-
-			pos=pos+1
-			layer_ticknes=self.lines[pos] 	#read thicknes
-
-			pos=pos+1
-			layer_material=self.lines[pos] 	#read material
-
-			pos=pos+1
-			device=self.lines[pos] 	#read thicknes
-
-			self.articles.append([ label, str(layer_ticknes),str(layer_material),str(device), True ])
-			scan_item_add("optics_epitaxy.inp",label,"Material for "+label,2)
-			scan_item_add("optics_epitaxy.inp",label,"Layer width "+label,1)
-			layer=layer+1
-
-
-			n=n+1
-
-
-		model = self.__create_model()
 
 		self.cb = gtk.combo_box_new_text()
 		self.cb.set_wrap_width(5)
-		self.cb_id=self.cb.connect("changed", self.on_changed,model)
+		self.cb_id=self.cb.connect("changed", self.on_changed)
 		self.update_cb()
 
 
@@ -653,24 +475,6 @@ class class_optical(gtk.Window):
 
 
 		self.connect('key_press_event', self.on_key_press_event)
-		#attach(canvas, 0, 3, gui_pos, gui_pos+1)
-
-		# create model
-
-		gui_pos=gui_pos+1
-
-
-		add_button = gtk.Button("Add layer",gtk.STOCK_ADD)
-		add_button.show()
-
-		delete_button = gtk.Button("Delete layer",gtk.STOCK_DELETE)
-		delete_button.show()
-
-		# create tree view
-		treeview = gtk.TreeView(model)
-		treeview.set_size_request(300, 150)
-		treeview.set_rules_hint(True)
-		treeview.get_selection().set_mode(gtk.SELECTION_SINGLE)
 
 		tool_bar_pos=0
 		save = gtk.ToolButton(gtk.STOCK_SAVE)
@@ -684,7 +488,7 @@ class class_optical(gtk.Window):
 		self.play = gtk.ToolButton(image)
    		#image.set_from_file(self.icon_theme.lookup_icon("media-playback-start", 32, 0).get_filename())
 		refresh = gtk.ToolButton(image)
-		refresh.connect("clicked", self.callback_refresh,treeview)
+		refresh.connect("clicked", self.callback_refresh)
 		toolbar.insert(refresh, tool_bar_pos)
 		toolbar.show_all()
 		tool_bar_pos=tool_bar_pos+1
@@ -732,7 +536,6 @@ class class_optical(gtk.Window):
 		sep.show()
 		tool_bar_pos=tool_bar_pos+1
 
-
 		help = gtk.ToolButton(gtk.STOCK_HELP)
 		toolbar.insert(help, tool_bar_pos)
 		help.connect("clicked", self.callback_help)
@@ -740,52 +543,21 @@ class class_optical(gtk.Window):
 		tool_bar_pos=tool_bar_pos+1
 
 		close = gtk.ToolButton(gtk.STOCK_QUIT)
-		close.connect("clicked", self.callback_close,treeview)
+		close.connect("clicked", self.callback_close)
 		toolbar.insert(close, tool_bar_pos)
 		close.show()
 		tool_bar_pos=tool_bar_pos+1
 
-	        hbox = gtk.HBox(False, 5)
+		f = open("optics_epitaxy.inp")
+		self.lines = f.readlines()
+		f.close()
 
-
-	        hbox.pack_start(add_button, False, False, 0)
-	        hbox.pack_start(delete_button, False, False, 0)
-		hbox.show()
-		#self.attach(hbox, 2, 4, gui_pos, gui_pos+1,gtk.SHRINK ,gtk.SHRINK)
-		gui_pos=gui_pos+1
+		for i in range(0, len(self.lines)):
+			self.lines[i]=self.lines[i].rstrip()
 
 
 
-		add_button.connect("clicked", self.on_add_item_clicked, treeview)
-		delete_button.connect("clicked", self.on_remove_item_clicked, treeview)
-
-
-		self.__add_columns(treeview)
-
-		#sw.add()
-		
-		#self.attach(treeview, 0, 3, gui_pos, gui_pos+1,gtk.SHRINK ,gtk.SHRINK)
-		hbox0=gtk.HBox()
-		frame_vbox=gtk.VBox()
-		frame_vbox.show()
-		frame = gtk.Frame()
-		frame.set_label("Device layers")
-		frame.set_label_align(0.0, 0.0)
-		frame.set_shadow_type(gtk.SHADOW_ETCHED_OUT)
-		frame.show()
-
-
-		#hbox0.pack_start(self.canvas, False, False, 0)
-		hbox0.show()
-		frame_vbox.pack_start(treeview, False, False, 0)
-		frame_vbox.pack_start(hbox, False, False, 0)
-
-		frame.add(frame_vbox)
-
-		hbox0.pack_start(frame, False, False, 0)
-		hbox0.pack_start(self.canvas, False, False, 0)
-
-		canvas_vbox.pack_start(hbox0, False, False, 0)
+		canvas_vbox.pack_start(self.canvas, False, False, 0)
 		self.notebook.append_page(canvas_vbox,gtk.Label("Device configuration") )
 		self.main_vbox.pack_start(self.notebook, False, False, 0)
 
@@ -825,14 +597,11 @@ class class_optical(gtk.Window):
 
 			self.notebook.append_page(self.plot_widgets[i],gtk.Label(plot_labels[i]))
 
-		gui_pos=gui_pos+1
-
 		self.connect("delete-event", self.callback_close) 
 
-		treeview.show()
 		self.add(self.main_vbox)
 		self.main_vbox.show()
-		self.draw_graph(model)
+		self.draw_graph()
 		self.set_icon_from_file(find_data_file("gui/image.jpg"))
 		self.set_title("Optical Model - (www.opvdm.com)")
 		self.set_position(gtk.WIN_POS_CENTER)

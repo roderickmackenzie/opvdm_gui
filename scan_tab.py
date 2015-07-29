@@ -58,17 +58,12 @@ from scan_item import scan_item_save
 from scan_plot import scan_gen_plot_data
 from scan_io import scan_clean_dir
 from scan_io import scan_clean_unconverged
-from scan_io import scan_clean_simulation_output
-from scan_io import scan_nested_simulation
 from server import server_find_simulations_to_run
 from plot_io import plot_save_oplot_file
 from scan_io import scan_list_simulations
+from scan_io import scan_delete_simulations
 from notes import notes
 from scan_io import scan_push_to_hpc
-from scan_io import scan_import_from_hpc
-from opvdm_open import opvdm_open
-from scan_tree import tree_load_flat_list
-from scan_tree import tree_save_flat_list
 
 class scan_vbox(gtk.VBox):
 
@@ -210,11 +205,25 @@ class scan_vbox(gtk.VBox):
 	def scan_clean_unconverged(self):
 		scan_clean_unconverged(self.sim_dir)
 
-	def scan_clean_simulation_output(self):
-		scan_clean_simulation_output(self.sim_dir)
 
 	def import_from_hpc(self):
-		scan_import_from_hpc(self.sim_dir)
+		config_file=os.path.join(os.getcwd(),"server.inp")
+		hpc_path=inp_get_token_value(config_file, "#hpc_dir")
+		hpc_path=os.path.abspath(hpc_path)
+
+		if os.path.isdir(hpc_path)==True:
+			scan_clean_dir(self.sim_dir)
+
+			files=os.listdir(hpc_path)
+			for i in range(0,len(files)):
+				full_name=os.path.join(hpc_path,files[i])
+				if files[i]!="orig":
+					if os.path.isdir(full_name)==True:
+						dest=os.path.join(self.sim_dir,files[i])
+						shutil.copytree(full_name, dest, symlinks=False, ignore=None)
+						print full_name
+		else:
+			print "HPC dir not found",hpc_path
 
 	def push_to_hpc(self):
 		scan_push_to_hpc(self.sim_dir,False)
@@ -222,9 +231,6 @@ class scan_vbox(gtk.VBox):
 	def push_unconverged_to_hpc(self):
 		scan_push_to_hpc(self.sim_dir,True)
 
-	def nested_simulation(self):
-		commands=scan_nested_simulation(self.sim_dir,"/home/rod/juan/hpc/final_graphs/orig/probe")
-		self.send_commands_to_server(commands)
 	def simulate(self,run_simulation,generate_simulations):
 
 		base_dir=os.getcwd()
@@ -276,38 +282,32 @@ class scan_vbox(gtk.VBox):
 			print program_list
 
 			if generate_simulations==True:
-				flat_simulation_list=[]
-				tree_gen(flat_simulation_list,program_list,base_dir,self.sim_dir)
-				print "flat list",flat_simulation_list
-				tree_save_flat_list(self.sim_dir,flat_simulation_list)
+				tree_gen(program_list,base_dir,self.sim_dir)
 
 			commands=[]
 			server_find_simulations_to_run(commands,self.sim_dir)
 
 			if run_simulation==True:
-				self.send_commands_to_server(commands)
+				self.myserver.init(self.sim_dir)
+
+				if self.myserver.start_threads()==0:
+					self.myserver.clear_cache()
+					for i in range(0, len(commands)):
+						self.myserver.add_job(commands[i])
+						print "Adding job"+commands[i]
+
+					self.myserver.start(self.exe_command)
+
+
+				else:
+					message = gtk.MessageDialog(type=gtk.MESSAGE_ERROR, buttons=gtk.BUTTONS_OK)
+					message.set_markup("I can't connect to the server")
+					message.run()
+					message.destroy()
 
 		self.save_combo()
 		os.chdir(base_dir)
 		gc.collect()
-
-	def send_commands_to_server(self,commands):
-		self.myserver.init(self.sim_dir)
-
-		if self.myserver.start_threads()==0:
-			self.myserver.clear_cache()
-			for i in range(0, len(commands)):
-				self.myserver.add_job(commands[i])
-				print "Adding job"+commands[i]
-
-			self.myserver.start(self.exe_command)
-
-
-		else:
-			message = gtk.MessageDialog(type=gtk.MESSAGE_ERROR, buttons=gtk.BUTTONS_OK)
-			message.set_markup("I can't connect to the server")
-			message.run()
-			message.destroy()
 
 	def callback_plot_results(self, widget, data=None):
 		self.plot_results(self.last_plot_data)
@@ -331,32 +331,28 @@ class scan_vbox(gtk.VBox):
 				self.plotted_graphs.refresh()
 
 	def callback_gen_plot_command(self, widget, data=None):
-		#dialog = gtk.FileChooserDialog("File to plot",
-        #       None,
-        #       gtk.FILE_CHOOSER_ACTION_OPEN,
-        #       (gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL,
-        #        gtk.STOCK_OPEN, gtk.RESPONSE_OK))
-		#dialog.set_default_response(gtk.RESPONSE_OK)
-		#dialog.set_current_folder(self.sim_dir)
-		#filter = gtk.FileFilter()
-		#filter.set_name("Data files")
-		#filter.add_pattern("*.dat")
-		#dialog.add_filter(filter)
+		dialog = gtk.FileChooserDialog("File to plot",
+               None,
+               gtk.FILE_CHOOSER_ACTION_OPEN,
+               (gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL,
+                gtk.STOCK_OPEN, gtk.RESPONSE_OK))
+		dialog.set_default_response(gtk.RESPONSE_OK)
+		dialog.set_current_folder(self.sim_dir)
+		filter = gtk.FileFilter()
+		filter.set_name("Data files")
+		filter.add_pattern("*.dat")
+		dialog.add_filter(filter)
 
-		#filter = gtk.FileFilter()
-		#filter.set_name("Input files")
-		#filter.add_pattern("*.inp")
-		#dialog.add_filter(filter)
+		filter = gtk.FileFilter()
+		filter.set_name("Input files")
+		filter.add_pattern("*.inp")
+		dialog.add_filter(filter)
 
-		#dialog.set_action(gtk.FILE_CHOOSER_ACTION_OPEN)
+		dialog.set_action(gtk.FILE_CHOOSER_ACTION_OPEN)
 
 
-		#response = dialog.run()
-		dialog=opvdm_open()
-		dialog.init(self.sim_dir)
-		response=dialog.run()
-
-		if response == True:
+		response = dialog.run()
+		if response == gtk.RESPONSE_OK:
 			full_file_name=dialog.get_filename()
 			dialog.destroy()
 			#print cur_dir=os.getcwd()

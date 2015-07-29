@@ -165,8 +165,7 @@ def command_args(argc,argv):
 			#print pwd,scan_dir_path
 			#print os.getcwd(),os.path.join(scan_dir_path)
 			#tree_gen(program_list,os.getcwd(),os.path.join(os.getcwd(),"suns"))
-			flat_list=[]
-			tree_gen(flat_list,program_list,base_dir,scan_dir_path)
+			tree_gen(program_list,base_dir,scan_dir_path)
 			commands=[]
 			server_find_simulations_to_run(commands,scan_dir_path)
 			myserver=server()

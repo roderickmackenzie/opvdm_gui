@@ -75,13 +75,6 @@ def plot_load_oplot_file(plot_token,file_name):
 		plot_token.x_mul=float(inp_search_token_value(lines, "#x_mul"))
 		plot_token.y_mul=float(inp_search_token_value(lines, "#y_mul"))
 		plot_token.key_units=inp_search_token_value(lines, "#key_units")
-		plot_token.x_start=float(inp_search_token_value(lines, "#x_start"))
-		plot_token.x_stop=float(inp_search_token_value(lines, "#x_stop"))
-		plot_token.x_points=float(inp_search_token_value(lines, "#x_points"))
-		plot_token.y_start=float(inp_search_token_value(lines, "#y_start"))
-		plot_token.y_stop=float(inp_search_token_value(lines, "#y_stop"))
-		plot_token.y_points=float(inp_search_token_value(lines, "#y_points"))
-
 
 		return True
 	return False
@@ -143,19 +136,6 @@ def plot_save_oplot_file(config_file,plot_token):
 		lines.append(str(plot_token.y_mul))
 		lines.append("#key_units")
 		lines.append(plot_token.key_units)
-		lines.append("#x_start")
-		lines.append(str(plot_token.x_start))
-		lines.append("#x_stop")
-		lines.append(str(plot_token.x_stop))
-		lines.append("#x_points")
-		lines.append(str(plot_token.x_points))
-		lines.append("#y_start")
-		lines.append(str(plot_token.y_start))
-		lines.append("#y_stop")
-		lines.append(str(plot_token.y_stop))
-		lines.append("#y_points")
-		lines.append(str(plot_token.y_points))
-
 		lines.append("#ver")
 		lines.append("1.0")
 		lines.append("#end")
