@@ -25,113 +25,24 @@ import gtk
 import sys
 import math
 import random
-
-from scan_item import scan_item_add
-(
-  COLUMN_LAYER,
-  COLUMN_THICKNES,
-  COLUMN_MATERIAL,
-  COLUMN_DEVICE,
-  COLUMN_EDITABLE
-) = range(5)
-
+from layer_widget import layer_widget
 
 class tab_main(gtk.VBox):
 
-	articles = []
-
-	def load(self):
-		f = open("optics_epitaxy.inp")
-		self.lines = f.readlines()
-		f.close()
-
-		for i in range(0, len(self.lines)):
-			self.lines[i]=self.lines[i].rstrip()
-
-		pos=0
-		pos=pos+1
-		items=int(self.lines[pos])
-
-		self.edit_list=[]
-		self.line_number=[]
-
-		layer=0
-		self.thick=[]
-		self.material=[]
-
-		for i in range(0, items):
-			pos=pos+1
-			label=self.lines[pos]	#read label
-
-			pos=pos+1
-			self.thick.append(float(self.lines[pos]))
-
-			pos=pos+1
-			self.material.append(self.lines[pos])
-
-			pos=pos+1
-			device=self.lines[pos] 	#value
-
-			self.articles.append([ label, str(self.thick[-1]),str(self.material[-1]),str(device), True ])
-			scan_item_add("optics_epitaxy.inp",label,"Material for "+label,2)
-			scan_item_add("optics_epitaxy.inp",label,"Layer width "+label,1)
-			layer=layer+1
-
-
+	def update(self,object):
+		self.darea.queue_draw()
 
 	def init(self):
-		self.load()
 		main_hbox=gtk.HBox()
-		darea = gtk.DrawingArea()
-		darea.connect("expose-event", self.expose)
+		self.darea = gtk.DrawingArea()
+		self.darea.connect("expose-event", self.expose)
 		#darea.show()
 
+		self.frame=layer_widget()
+		main_hbox.pack_start(self.frame, False, False, 0)
+		main_hbox.pack_start(self.darea, True, True, 0)
 
-		add_button = gtk.Button("Add layer",gtk.STOCK_ADD)
-		add_button.show()
-
-		delete_button = gtk.Button("Delete layer",gtk.STOCK_DELETE)
-		delete_button.show()
-
-		# create tree view
-		model = self.__create_model()
-
-		treeview = gtk.TreeView(model)
-		treeview.set_size_request(300, 150)
-		treeview.set_rules_hint(True)
-		treeview.get_selection().set_mode(gtk.SELECTION_SINGLE)
-
-		hbox = gtk.HBox(False, 5)
-
-		hbox.pack_start(add_button, False, False, 0)
-		hbox.pack_start(delete_button, False, False, 0)
-		hbox.show()
-
-		hbox0=gtk.HBox()
-		frame_vbox=gtk.VBox()
-		frame = gtk.Frame()
-		frame.set_label("Device layers")
-		frame.set_label_align(0.0, 0.0)
-		frame.set_shadow_type(gtk.SHADOW_ETCHED_OUT)
-		frame.show()
-
-		hbox0.show()
-		frame_vbox.pack_start(treeview, False, False, 0)
-		frame_vbox.pack_start(hbox, False, False, 0)
-
-
-		frame.add(frame_vbox)
-		frame.show_all()
-
-		main_hbox.pack_start(frame, False, False, 0)
-		main_hbox.pack_start(darea, True, True, 0)
-
-		add_button.connect("clicked", self.on_add_item_clicked, treeview)
-		delete_button.connect("clicked", self.on_remove_item_clicked, treeview)
-
-
-		self.__add_columns(treeview)
-
+		self.frame.connect("refresh", self.update)
 
 		self.add(main_hbox)
 		self.show_all()
@@ -174,173 +85,17 @@ class tab_main(gtk.VBox):
 		self.cr.move_to(x+200+80+20, y-60+z/2)
 		self.cr.show_text(text)
 		
-	def draw(self,thick,text):
-		tot=sum(thick)
+	def draw(self,articles):
+		tot=0
+		for i in range(0,len(articles)):
+			tot=tot+float(articles[i][1])
+
 		pos=0.0
-		for i in range(0,len(thick)):
-			thick[i]=200.0*thick[i]/tot
-			pos=pos+thick[i]
+		for i in range(0,len(articles)):
+			thick=200.0*float(articles[i][1])/tot
+			pos=pos+thick
 			print "Draw"
-			self.draw_box(-400,100.0-pos,thick[i]*0.9,random.uniform(0, 1),random.uniform(0, 1),random.uniform(0, 1),text[i])
-
-	def __create_model(self):
-
-		# create list store
-		model = gtk.ListStore(str,str,str,str,bool)
-
-		# add items
-
-		for item in self.articles:
-			iter = model.append()
-
-			model.set (iter,
-			  COLUMN_LAYER, item[COLUMN_LAYER],
-			  COLUMN_THICKNES, item[COLUMN_THICKNES],
-			  COLUMN_MATERIAL, item[COLUMN_MATERIAL],
-			  COLUMN_DEVICE, item[COLUMN_DEVICE],
-			  COLUMN_EDITABLE, item[COLUMN_EDITABLE]
-			)
-		return model
-
-	def on_remove_item_clicked(self, button, treeview):
-
-		selection = treeview.get_selection()
-		model, iter = selection.get_selected()
-
-		if iter:
-			path = model.get_path(iter)[0]
-			model.remove(iter)
-
-			del self.articles[ path ]
-
-			self.save_model(model)
-			#self.update_graph(model)
-
-
-
-	def __add_columns(self, treeview):
-
-		model = treeview.get_model()
-
-		# Layer tag
-		renderer = gtk.CellRendererText()
-		renderer.connect("edited", self.on_cell_edited, model)
-		renderer.set_data("column", COLUMN_LAYER)
-
-		column = gtk.TreeViewColumn("Layer", renderer, text=COLUMN_LAYER,
-				       editable=COLUMN_EDITABLE)
-		treeview.append_column(column)
-
-		# Thicknes
-		renderer = gtk.CellRendererText()
-		renderer.connect("edited", self.on_cell_edited, model)
-		renderer.set_data("column", COLUMN_THICKNES)
-
-		column = gtk.TreeViewColumn("Thicknes", renderer, text=COLUMN_THICKNES,
-				       editable=COLUMN_EDITABLE)
-		treeview.append_column(column)
-
-		# Material file
-		renderer = gtk.CellRendererText()
-		renderer.connect("edited", self.on_cell_edited, model)
-		renderer.set_data("column", COLUMN_MATERIAL)
-
-		column = gtk.TreeViewColumn("Material", renderer, text=COLUMN_MATERIAL,
-				       editable=COLUMN_EDITABLE)
-		treeview.append_column(column)
-
-		# Device
-		renderer = gtk.CellRendererText()
-		renderer.connect("edited", self.on_cell_edited, model)
-		renderer.set_data("column", COLUMN_DEVICE)
-
-		column = gtk.TreeViewColumn("Active layer", renderer, text=COLUMN_DEVICE,
-				       editable=COLUMN_EDITABLE)
-		treeview.append_column(column)
-
-
-	def on_cell_edited(self, cell, path_string, new_text, model):
-
-		iter = model.get_iter_from_string(path_string)
-		path = model.get_path(iter)[0]
-		column = cell.get_data("column")
-
-		if column == COLUMN_LAYER:
-			self.articles[path][COLUMN_LAYER] = new_text
-
-			model.set(iter, column, self.articles[path][COLUMN_LAYER])
-
-		if column == COLUMN_THICKNES:
-			#old_text = model.get_value(iter, column)
-			self.articles[path][COLUMN_THICKNES] = new_text
-			model.set(iter, column, self.articles[path][COLUMN_THICKNES])
-
-		if column == COLUMN_MATERIAL:
-			#old_text = model.get_value(iter, column)
-			self.articles[path][COLUMN_MATERIAL] = new_text
-
-			model.set(iter, column, self.articles[path][COLUMN_MATERIAL])
-
-		if column == COLUMN_DEVICE:
-			#old_text = model.get_value(iter, column)
-			self.articles[path][COLUMN_DEVICE] = new_text
-
-			model.set(iter, column, self.articles[path][COLUMN_DEVICE])
-
-		self.save_model(model)
-		#self.update_graph(model)
-#####################################
-
-
-	def callback_edit(self, widget, data=None):
-		line=self.line_number[data]
-		self.lines[line]=self.edit_list[data].get_text()
-		self.edit_list[data].set_text(self.lines[line])
-		a = open(self.config_file, "w")
-		for i in range(0,len(self.lines)):
-			a.write(self.lines[i]+"\n")
-		a.close()
-
-	def on_add_item_clicked(self, button, treeview):
-		new_item = ["#mat", "100e-9", "pcbm","0","1",True]
-
-		selection = treeview.get_selection()
-		model, iter = selection.get_selected()
-
-		path = model.get_path(iter)[0]
-		#model.remove(iter)
-
-		#del articles[ path ]
-
-		self.articles.insert(path, new_item) #append(new_item)
-
-		iter = model.insert(path) #append()
-		model.set (iter,
-		    COLUMN_LAYER, new_item[COLUMN_LAYER],
-		    COLUMN_THICKNES, new_item[COLUMN_THICKNES],
-		    COLUMN_MATERIAL, new_item[COLUMN_MATERIAL],
-		    COLUMN_DEVICE, new_item[COLUMN_DEVICE],
-		    COLUMN_EDITABLE, new_item[COLUMN_EDITABLE]
-		)
-		self.save_model(model)
-		#self.update_graph(model)
-
-	def save_model(self, model):
-		a = open("optics_epitaxy.inp", "w")
-		a.write("#layers\n")
-		a.write(str(len(model))+"\n")
-
-
-		for item in model:
-			a.write(item[COLUMN_LAYER]+"\n")
-			a.write(item[COLUMN_THICKNES]+"\n")
-			a.write(item[COLUMN_MATERIAL]+"\n")
-			a.write(item[COLUMN_DEVICE]+"\n")
-
-		a.write("#ver\n")			
-		a.write("1.11\n")			
-		a.write("#end\n")			
-		a.close()
+			self.draw_box(-400,100.0-pos,thick*0.9,random.uniform(0, 1),random.uniform(0, 1),random.uniform(0, 1),articles[i][2])
 
 	def expose(self, widget, event):
 
@@ -354,7 +109,6 @@ class tab_main(gtk.VBox):
 
 		self.cr.translate(w/2, h/2)
 
-		
+		self.draw(self.frame.articles)
 
-		self.draw(self.thick,self.material)
 

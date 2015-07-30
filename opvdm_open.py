@@ -24,6 +24,7 @@
 
 import gtk
 import os
+from util import find_data_file
 
 COL_PATH = 0
 COL_PIXBUF = 1
@@ -72,8 +73,9 @@ class opvdm_open(gtk.Dialog):
 
 
 
-		self.fileIcon = self.get_icon(gtk.STOCK_FILE)
-		self.dirIcon = self.get_icon(gtk.STOCK_DIRECTORY)
+		self.dir_icon = self.get_icon("dir")
+		self.dat_icon = self.get_icon("dat")
+		self.inp_icon = self.get_icon("inp")
 
 		sw = gtk.ScrolledWindow()
 		sw.set_shadow_type(gtk.SHADOW_ETCHED_IN)
@@ -103,12 +105,11 @@ class opvdm_open(gtk.Dialog):
 		self.show_all()
 
 	def get_icon(self, name):
-		theme = gtk.icon_theme_get_default()
-		return theme.load_icon(name, 48, 0)
+		return gtk.gdk.pixbuf_new_from_file(find_data_file("gui/"+name+"_file.png"))
     
 
 	def create_store(self):
-		store = gtk.ListStore(str, gtk.gdk.Pixbuf, bool)
+		store = gtk.ListStore(str, gtk.gdk.Pixbuf, str)
 		store.set_sort_column_id(COL_PATH, gtk.SORT_ASCENDING)
 		return store
 
@@ -121,7 +122,7 @@ class opvdm_open(gtk.Dialog):
 		for fl in os.listdir(self.dir):
 			file_name=os.path.join(self.dir, fl)
 			if os.path.isdir(file_name):
-			    self.store.append([fl, self.dirIcon, True])
+			    self.store.append([fl, self.dir_icon, "dir"])
 			else:
 				append=False
 				if (file_name.endswith(".dat")==True):
@@ -131,14 +132,10 @@ class opvdm_open(gtk.Dialog):
 					print text
 					text=text.rstrip()
 					if text=="#opvdm":
-						append=True
+						self.store.append([fl, self.dat_icon, "dat"])
 
 				if (file_name.endswith(".inp")==True):
-					append=True
-
-
-				if append==True:
-					self.store.append([fl, self.fileIcon, False])
+					self.store.append([fl, self.inp_icon, "inp"])
 
 	def on_home_clicked(self, widget):
 		self.dir = self.root_dir
@@ -149,9 +146,9 @@ class opvdm_open(gtk.Dialog):
 
 		model = widget.get_model()
 		path = model[item][COL_PATH]
-		isDir = model[item][COL_IS_DIRECTORY]
+		file_type = model[item][COL_IS_DIRECTORY]
 
-		if isDir==False:
+		if file_type!="dir":
 			self.file_path=os.path.join(self.dir, path)
 			self.response(True)
 		    	return

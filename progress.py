@@ -101,5 +101,11 @@ class progress_class(gtk.Window):
 		self.spin.stop()
 
 	def set_text(self,text):
+		text=text
+		l=len(text)
+		if l>50:
+			l=l-50
+			text=text[l:]
+
 		self.label.set_text(text)
 

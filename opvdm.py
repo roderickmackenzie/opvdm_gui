@@ -91,7 +91,9 @@ from debug import debug_mode
 from util import read_data_2d
 from progress import progress_class
 from qe import qe_window
+from opvdm_open import opvdm_open
 from tab_main import tab_main
+
 if running_on_linux()==True:
 	import pyinotify
 	import pynotify
@@ -496,15 +498,15 @@ class NotebookExample:
 		hello.wow(find_data_file("gui/image.jpg"))
 		hello.show()
 		notebook.append_page(hello, gtk.Label("Information"))
+		self.finished_loading=True
+		self.progress.hide()
+		self.progress.set_fraction(0.0)
+
 
 		hello=tab_main()
 		hello.init()
 		hello.show()
-		notebook.append_page(hello, gtk.Label("Information"))
-
-		self.finished_loading=True
-		self.progress.hide()
-		self.progress.set_fraction(0.0)
+		notebook.append_page(hello, gtk.Label("Device structure"))
 
 	def callback_plot_after_run_toggle(self, widget, data):
 		self.plot_after_run=data.get_active()
