@@ -93,6 +93,8 @@ from progress import progress_class
 from qe import qe_window
 from opvdm_open import opvdm_open
 from tab_main import tab_main
+from tb_item_sun import tb_item_sun
+from tb_item_sim_mode import tb_item_sim_mode
 
 if running_on_linux()==True:
 	import pyinotify
@@ -139,7 +141,6 @@ def process_events():
 		gtk.main_iteration(False)
 
 def set_active_name(combobox, name):
-    logging.info('set_active_name'+name)
     liststore = combobox.get_model()
     for i in xrange(len(liststore)):
         if liststore[i][0] == name:
@@ -503,10 +504,12 @@ class NotebookExample:
 		self.progress.set_fraction(0.0)
 
 
-		hello=tab_main()
-		hello.init()
-		hello.show()
-		notebook.append_page(hello, gtk.Label("Device structure"))
+		self.main_tab=tab_main()
+		self.main_tab.init(self.tooltips)
+		self.main_tab.show()
+		notebook.append_page(self.main_tab, gtk.Label("Device structure"))
+
+		self.ti_light.connect('refresh', self.main_tab.update)
 
 	def callback_plot_after_run_toggle(self, widget, data):
 		self.plot_after_run=data.get_active()
@@ -996,16 +999,6 @@ class NotebookExample:
 		cmd = 'make'
 		os.system(cmd)
 
-	def call_back_sim_mode_changed(self, widget, data=None):
-		mode=self.sim_mode.get_active_text()
-		inp_update_token_value("sim.inp", "#simmode", mode,1)
-
-	def call_back_light_changed(self, widget, data=None):
-		light_power=self.light.get_active_text()
-		print light_power
-		inp_update_token_value("light.inp", "#Psun", light_power,1)
-
-
 	def get_main_menu(self, window):
 		logging.info('get_main_menu')
 		accel_group = gtk.AccelGroup()
@@ -1060,61 +1053,20 @@ class NotebookExample:
 			self.optics_button.show_all()
 			pos=pos+1
 
-		self.sim_mode = gtk.combo_box_entry_new_text()
-		self.sim_mode.set_size_request(-1, 20)
-		f = open(find_data_file("sim_menu.inp"))
-		lines = f.readlines()
-		f.close()
-
-		for i in range(0, len(lines)):
-			self.sim_mode.append_text(lines[i].rstrip())
-
-		self.sim_mode.child.connect('changed', self.call_back_sim_mode_changed)
-		set_active_name(self.sim_mode, inp_get_token_value("sim.inp", "#simmode"))
-
-		lable=gtk.Label("Simulation mode:")
-		#lable.set_width_chars(15)
-		lable.show()
-
-		hbox = gtk.HBox(False, 2)
-
-		hbox.pack_start(lable, False, False, 0)
-		hbox.pack_start(self.sim_mode, False, False, 0)
-
-		tb_comboitem = gtk.ToolItem();
-		tb_comboitem.add(hbox);
-		tb_comboitem.show_all()
-		toolbar.insert(tb_comboitem, pos)
+		sim_mode=tb_item_sim_mode()
+		sim_mode.init()
+		self.sim_mode=sim_mode.sim_mode
+		toolbar.insert(sim_mode, pos)
 		pos=pos+1
 
-		self.light = gtk.combo_box_entry_new_text()
-		self.sim_mode.set_size_request(-1, 20)
-		sun_values=["0.0","0.01","0.1","1.0","10"]
-		token=inp_get_token_value("light.inp", "#Psun")
-		if sun_values.count(token)==0:
-			sun_values.append(token)
-
-		for i in range(0,len(sun_values)):
-			self.light.append_text(sun_values[i])
-
-		self.light.child.connect('changed', self.call_back_light_changed)
-		set_active_name(self.light, token)
-
-		ti_light = gtk.ToolItem();
-		lable=gtk.Label("Light intensity:")
-		lable.show
-		hbox = gtk.HBox(False, 2)
-		hbox.pack_start(lable, False, False, 0)
-		hbox.pack_start(self.light, False, False, 0)
-
-		ti_light.add(hbox)
-		ti_light.show_all()
+		self.ti_light=tb_item_sun()
+		self.light=self.ti_light.light
 
 		print "one"
 
 		print "two"
 
-		toolbar.insert(ti_light, pos)
+		toolbar.insert(self.ti_light, pos)
 		pos=pos+1
 
 		ti_progress = gtk.ToolItem()

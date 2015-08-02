@@ -47,8 +47,8 @@ from plot_state import plot_state
 from plot_io import plot_load_info
 import webbrowser
 from progress import progress_class
-
-
+from cal_path import get_phys_path
+from cal_path import get_light_dll_path
 def find_modes(path):
 	result = []
 	file_names=[]
@@ -82,14 +82,7 @@ def find_models():
 	else:
 		ext="dll"
 
-	local=os.path.join(os.getcwd(),"light","exp."+ext)
-	if os.path.isfile(local):
-		path=os.path.join(os.getcwd(),"light")
-	else:
-		if running_on_linux()==True:
-			path="/usr/lib64/opvdm/"
-		else:
-			path="c:\\opvdm\\light\\"
+	path=get_light_dll_path()
 
 	
 	for file in glob.glob(os.path.join(path,"*."+ext)):
@@ -100,16 +93,22 @@ def find_models():
 def find_light_source():
 	ret=[]
 
-	path=os.path.join(os.getcwd(),"phys")
-	if os.path.isdir(path)==False:
-		if running_on_linux()==True:
-			path="/usr/lib64/phys/"
-		else:
-			path="c:\\opvdm\\phys\\"
+	path=get_phys_path()
 
 	
 	for file in glob.glob(os.path.join(path,"*.inp")):
 		ret.append(os.path.splitext(os.path.basename(file))[0])
+
+	return ret
+
+def find_materials():
+	ret=[]
+
+	path=get_phys_path()
+
+	for file in glob.glob(os.path.join(path,"*")):
+		if os.path.isdir(file)==True:
+			ret.append(os.path.splitext(os.path.basename(file))[0])
 
 	return ret
 

@@ -1,0 +1,44 @@
+#    Organic Photovoltaic Device Model - a drift diffusion base/Shockley-Read-Hall
+#    model for organic solar cells. 
+#    Copyright (C) 2012 Roderick C. I. MacKenzie
+#
+#	roderick.mackenzie@nottingham.ac.uk
+#	www.opvdm.com
+#	Room B86 Coates, University Park, Nottingham, NG7 2RD, UK
+#
+#    This program is free software; you can redistribute it and/or modify
+#    it under the terms of the GNU General Public License v2.0, as published by
+#    the Free Software Foundation.
+#
+#    This program is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU General Public License for more details.
+#
+#    You should have received a copy of the GNU General Public License along
+#    with this program; if not, write to the Free Software Foundation, Inc.,
+#    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+
+import sys
+import os
+import shutil
+
+def get_phys_path():
+	path=os.path.join(os.getcwd(),"phys")
+	if os.path.isdir(path)==False:
+		if running_on_linux()==True:
+			path="/usr/lib64/phys/"
+		else:
+			path="c:\\opvdm\\phys\\"
+	return path
+
+def get_light_dll_path():
+	local=os.path.join(os.getcwd(),"light","exp."+ext)
+	if os.path.isfile(local):
+		path=os.path.join(os.getcwd(),"light")
+	else:
+		if running_on_linux()==True:
+			path="/usr/lib64/opvdm/"
+		else:
+			path="c:\\opvdm\\light\\"
+	return path

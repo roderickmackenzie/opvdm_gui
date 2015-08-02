@@ -26,59 +26,105 @@ import sys
 import math
 import random
 import gobject
+import os
+from optics import find_materials
+from inp import inp_write_lines_to_file
+from inp import inp_load_file
+from util import str2bool
+from inp import inp_search_token_value
+from inp import inp_update_token_value
 
 from scan_item import scan_item_add
 (
-  COLUMN_LAYER,
   COLUMN_THICKNES,
   COLUMN_MATERIAL,
-  COLUMN_DEVICE,
-  COLUMN_EDITABLE
-) = range(5)
+  COLUMN_DEVICE
+) = range(3)
 
-class layer_widget(gtk.Frame):
+class layer_widget(gtk.VBox):
 
-	articles = []
+	material_files=gtk.ListStore(str)
+	active_layer=gtk.ListStore(str)
+	def combo_changed(self, widget, path, text, model):
+		#print model[path][1] 
+		self.model[path][COLUMN_MATERIAL] = text
+		self.save_model()
+		self.emit("refresh")
 
-	def load(self):
-		f = open("optics_epitaxy.inp")
-		self.lines = f.readlines()
-		f.close()
+	def sync_to_electrical_mesh(self):
+		count=0
+		found_layer=0
+		for i in range(0,len(self.model)):
+			if str2bool(self.model[i][COLUMN_DEVICE])==True:
+				count=count+1
+				found_layer=i
 
-		for i in range(0, len(self.lines)):
-			self.lines[i]=self.lines[i].rstrip()
+		if count==1:
+			lines=[]
+			if inp_load_file(lines,os.path.join(os.getcwd(),"device_epitaxy.inp"))==True:
+				layers=int(inp_search_token_value(lines, "#layers"))
+				mesh_layers=int(inp_search_token_value(lines, "#mesh_layers"))
+				if layers==1 and mesh_layers==1:
+					thickness=self.model[found_layer][COLUMN_THICKNES]
+					inp_update_token_value(os.path.join(os.getcwd(),"device_epitaxy.inp"), "#layer0", thickness,1)
+					inp_update_token_value(os.path.join(os.getcwd(),"device_epitaxy.inp"), "#mesh_layer_length0", thickness,1)
 
-		pos=0
-		pos=pos+1
-		items=int(self.lines[pos])
 
-		self.edit_list=[]
-		self.line_number=[]
+	def active_layer_edit(self, widget, path, text, model):
+		#print model[path][1]
+		#count=0
+		#for i in range(0,len(self.model)):
+		#	if str2bool(self.model[i][COLUMN_DEVICE])==True:
+		#		count=count+1
 
-		layer=0
+		#If we only have one true in the list and the user wants to set it to false don't let them
+		#if count==1 and str2bool(self.model[path][COLUMN_DEVICE])==True and str2bool(text)==False:
+		#	md = gtk.MessageDialog(None, gtk.DIALOG_DESTROY_WITH_PARENT, gtk.MESSAGE_INFO, 
+		#			gtk.BUTTONS_CLOSE, "You must assign at least one layer to be the active layer")
+		#	md.run()
+		#	md.destroy()
+		#	return
 
-		for i in range(0, items):
-			pos=pos+1
-			label=self.lines[pos]	#read label
+		#print len(self.model[path])
 
-			pos=pos+1
-			thick=float(self.lines[pos])
+		for i in range(0,len(self.model)):
+			self.model[i][COLUMN_DEVICE]="False"
 
-			pos=pos+1
-			material=self.lines[pos]
+		self.model[path][COLUMN_DEVICE] = "True"
+		self.save_model()
+		self.emit("refresh")
 
-			pos=pos+1
-			device=self.lines[pos] 	#value
 
-			self.articles.append([ label, str(thick),str(material),str(device), True ])
-			scan_item_add("optics_epitaxy.inp",label,"Material for "+label,2)
-			scan_item_add("optics_epitaxy.inp",label,"Layer width "+label,1)
-			layer=layer+1
 
-	def __init__(self):
+	def rebuild_mat_list(self):
+		self.material_files.clear()
+		self.active_layer.clear()
+		mat=find_materials()
+		print mat
+		for i in range(0,len(mat)):
+			self.material_files.append([mat[i]])
+
+		self.active_layer.append(["True"])
+		#self.active_layer.append(["False"])
+		#for i in range(0,len(self.liststore_combobox)):
+		#	if self.liststore_combobox[i][0]!="Select parameter":
+		#		self.material_files.append([self.liststore_combobox[i][0]])
+
+	def callback_move_down(self, widget, data=None):
+
+		selection = self.treeview.get_selection()
+		model, iter = selection.get_selected()
+
+		if iter:
+			path = model.get_path(iter)[0]
+ 			model.move_after( iter,model.iter_next(iter))
+			self.save_model()
+			self.emit("refresh")
+
+	def __init__(self,tooltips):
+		self.frame=gtk.Frame()
+
 		self.__gobject_init__()
-
-		self.load()
 
 		add_button = gtk.Button("Add layer",gtk.STOCK_ADD)
 		add_button.show()
@@ -87,34 +133,50 @@ class layer_widget(gtk.Frame):
 		delete_button.show()
 
 		# create tree view
-		model = self.__create_model()
+		self.model = self.__create_model()
 
-		treeview = gtk.TreeView(model)
-		treeview.set_size_request(300, 150)
-		treeview.set_rules_hint(True)
-		treeview.get_selection().set_mode(gtk.SELECTION_SINGLE)
+		self.treeview = gtk.TreeView(self.model)
+		self.treeview.set_size_request(300, 150)
+		self.treeview.set_rules_hint(True)
+		self.treeview.get_selection().set_mode(gtk.SELECTION_SINGLE)
 
-		hbox = gtk.HBox(False, 5)
+		toolbar = gtk.Toolbar()
+		toolbar.set_style(gtk.TOOLBAR_ICONS)
+		toolbar.set_size_request(-1, 50)
+		pos=0
 
-		hbox.pack_start(add_button, False, False, 0)
-		hbox.pack_start(delete_button, False, False, 0)
-		hbox.show()
+		add = gtk.ToolButton(gtk.STOCK_ADD)
+		add.connect("clicked", self.on_add_item_clicked)
+		tooltips.set_tip(add, "Add device layer")
+		toolbar.insert(add, pos)
+		pos=pos+1
+
+
+		remove = gtk.ToolButton(gtk.STOCK_CLEAR)
+		remove.connect("clicked", self.on_remove_item_clicked)
+		tooltips.set_tip(remove, "Delete device layer")
+		toolbar.insert(remove, pos)
+		pos=pos+1
+
+		move = gtk.ToolButton(gtk.STOCK_GO_DOWN)
+		move.connect("clicked", self.callback_move_down)
+		tooltips.set_tip(move, "Move device layer")
+		toolbar.insert(move, pos)
+		pos=pos+1
+
 
 		hbox0=gtk.HBox()
-		frame_vbox=gtk.VBox()
-		self.set_label("Device layers")
-		self.set_label_align(0.0, 0.0)
-		self.set_shadow_type(gtk.SHADOW_ETCHED_OUT)
+
+		self.frame.set_label("Device layers")
+		self.frame.set_label_align(0.0, 0.0)
+		self.frame.set_shadow_type(gtk.SHADOW_ETCHED_OUT)
 		hbox0.show()
-		frame_vbox.pack_start(treeview, False, False, 0)
-		frame_vbox.pack_start(hbox, False, False, 0)
-		self.add(frame_vbox)
 
-		add_button.connect("clicked", self.on_add_item_clicked, treeview)
-		delete_button.connect("clicked", self.on_remove_item_clicked, treeview)
+		self.pack_start(toolbar, False, False, 0)
+		self.frame.add(self.treeview)
+		self.pack_start(self.frame, True, True, 0)
 
-
-		self.__add_columns(treeview)
+		self.__add_columns(self.treeview)
 
 
 		self.show_all()
@@ -125,35 +187,60 @@ class layer_widget(gtk.Frame):
 	def __create_model(self):
 
 		# create list store
-		model = gtk.ListStore(str,str,str,str,bool)
+		model = gtk.ListStore(str,str,str,bool)
 
 		# add items
 
-		for item in self.articles:
+		self.rebuild_mat_list()
+		lines=[]
+		inp_load_file(lines,os.path.join(os.getcwd(),"optics_epitaxy.inp"))
+
+		pos=0
+		pos=pos+1
+		items=int(lines[pos])
+
+		self.edit_list=[]
+		self.line_number=[]
+
+		layer=0
+
+		for i in range(0, items):
+			pos=pos+1
+			#label=lines[pos]	#read label
+
+			pos=pos+1
+			thick=float(lines[pos])
+
+			pos=pos+1
+			material=lines[pos]
+
+			pos=pos+1
+			device=lines[pos] 	#value
+
+			scan_item_add("optics_epitaxy.inp","#layer"+str(layer),"Material for "+str(material),2)
+			scan_item_add("optics_epitaxy.inp","#layer"+str(layer),"Layer width "+str(material),1)
+			layer=layer+1
+
 			iter = model.append()
 
 			model.set (iter,
-			  COLUMN_LAYER, item[COLUMN_LAYER],
-			  COLUMN_THICKNES, item[COLUMN_THICKNES],
-			  COLUMN_MATERIAL, item[COLUMN_MATERIAL],
-			  COLUMN_DEVICE, item[COLUMN_DEVICE],
-			  COLUMN_EDITABLE, item[COLUMN_EDITABLE]
+			  COLUMN_THICKNES, str(thick),
+			  COLUMN_MATERIAL, str(material),
+			  COLUMN_DEVICE, str(bool(int(device)))
 			)
 		return model
 
-	def on_remove_item_clicked(self, button, treeview):
+	def on_remove_item_clicked(self, button):
 
-		selection = treeview.get_selection()
+		selection = self.treeview.get_selection()
 		model, iter = selection.get_selected()
 
 		if iter:
 			path = model.get_path(iter)[0]
 			model.remove(iter)
 
-			del self.articles[ path ]
-
-			self.save_model(model)
-			#self.update_graph(model)
+			self.save_model()
+			self.emit("refresh")
 
 
 
@@ -161,40 +248,41 @@ class layer_widget(gtk.Frame):
 
 		model = treeview.get_model()
 
-		# Layer tag
-		renderer = gtk.CellRendererText()
-		renderer.connect("edited", self.on_cell_edited, model)
-		renderer.set_data("column", COLUMN_LAYER)
-
-		column = gtk.TreeViewColumn("Layer", renderer, text=COLUMN_LAYER,
-				       editable=COLUMN_EDITABLE)
-		treeview.append_column(column)
 
 		# Thicknes
 		renderer = gtk.CellRendererText()
 		renderer.connect("edited", self.on_cell_edited, model)
 		renderer.set_data("column", COLUMN_THICKNES)
-
-		column = gtk.TreeViewColumn("Thicknes", renderer, text=COLUMN_THICKNES,
-				       editable=COLUMN_EDITABLE)
+		renderer.set_property("editable", True)
+		column = gtk.TreeViewColumn("Thicknes", renderer, text=COLUMN_THICKNES,editable=True)
 		treeview.append_column(column)
 
 		# Material file
-		renderer = gtk.CellRendererText()
-		renderer.connect("edited", self.on_cell_edited, model)
-		renderer.set_data("column", COLUMN_MATERIAL)
-
-		column = gtk.TreeViewColumn("Material", renderer, text=COLUMN_MATERIAL,
-				       editable=COLUMN_EDITABLE)
+		column = gtk.TreeViewColumn("Material")
+		cellrenderer_combo = gtk.CellRendererCombo()
+		cellrenderer_combo.set_property("editable", True)
+		cellrenderer_combo.set_property("model", self.material_files)
+		cellrenderer_combo.set_property("text-column", 0)
+		cellrenderer_combo.connect("edited", self.combo_changed, self.material_files)
+		column.pack_start(cellrenderer_combo, False)
+		column.add_attribute(cellrenderer_combo, "text", COLUMN_MATERIAL)
 		treeview.append_column(column)
 
 		# Device
-		renderer = gtk.CellRendererText()
-		renderer.connect("edited", self.on_cell_edited, model)
-		renderer.set_data("column", COLUMN_DEVICE)
+		#renderer = gtk.CellRendererText()
+		#renderer.connect("edited", self.on_cell_edited, model)
+		#renderer.set_data("column", COLUMN_DEVICE)
+		#renderer.set_property("editable", True)
+		#column = gtk.TreeViewColumn("Active layer", renderer, text=COLUMN_DEVICE,editable=True)
 
-		column = gtk.TreeViewColumn("Active layer", renderer, text=COLUMN_DEVICE,
-				       editable=COLUMN_EDITABLE)
+		column = gtk.TreeViewColumn("Active layer")
+		render = gtk.CellRendererCombo()
+		render.set_property("editable", True)
+		render.set_property("model", self.active_layer)
+		render.set_property("text-column", 0)
+		render.connect("edited", self.active_layer_edit, self.active_layer)
+		column.pack_start(render, False)
+		column.add_attribute(render, "text", COLUMN_DEVICE)
 		treeview.append_column(column)
 
 
@@ -204,72 +292,48 @@ class layer_widget(gtk.Frame):
 		path = model.get_path(iter)[0]
 		column = cell.get_data("column")
 
-		if column == COLUMN_LAYER:
-			self.articles[path][COLUMN_LAYER] = new_text
+		model.set(iter, column, new_text)
 
-			model.set(iter, column, self.articles[path][COLUMN_LAYER])
-
-		if column == COLUMN_THICKNES:
-			#old_text = model.get_value(iter, column)
-			self.articles[path][COLUMN_THICKNES] = new_text
-			model.set(iter, column, self.articles[path][COLUMN_THICKNES])
-
-		if column == COLUMN_MATERIAL:
-			#old_text = model.get_value(iter, column)
-			self.articles[path][COLUMN_MATERIAL] = new_text
-
-			model.set(iter, column, self.articles[path][COLUMN_MATERIAL])
-
-		if column == COLUMN_DEVICE:
-			#old_text = model.get_value(iter, column)
-			self.articles[path][COLUMN_DEVICE] = new_text
-
-			model.set(iter, column, self.articles[path][COLUMN_DEVICE])
+		self.save_model()
 		self.emit("refresh")
 
-		self.save_model(model)
 
+	def on_add_item_clicked(self, button):
+		new_item = ["100e-9", "pcbm","0","1",False]
 
-	def on_add_item_clicked(self, button, treeview):
-		new_item = ["#mat", "100e-9", "pcbm","0","1",True]
-
-		selection = treeview.get_selection()
+		selection = self.treeview.get_selection()
 		model, iter = selection.get_selected()
 
 		path = model.get_path(iter)[0]
-		#model.remove(iter)
 
-		#del articles[ path ]
-
-		self.articles.insert(path, new_item) #append(new_item)
-
-		iter = model.insert(path) #append()
+		iter = model.insert(path)
 		model.set (iter,
-		    COLUMN_LAYER, new_item[COLUMN_LAYER],
 		    COLUMN_THICKNES, new_item[COLUMN_THICKNES],
 		    COLUMN_MATERIAL, new_item[COLUMN_MATERIAL],
-		    COLUMN_DEVICE, new_item[COLUMN_DEVICE],
-		    COLUMN_EDITABLE, new_item[COLUMN_EDITABLE]
+		    COLUMN_DEVICE, new_item[COLUMN_DEVICE]
 		)
-		self.save_model(model)
-		#self.update_graph(model)
+		self.save_model()
+		self.emit("refresh")
 
-	def save_model(self, model):
-		a = open("optics_epitaxy.inp", "w")
-		a.write("#layers\n")
-		a.write(str(len(model))+"\n")
+	def save_model(self):
+		lines=[]
+		lines.append("#layers")
+		lines.append(str(len(self.model)))
 
-
-		for item in model:
-			a.write(item[COLUMN_LAYER]+"\n")
-			a.write(item[COLUMN_THICKNES]+"\n")
-			a.write(item[COLUMN_MATERIAL]+"\n")
-			a.write(item[COLUMN_DEVICE]+"\n")
-
-		a.write("#ver\n")			
-		a.write("1.11\n")			
-		a.write("#end\n")			
-		a.close()
+		layer=0
+		for item in self.model:
+			lines.append("#layer"+str(layer))
+			lines.append(item[COLUMN_THICKNES])
+			lines.append(item[COLUMN_MATERIAL])
+			out=int(str2bool(item[COLUMN_DEVICE]))
+			lines.append(str(out))
+			layer=layer+1
+		lines.append("#ver")			
+		lines.append("1.11")			
+		lines.append("#end")
+		
+		inp_write_lines_to_file(os.path.join(os.getcwd(),"optics_epitaxy.inp"),lines)
+		self.sync_to_electrical_mesh()
 
 gobject.type_register(layer_widget)
 gobject.signal_new("refresh", layer_widget, gobject.SIGNAL_RUN_FIRST,gobject.TYPE_NONE, ())

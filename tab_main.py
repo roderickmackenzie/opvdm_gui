@@ -26,19 +26,25 @@ import sys
 import math
 import random
 from layer_widget import layer_widget
+from util import read_xyz_data
+import os
+from cal_path import get_phys_path
+from inp import inp_load_file
+from inp import inp_search_token_value
 
 class tab_main(gtk.VBox):
 
 	def update(self,object):
 		self.darea.queue_draw()
 
-	def init(self):
+	def init(self,tooltips):
+		self.sun=1
 		main_hbox=gtk.HBox()
 		self.darea = gtk.DrawingArea()
 		self.darea.connect("expose-event", self.expose)
 		#darea.show()
 
-		self.frame=layer_widget()
+		self.frame=layer_widget(tooltips)
 		main_hbox.pack_start(self.frame, False, False, 0)
 		main_hbox.pack_start(self.darea, True, True, 0)
 
@@ -46,6 +52,26 @@ class tab_main(gtk.VBox):
 
 		self.add(main_hbox)
 		self.show_all()
+
+	def draw_photon(self,x_start,y_start):
+		x=x_start
+		y=y_start
+		self.cr.set_source_rgb(0,1.0,0.0)
+		self.cr.move_to(x, y)
+		self.cr.set_line_width(2)
+		while (y<y_start+101):
+			self.cr.line_to(x+math.sin((y_start-y)/4)*10, y)
+			y=y+0.1
+		self.cr.stroke()
+
+		self.cr.line_to(x+10, y)
+		self.cr.line_to(x, y+20)
+		self.cr.line_to(x-10, y)
+		self.cr.fill()
+		#optical_mode_file
+		
+
+		#self.cr.restore()
 
 	def draw_box(self,x,y,z,r,g,b,text):
 		self.cr.set_source_rgb(r,g,b)
@@ -84,18 +110,72 @@ class tab_main(gtk.VBox):
 		self.cr.set_font_size(14)
 		self.cr.move_to(x+200+80+20, y-60+z/2)
 		self.cr.show_text(text)
-		
-	def draw(self,articles):
+
+	def draw_mode(self,x_start,y_start,z_size):
+		t=[]
+		s=[]
+		z=[]
+		x=x_start
+		y=y_start
+		self.cr.set_source_rgb(0.2,0.2,0.2)
+		if read_xyz_data(t,s,z,os.path.join(os.getcwd(),"light_dump","light_1d_photons_tot_norm.dat"))==True:
+			self.cr.move_to(x-s[0]*40, y)
+			self.cr.set_line_width(5)
+			array_len=len(t)
+
+			for i in range(0,array_len):
+					self.cr.line_to(x-s[i]*40, y_start+(z_size*i/array_len))
+
+		self.cr.stroke()
+
+	def set_sun(self,sun):
+		self.sun=sun
+
+	def draw(self,model):
 		tot=0
-		for i in range(0,len(articles)):
-			tot=tot+float(articles[i][1])
+		for i in range(0,len(model)):
+			tot=tot+float(model[i][0])
 
 		pos=0.0
-		for i in range(0,len(articles)):
-			thick=200.0*float(articles[i][1])/tot
+		l=len(model)-1
+		lines=[]
+
+		for i in range(0,len(model)):
+			thick=200.0*float(model[l-i][0])/tot
 			pos=pos+thick
 			print "Draw"
-			self.draw_box(-400,100.0-pos,thick*0.9,random.uniform(0, 1),random.uniform(0, 1),random.uniform(0, 1),articles[i][2])
+			path=os.path.join(get_phys_path(),model[l-i][1],"mat.inp")
+
+			if inp_load_file(lines,path)==True:
+				red=float(inp_search_token_value(lines, "#Red"))
+				green=float(inp_search_token_value(lines, "#Green"))
+				blue=float(inp_search_token_value(lines, "#Blue"))
+			else:
+				red=0.0
+				green=0.0
+				blue=0.0
+			self.draw_box(200,450.0-pos,thick*0.9,red,green,blue,model[l-i][1])
+		step=50.0
+
+		lines=[]
+		if inp_load_file(lines,os.path.join(os.getcwd(),"light.inp"))==True:
+			self.sun=float(inp_search_token_value(lines, "#Psun"))
+
+		if self.sun<=0.01:
+			step=200
+		elif self.sun<=0.1:
+			step=100
+		elif self.sun<=1.0:
+			step=50
+		elif self.sun<=10.0:
+			step=10
+		else:
+			step=5.0
+		if self.sun!=0:
+			for x in range(0,200,step):
+				self.draw_photon(270+x,50)
+
+		self.draw_mode(200,250,200)
 
 	def expose(self, widget, event):
 
@@ -107,8 +187,8 @@ class tab_main(gtk.VBox):
 		w = self.allocation.width
 		h = self.allocation.height
 
-		self.cr.translate(w/2, h/2)
+		#self.cr.translate(w/2, h/2)
 
-		self.draw(self.frame.articles)
+		self.draw(self.frame.model)
 
 
