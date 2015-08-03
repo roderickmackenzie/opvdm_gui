@@ -130,13 +130,13 @@ class opvdm_open(gtk.Dialog):
 					f = open(file_name, 'r')
 					text = f.readline()
 					f.close()
-					print text
+					#print text
 					text=text.rstrip()
 					if text=="#opvdm":
 						self.store.append([fl, self.dat_icon, "dat"])
 
 				if (file_name.endswith(".inp")==True) and self.show_inp_files==True:
-					print self.show_inp_files
+					#print self.show_inp_files
 					self.store.append([fl, self.inp_icon, "inp"])
 
 	def on_home_clicked(self, widget):
@@ -163,7 +163,7 @@ class opvdm_open(gtk.Dialog):
 
 		self.fill_store()
 		sensitive = True
-		print self.dir,self.root_dir
+		#print self.dir,self.root_dir
 		if self.dir == self.root_dir:
 			sensitive = False
 

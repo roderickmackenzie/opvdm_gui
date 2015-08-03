@@ -41,11 +41,11 @@ from scan_item import scan_items_clear
 from scan import scan_class 
 from tab import tab_class
 from search import find_fit_error
-from optics import class_optical
 import signal
 import subprocess
 from inp import inp_get_token_value
-from util import set_exe_command
+from util import get_exe_command
+from util import get_exe_name
 from util import opvdm_clone
 from export_as import export_as
 from tmesh import tab_time_mesh
@@ -194,9 +194,9 @@ class NotebookExample:
 	icon_theme = gtk.icon_theme_get_default()
 	plot_after_run=False
 	plot_after_run_file=""
-	electrical_mesh=None
+	#electrical_mesh=None
 	scan_window=None
-	exe_command , exe_name  =  set_exe_command()
+	exe_command   =  get_exe_command()
 	#print exe_command
 
 	def check_model_error(self):
@@ -307,14 +307,11 @@ class NotebookExample:
 		self.rod=[]
 		self.number_of_tabs=0
 
-		self.optics_window=False
-
 		if (os.path.exists("sim.opvdm")==True) and (os.getcwd()!="C:\\opvdm"):
 			self.play.set_sensitive(True)
 			self.stop.set_sensitive(True)
 			self.examine.set_sensitive(True)
 			self.param_scan.set_sensitive(True)
-			self.optics_button.set_sensitive(True)
 			self.plot_select.set_sensitive(True)
 			self.undo.set_sensitive(True)
 			self.save_sim.set_sensitive(True)
@@ -353,8 +350,15 @@ class NotebookExample:
 			except:
 				print "No gui_config.inp file found\n"
 
-			internal_names = ["Device","JV Curve","JV simple","Light","Output","CELIV","Numerics", "ToF", "stark", "Bands", "Pulse","Pulse voc", "imps","Exp. Optical Model","Terminal","Sun voc","TPC","fit","Thermal"]
-			internal_files = ["device.inp","jv.inp","jv_simple.inp","light.inp","dump.inp","celiv.inp","math.inp","tof.inp","stark.inp","lumo0.inp","pulse.inp","pulse_voc.inp","imps.inp","light_exp.inp","terminal.inp","sun_voc.inp","tpc.inp","fit.inp","thermal.inp"]
+			self.main_tab=tab_main()
+			self.main_tab.init(self.tooltips)
+			self.main_tab.show()
+			notebook.append_page(self.main_tab, gtk.Label("Device structure"))
+
+			self.ti_light.connect('refresh', self.main_tab.update)
+
+			internal_names = ["Device","JV Curve","JV simple","Output","CELIV","Numerics", "ToF", "stark", "Bands", "Pulse","Pulse voc", "imps","Exp. Optical Model","Terminal","Sun voc","TPC","fit","Thermal"]
+			internal_files = ["device.inp","jv.inp","jv_simple.inp","dump.inp","celiv.inp","math.inp","tof.inp","stark.inp","lumo0.inp","pulse.inp","pulse_voc.inp","imps.inp","light_exp.inp","terminal.inp","sun_voc.inp","tpc.inp","fit.inp","thermal.inp"]
 
 			i=0
 			while i<len(internal_names) :
@@ -393,6 +397,7 @@ class NotebookExample:
 						self.terminal=hello.terminal
 				else:
 					self.terminal=None
+
 
 				if cur_file=="lumo0.inp":
 					hello=tab_bands()
@@ -461,10 +466,9 @@ class NotebookExample:
 		else:
 			self.play.set_sensitive(False)
 			self.stop.set_sensitive(False)
-			self.mesh.set_sensitive(False)
+			#self.mesh.set_sensitive(False)
 			self.examine.set_sensitive(False)
 			self.param_scan.set_sensitive(False)
-			self.optics_button.set_sensitive(False)
 			self.plot_select.set_sensitive(False)
 			self.undo.set_sensitive(False)
 			self.save_sim.set_sensitive(False)
@@ -478,13 +482,6 @@ class NotebookExample:
 		self.progress.hide()
 		self.progress.set_fraction(0.0)
 
-
-		self.main_tab=tab_main()
-		self.main_tab.init(self.tooltips)
-		self.main_tab.show()
-		notebook.append_page(self.main_tab, gtk.Label("Device structure"))
-
-		self.ti_light.connect('refresh', self.main_tab.update)
 
 	def callback_plot_after_run_toggle(self, widget, data):
 		self.plot_after_run=data.get_active()
@@ -736,7 +733,8 @@ class NotebookExample:
 
 		self.change_sim_dir(new_dir)
 		self.config.load(self.sim_dir)
-		self.exe_command , self.exe_name = set_exe_command()
+		self.exe_command= get_exe_command()
+		self.exe_name = get_exe_name()
 		self.status_bar.push(self.context_id, os.getcwd())
 		self.plot_open.set_sensitive(False)
 		for child in notebook.get_children():
@@ -757,10 +755,10 @@ class NotebookExample:
 			self.scan_window=None
 
 
-		if self.electrical_mesh!=None:
-			del self.electrical_mesh
-			self.electrical_mesh=tab_electrical_mesh()
-			self.electrical_mesh.init()
+		#if self.electrical_mesh!=None:
+		#	del self.electrical_mesh
+		#	self.electrical_mesh=tab_electrical_mesh()
+		#	self.electrical_mesh.init()
 
 		if self.time_mesh!=None:
 			del self.time_mesh
@@ -848,10 +846,6 @@ class NotebookExample:
 		cmd = 'gnome-open '+self.rod[page].file_name
 		os.system(cmd)
 
-	def callback_wiki(self, widget, data=None):
-		page = notebook.get_current_page()
-		webbrowser.open('http://www.roderickmackenzie.eu/wiki/index.php?title='+self.rod[page].file_name)
-
 	def callback_about_dialog(self, widget, data=None):
 		about_dialog_show()
 
@@ -909,19 +903,6 @@ class NotebookExample:
 #		self.file_name, data, widget.get_text(),widget
 
 
-	def callback_optics_sim(self, widget, data=None):
-		if self.optics_window==False:
-			self.optics_window=class_optical()
-			self.optics_window.init()
-			if self.optics_window.enabled==True:
-				self.optics_window.wow(self.exe_command)
-				self.optics_window.hide()
-
-		if self.optics_window.get_property("visible")==True:
-			self.optics_window.hide()
-		else:
-			self.optics_window.show()
-
 	def callback_make(self, widget, data=None):
 		cmd = 'make clean'
 		os.system(cmd)
@@ -959,23 +940,14 @@ class NotebookExample:
 		toolbar.set_size_request(900, 50)
 		toolbar.show()
 
-		image = gtk.Image()
-   		image.set_from_file(find_data_file("gui/qe.png"))
-		self.qe_button = gtk.ToolButton(image)
-		self.tooltips.set_tip(self.qe_button, "Quantum efficiency")
-		self.qe_button.connect("clicked", self.callback_qe_window)
-		toolbar.insert(self.qe_button, pos)
-		self.qe_button.show_all()
-		pos=pos+1
-
-		if os.path.isfile(find_data_file("optics_epitaxy.inp")):
+		if debug_mode()==True:
 			image = gtk.Image()
-	   		image.set_from_file(find_data_file("gui/optics.png"))
-			self.optics_button = gtk.ToolButton(image)
-			self.tooltips.set_tip(self.optics_button, "Optical simulation")
-			self.optics_button.connect("clicked", self.callback_optics_sim)
-			toolbar.insert(self.optics_button, pos)
-			self.optics_button.show_all()
+	   		image.set_from_file(find_data_file("gui/qe.png"))
+			self.qe_button = gtk.ToolButton(image)
+			self.tooltips.set_tip(self.qe_button, "Quantum efficiency")
+			self.qe_button.connect("clicked", self.callback_qe_window)
+			toolbar.insert(self.qe_button, pos)
+			self.qe_button.show_all()
 			pos=pos+1
 
 		sim_mode=tb_item_sim_mode()
@@ -1093,7 +1065,6 @@ class NotebookExample:
 		    ( "/_Plots/",     None, None, 0, "<Separator>" ),
 		    ( "/_Help",         None,         None, 0, "<LastBranch>" ),
 			( "/_Help/Help Index",   None,         self.callback_help, 0, "<StockItem>", "gtk-help"  ),
-		    ( "/_Help/Help about this tab",   None,         self.callback_wiki, 0, None  ),
 			
 
 		    ( "/_Help/About",   None, self.callback_about_dialog, 0, "<StockItem>", "gtk-about" ),
@@ -1253,13 +1224,15 @@ class NotebookExample:
 		toolbar.insert(sep, pos)
 		pos=pos+1
 
-		image = gtk.Image()
-   		image.set_from_file(find_data_file("gui/time.png"))
-		self.time_mesh_button = gtk.ToolButton(image)
-		self.tooltips.set_tip(self.time_mesh_button, "Edit the electrical mesh")
-		self.time_mesh_button.connect("clicked", self.callback_edit_time_mesh)
-		toolbar.insert(self.time_mesh_button, pos)
-		pos=pos+1
+
+		if debug_mode()==True:
+			image = gtk.Image()
+	   		image.set_from_file(find_data_file("gui/time.png"))
+			self.time_mesh_button = gtk.ToolButton(image)
+			self.tooltips.set_tip(self.time_mesh_button, "Edit the time mesh")
+			self.time_mesh_button.connect("clicked", self.callback_edit_time_mesh)
+			toolbar.insert(self.time_mesh_button, pos)
+			pos=pos+1
 
 
 

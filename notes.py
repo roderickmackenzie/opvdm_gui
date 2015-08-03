@@ -25,12 +25,9 @@ import gtk
 import sys
 import os
 import shutil
-from util import set_exe_command
 from numpy import *
 from matplotlib.figure import Figure
 from numpy import arange, sin, pi
-from matplotlib.backends.backend_gtkagg import FigureCanvasGTKAgg as FigureCanvas
-from matplotlib.backends.backend_gtkagg import NavigationToolbar2GTKAgg as NavigationToolbar
 import gobject
 
 

@@ -25,7 +25,7 @@ import gtk
 import sys
 import os
 import shutil
-from util import set_exe_command
+from util import get_exe_command
 from numpy import *
 from matplotlib.figure import Figure
 from numpy import arange, sin, pi
@@ -48,9 +48,12 @@ class tab_electrical_mesh(gtk.Window):
 	name=""
 	visible=1
 
+	def run_simulation(self,data):
+		cmd = get_exe_command()+' --onlypos'
+		os.system(cmd)
+		self.update_graph()
+
 	def update_graph(self):
-		#cmd = self.exe_command+' --onlypos'
-		#ret= os.system(cmd)
 		self.fig.clf()
 		self.draw_graph()
 		self.fig.canvas.draw()
@@ -156,7 +159,6 @@ class tab_electrical_mesh(gtk.Window):
 		self.ax1=None
 		self.show_key=True
 		self.hbox=gtk.HBox()
-		self.exe_command , exe_name  =  set_exe_command()
 		self.edit_list=[]
 		self.line_number=[]
 		gui_pos=0
@@ -195,7 +197,7 @@ class tab_electrical_mesh(gtk.Window):
    		image.set_from_file(find_data_file("gui/play.png"))
 		save = gtk.ToolButton(image)
 		tooltips.set_tip(save, "Run simulation")
-		save.connect("clicked", self.refresh)
+		save.connect("clicked", self.run_simulation)
 		toolbar.insert(save, tool_bar_pos)
 		tool_bar_pos=tool_bar_pos+1
 
@@ -222,12 +224,6 @@ class tab_electrical_mesh(gtk.Window):
 		toolbar.insert(help, tool_bar_pos)
 		help.connect("clicked", self.callback_help)
 		help.show()
-		tool_bar_pos=tool_bar_pos+1
-
-		close = gtk.ToolButton(gtk.STOCK_QUIT)
-		close.connect("clicked", self.callback_close)
-		toolbar.insert(close, tool_bar_pos)
-		close.show()
 		tool_bar_pos=tool_bar_pos+1
 
 		toolbar.show_all()

@@ -25,7 +25,7 @@ import gtk
 import sys
 import os
 import shutil
-from util import set_exe_command
+from util import get_exe_command
 from numpy import *
 from matplotlib.figure import Figure
 from numpy import arange, sin, pi
@@ -134,7 +134,7 @@ class qe_window(gtk.Window):
 		self.ax1=None
 		self.show_key=True
 		self.hbox=gtk.HBox()
-		self.exe_command , exe_name  =  set_exe_command()
+		self.exe_command  =  get_exe_command()
 		self.edit_list=[]
 		self.line_number=[]
 		gui_pos=0

@@ -116,7 +116,7 @@ class scan_class(gtk.Window):
 		return True
 
 	def callback_help(self, widget, data=None):
-		webbrowser.open('firefox http://www.roderickmackenzie.eu/wiki/index.php?title=parameter_scan')
+		webbrowser.open('http://www.opvdm.com/man/index.html')
 
 	def callback_add_page(self, widget, data=None):
 		new_sim_name=dlg_get_text( "New simulation name:", "Simulation "+str(self.number_of_tabs+1))

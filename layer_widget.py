@@ -39,6 +39,7 @@ from emesh import tab_electrical_mesh
 from plot_gen import plot_gen
 from opvdm_open import opvdm_open
 from cal_path import get_phys_path
+from optics import class_optical
 
 (
   COLUMN_THICKNES,
@@ -148,6 +149,8 @@ class layer_widget(gtk.VBox):
 
 	def __init__(self,tooltips):
 
+		self.optics_window=False
+
 		self.electrical_mesh=tab_electrical_mesh()
 		self.electrical_mesh.init()
 
@@ -205,12 +208,21 @@ class layer_widget(gtk.VBox):
 		pos=pos+1
 
 		image = gtk.Image()
-   		image.set_from_file(find_data_file("gui/dir_file.png"))
-		self.mesh = gtk.ToolButton(image)
-		tooltips.set_tip(self.mesh, "Look at the materials database")
-		self.mesh.connect("clicked", self.callback_view_materials)
-		toolbar.insert(self.mesh, pos)
+   		image.set_from_file(find_data_file("gui/optics.png"))
+		self.optics_button = gtk.ToolButton(image)
+		tooltips.set_tip(self.optics_button, "Optical simulation")
+		self.optics_button.connect("clicked", self.callback_optics_sim)
+		toolbar.insert(self.optics_button, pos)
+		self.optics_button.show_all()
 		pos=pos+1
+
+		#image = gtk.Image()
+   		#image.set_from_file(find_data_file("gui/dir_file.png"))
+		#self.mesh = gtk.ToolButton(image)
+		#tooltips.set_tip(self.mesh, "Look at the materials database")
+		#self.mesh.connect("clicked", self.callback_view_materials)
+		#toolbar.insert(self.mesh, pos)
+		#pos=pos+1
 
 		hbox0=gtk.HBox()
 
@@ -401,6 +413,20 @@ class layer_widget(gtk.VBox):
 		
 		inp_write_lines_to_file(os.path.join(os.getcwd(),"optics_epitaxy.inp"),lines)
 		self.sync_to_electrical_mesh()
+
+	def callback_optics_sim(self, widget, data=None):
+		if self.optics_window==False:
+			self.optics_window=class_optical()
+			self.optics_window.init()
+			if self.optics_window.enabled==True:
+				self.optics_window.wow()
+				self.optics_window.hide()
+
+		if self.optics_window.get_property("visible")==True:
+			self.optics_window.hide()
+		else:
+			self.optics_window.show()
+
 
 gobject.type_register(layer_widget)
 gobject.signal_new("refresh", layer_widget, gobject.SIGNAL_RUN_FIRST,gobject.TYPE_NONE, ())

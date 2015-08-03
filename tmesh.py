@@ -25,7 +25,6 @@ import gtk
 import sys
 import os
 import shutil
-from util import set_exe_command
 from numpy import *
 from matplotlib.figure import Figure
 from numpy import arange, sin, pi
@@ -201,13 +200,6 @@ class tab_time_mesh(gtk.Window):
 		self.draw_graph()
 		self.fig.canvas.draw()
 		self.save_data()
-
-	def update_graph(self):
-		cmd = self.exe_command+' --onlypos'
-		ret= os.system(cmd)
-		self.fig.clf()
-		self.draw_graph()
-		self.fig.canvas.draw()
 
 	def gaussian(self,x, mu, sig):
 		return exp(-power(x - mu, 2.) / (2 * power(sig, 2.)))
@@ -422,7 +414,6 @@ class tab_time_mesh(gtk.Window):
 		self.ax1=None
 		self.show_key=True
 		self.hbox=gtk.HBox()
-		self.exe_command , exe_name  =  set_exe_command()
 		self.edit_list=[]
 		self.line_number=[]
 		gui_pos=0

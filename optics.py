@@ -49,6 +49,7 @@ import webbrowser
 from progress import progress_class
 from cal_path import get_phys_path
 from cal_path import get_light_dll_path
+from util import get_exe_command
 def find_modes(path):
 	result = []
 	file_names=[]
@@ -257,7 +258,8 @@ class class_optical(gtk.Window):
 		self.fig.canvas.draw()
 
 	def update_graph(self):
-		cmd = self.exe_command+' --optics'
+		cmd = get_exe_command()+' --optics'
+		print cmd
 		ret= os.system(cmd)
 		self.fig.clf()
 		self.draw_graph()
@@ -423,7 +425,7 @@ class class_optical(gtk.Window):
 			
 			layer=layer+1
 
-	def wow(self,exe_command):
+	def wow(self):
 		self.load()
 		self.articles=[]
 		self.dump_dir=os.path.join(os.getcwd(),"light_dump")
@@ -440,7 +442,6 @@ class class_optical(gtk.Window):
 		#self.optical_mode_file=self.dump_dir+"/light_1d_photons_tot_norm.dat"
 		self.optical_mode_file="light_1d_photons_tot_norm.dat"
 		
-		self.exe_command=exe_command
 		self.edit_list=[]
 		self.line_number=[]
 

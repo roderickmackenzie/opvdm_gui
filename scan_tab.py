@@ -727,6 +727,7 @@ class scan_vbox(gtk.VBox):
 		renderer_enable.connect("toggled", self.toggled_cb, self.liststore_combobox)
 		column_enable = gtk.TreeViewColumn("Enabled",renderer_enable)
 		column_enable.set_max_width(50)
+		column_enable.set_visible(False)
 	
 		column_enable.add_attribute(renderer_enable, "active", 3)
 		column_enable.pack_start(renderer_enable, False)

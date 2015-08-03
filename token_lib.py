@@ -59,7 +59,7 @@ class tokens:
 	lib.append(my_data("#Vstep","V","Voltage step",["text"],"e",1.0))
 	lib.append(my_data("#I0","Apms","I0",["text"],"e",1.0))
 	lib.append(my_data("#nid","(a.u.)","ideality factor",["text"],"e",1.0))
-	lib.append(my_data("#Psun","Sun","Intensity of the sun",["text"],"e",1.0))
+	#lib.append(my_data("#Psun","Sun","Intensity of the sun",["text"],"e",1.0))
 
 	lib.append(my_data("#saturation_n0","#saturation_n0","#saturation_n0",["text"],"e",1.0))
 	lib.append(my_data("#saturation_rate","#saturation_rate","#saturation_rate",["text"],"e",1.0))

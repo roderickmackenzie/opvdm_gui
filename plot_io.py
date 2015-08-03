@@ -33,7 +33,7 @@ from util import str2bool
 from inp import inp_save_lines
 
 def plot_load_info(plot_token,file_name_in):
-	print "whoo",file_name_in
+	#print "whoo",file_name_in
 	file_name=os.path.splitext(file_name_in)[0]+".dat"
 
 	ret=False

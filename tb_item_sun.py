@@ -54,7 +54,7 @@ class tb_item_sun(gtk.ToolItem):
 
 		self.light.child.connect('changed', self.call_back_light_changed)
 
-		lable=gtk.Label("Light intensity:")
+		lable=gtk.Label("Light intensity (Suns):")
 		lable.show
 		hbox = gtk.HBox(False, 2)
 		hbox.pack_start(lable, False, False, 0)

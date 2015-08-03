@@ -80,7 +80,6 @@ class tab_main(gtk.VBox):
 		self.cr.set_source_rgb(r,g,b)
 
 		points=[(x,y), (x+200,y), (x+200,y+z), (x,y+z)]
-		print points
 		self.cr.move_to(x, y)
 		for px,py in points:
 			self.cr.line_to(px, py)
@@ -88,7 +87,6 @@ class tab_main(gtk.VBox):
 
 		if active_layer==True:
 			points=[(x+285,y-60), (x+295,y-60), (x+295,y+z-60), (x+285,y+z-60)]
-			print points
 			self.cr.set_source_rgb(0.0,0.0,0.7)
 			self.cr.move_to(points[0][0], points[0][1])
 			for px,py in points:
@@ -101,7 +99,6 @@ class tab_main(gtk.VBox):
 		self.cr.set_source_rgb(r,g,b)
 
 		points=[(x+200,y-0),(x+200,y+z), (x+200+80,y-60+z),(x+200+80,y-60)]
-		print points
 		self.cr.move_to(points[0][0], points[0][1])
 		for px,py in points:
 			self.cr.line_to(px, py)
@@ -114,7 +111,6 @@ class tab_main(gtk.VBox):
 
 		points=[(x,y),(x+200,y), (x+200+80,y-60), (x+100,y-60)]
 		self.cr.move_to(points[0][0], points[0][1])
-		print points
 		self.cr.move_to(x, y)
 		for px,py in points:
 			self.cr.line_to(px, py)
@@ -155,7 +151,6 @@ class tab_main(gtk.VBox):
 		for i in range(0,len(model)):
 			thick=200.0*float(model[l-i][0])/tot
 			pos=pos+thick
-			print "Draw"
 			path=os.path.join(get_phys_path(),model[l-i][1],"mat.inp")
 
 			if inp_load_file(lines,path)==True:

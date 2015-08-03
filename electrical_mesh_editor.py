@@ -199,7 +199,6 @@ class electrical_mesh_editor(gtk.VBox):
 		lines=[]
 		pos=0
 		if inp_load_file(lines,os.path.join(os.getcwd(),"device_epitaxy.inp"))==True:
-			print "HELLO!!!!!!"
 			pos=pos+1	#first comment
 			layers=int(lines[pos])
 
