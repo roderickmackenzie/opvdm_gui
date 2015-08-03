@@ -192,7 +192,7 @@ class plot_widget(gtk.VBox):
 
 	def do_plot(self):
 		print "PLOT TYPE=",self.plot_token.type
-		if self.plot_token!=None:
+		if self.plot_token!=None and len(self.plot_id)!=0:
 			plot_number=0
 
 			self.fig.clf()

@@ -33,8 +33,13 @@ from inp import inp_load_file
 from util import str2bool
 from inp import inp_search_token_value
 from inp import inp_update_token_value
-
 from scan_item import scan_item_add
+from util import find_data_file
+from emesh import tab_electrical_mesh
+from plot_gen import plot_gen
+from opvdm_open import opvdm_open
+from cal_path import get_phys_path
+
 (
   COLUMN_THICKNES,
   COLUMN_MATERIAL,
@@ -49,7 +54,7 @@ class layer_widget(gtk.VBox):
 		#print model[path][1] 
 		self.model[path][COLUMN_MATERIAL] = text
 		self.save_model()
-		self.emit("refresh")
+		self.refresh(True)
 
 	def sync_to_electrical_mesh(self):
 		count=0
@@ -92,7 +97,7 @@ class layer_widget(gtk.VBox):
 
 		self.model[path][COLUMN_DEVICE] = "True"
 		self.save_model()
-		self.emit("refresh")
+		self.refresh(True)
 
 
 
@@ -110,6 +115,20 @@ class layer_widget(gtk.VBox):
 		#	if self.liststore_combobox[i][0]!="Select parameter":
 		#		self.material_files.append([self.liststore_combobox[i][0]])
 
+	def callback_view_materials(self, widget, data=None):
+		dialog=opvdm_open()
+
+		dialog.init(get_phys_path())
+		response=dialog.run()
+
+		if response == True:
+			full_file_name=dialog.get_filename()
+			plot_gen([dialog.get_filename()],[],"auto")
+
+		elif response == gtk.RESPONSE_CANCEL:
+		    print 'Closed, no files selected'
+		dialog.destroy()
+
 	def callback_move_down(self, widget, data=None):
 
 		selection = self.treeview.get_selection()
@@ -119,9 +138,21 @@ class layer_widget(gtk.VBox):
 			path = model.get_path(iter)[0]
  			model.move_after( iter,model.iter_next(iter))
 			self.save_model()
-			self.emit("refresh")
+			self.refresh(True)
+
+	def callback_edit_mesh(self, widget, data=None):
+		if self.electrical_mesh.get_property("visible")==True:
+			self.electrical_mesh.hide_all()
+		else:
+			self.electrical_mesh.show_all()
 
 	def __init__(self,tooltips):
+
+		self.electrical_mesh=tab_electrical_mesh()
+		self.electrical_mesh.init()
+
+		self.electrical_mesh.emesh_editor.connect("refresh", self.change_active_layer_thickness)
+
 		self.frame=gtk.Frame()
 
 		self.__gobject_init__()
@@ -164,6 +195,22 @@ class layer_widget(gtk.VBox):
 		toolbar.insert(move, pos)
 		pos=pos+1
 
+
+		image = gtk.Image()
+   		image.set_from_file(find_data_file("gui/mesh.png"))
+		self.mesh = gtk.ToolButton(image)
+		tooltips.set_tip(self.mesh, "Edit the electrical mesh")
+		self.mesh.connect("clicked", self.callback_edit_mesh)
+		toolbar.insert(self.mesh, pos)
+		pos=pos+1
+
+		image = gtk.Image()
+   		image.set_from_file(find_data_file("gui/dir_file.png"))
+		self.mesh = gtk.ToolButton(image)
+		tooltips.set_tip(self.mesh, "Look at the materials database")
+		self.mesh.connect("clicked", self.callback_view_materials)
+		toolbar.insert(self.mesh, pos)
+		pos=pos+1
 
 		hbox0=gtk.HBox()
 
@@ -240,7 +287,7 @@ class layer_widget(gtk.VBox):
 			model.remove(iter)
 
 			self.save_model()
-			self.emit("refresh")
+			self.refresh(True)
 
 
 
@@ -295,8 +342,23 @@ class layer_widget(gtk.VBox):
 		model.set(iter, column, new_text)
 
 		self.save_model()
-		self.emit("refresh")
+		self.refresh(True)
 
+	def change_active_layer_thickness(self,obj):
+		thickness=obj.get_data("refresh")
+		print thickness
+		count=0
+		for item in self.model:
+			if str2bool(item[COLUMN_DEVICE])==True:
+				count=count+1
+
+		if count==1:
+			for item in self.model:
+				if str2bool(item[COLUMN_DEVICE])==True:
+					item[COLUMN_THICKNES]=str(thickness)
+					self.save_model()
+					self.refresh(False)
+					return
 
 	def on_add_item_clicked(self, button):
 		new_item = ["100e-9", "pcbm","0","1",False]
@@ -313,7 +375,12 @@ class layer_widget(gtk.VBox):
 		    COLUMN_DEVICE, new_item[COLUMN_DEVICE]
 		)
 		self.save_model()
-		self.emit("refresh")
+		self.refresh(True)
+
+	def refresh(self,emit):
+		self.electrical_mesh.refresh()
+		if emit==True:
+			self.emit("refresh")
 
 	def save_model(self):
 		lines=[]

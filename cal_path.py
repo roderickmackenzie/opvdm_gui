@@ -22,6 +22,7 @@
 import sys
 import os
 import shutil
+from win_lin import running_on_linux
 
 def get_phys_path():
 	path=os.path.join(os.getcwd(),"phys")
@@ -33,9 +34,9 @@ def get_phys_path():
 	return path
 
 def get_light_dll_path():
-	local=os.path.join(os.getcwd(),"light","exp."+ext)
+	local=os.path.join(os.getcwd(),"light")
 	if os.path.isfile(local):
-		path=os.path.join(os.getcwd(),"light")
+		path=local
 	else:
 		if running_on_linux()==True:
 			path="/usr/lib64/opvdm/"

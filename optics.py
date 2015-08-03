@@ -256,7 +256,7 @@ class class_optical(gtk.Window):
 
 		self.fig.canvas.draw()
 
-	def update_graph(self,model):
+	def update_graph(self):
 		cmd = self.exe_command+' --optics'
 		ret= os.system(cmd)
 		self.fig.clf()

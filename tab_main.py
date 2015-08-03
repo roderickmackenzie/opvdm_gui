@@ -31,6 +31,7 @@ import os
 from cal_path import get_phys_path
 from inp import inp_load_file
 from inp import inp_search_token_value
+from util import str2bool
 
 class tab_main(gtk.VBox):
 
@@ -73,7 +74,9 @@ class tab_main(gtk.VBox):
 
 		#self.cr.restore()
 
-	def draw_box(self,x,y,z,r,g,b,text):
+	def draw_box(self,x,y,z,r,g,b,model):
+		text=model[1]
+		active_layer=str2bool(model[2])
 		self.cr.set_source_rgb(r,g,b)
 
 		points=[(x,y), (x+200,y), (x+200,y+z), (x,y+z)]
@@ -82,6 +85,15 @@ class tab_main(gtk.VBox):
 		for px,py in points:
 			self.cr.line_to(px, py)
 		self.cr.fill()
+
+		if active_layer==True:
+			points=[(x+285,y-60), (x+295,y-60), (x+295,y+z-60), (x+285,y+z-60)]
+			print points
+			self.cr.set_source_rgb(0.0,0.0,0.7)
+			self.cr.move_to(points[0][0], points[0][1])
+			for px,py in points:
+				self.cr.line_to(px, py)
+			self.cr.fill()
 
 		r=r*0.5
 		g=g*0.5
@@ -154,7 +166,7 @@ class tab_main(gtk.VBox):
 				red=0.0
 				green=0.0
 				blue=0.0
-			self.draw_box(200,450.0-pos,thick*0.9,red,green,blue,model[l-i][1])
+			self.draw_box(200,450.0-pos,thick*0.9,red,green,blue,model[l-i])
 		step=50.0
 
 		lines=[]

@@ -44,38 +44,28 @@ from search import find_fit_error
 from optics import class_optical
 import signal
 import subprocess
-from inp import inp_update_token_value
 from inp import inp_get_token_value
-from inp import inp_isfile
-from inp import inp_get_token_array
 from util import set_exe_command
-from util import get_orig_inp_file_path
 from util import opvdm_clone
 from export_as import export_as
-from emesh import tab_electrical_mesh
 from tmesh import tab_time_mesh
 from copying import copying
 from tab_homo import tab_bands
-from tempfile import mkstemp
 from plot_gen import plot_gen
 from plot_gen import set_plot_auto_close
 from import_archive import import_archive
 from about import about_dialog_show
 from util import find_data_file
 from notice import notice
-import os, fnmatch
+import os
 import threading
 import time
 import gobject
-import numpy
-import matplotlib
-import matplotlib.pyplot as plt
 from used_files_menu import used_files_menu
 from plot import load_graph
 from scan_item import scan_item_add
 from cmp_class import cmp_class
 from plot_state import plot_state
-import logging
 from Queue import *
 from util import check_is_config_file
 from window_list import windows
@@ -88,13 +78,13 @@ from ver import ver
 from win_lin import running_on_linux
 import webbrowser
 from debug import debug_mode
-from util import read_data_2d
 from progress import progress_class
 from qe import qe_window
 from opvdm_open import opvdm_open
 from tab_main import tab_main
 from tb_item_sun import tb_item_sun
 from tb_item_sim_mode import tb_item_sim_mode
+from opvdm_open import opvdm_open
 
 if running_on_linux()==True:
 	import pyinotify
@@ -118,16 +108,6 @@ else:
 
 	FILE_LIST_DIRECTORY = 0x0001
 
-
-#def trace(frame, event, arg):
-#    print "%s, %s:%d" % (event, frame.f_code.co_filename, frame.f_lineno)
-#    return trace
-
-#sys.settrace(trace)
-
-#logging.basicConfig(filename='/tmp/opvdm.log', level=logging.INFO)
-
-#logging.info(time.strftime("%c"))
 
 print notice()
 
@@ -220,7 +200,6 @@ class NotebookExample:
 	#print exe_command
 
 	def check_model_error(self):
-			logging.info('check_model_error')
 			print "Thread ID=",threading.currentThread()
 			f = open("error.dat")
 			lines = f.readlines()
@@ -278,7 +257,6 @@ class NotebookExample:
 
 
 	def user_callback(self,object):
-		#logging.info('user_callback')
 		global thread_data
 		file_name=thread_data.get()
 		if (file_name=="signal_start.dat"):
@@ -324,7 +302,6 @@ class NotebookExample:
 		global thread_data
 		thread_data = Queue(maxsize=0)
 		
-		#logging.info('notebook_load_pages')
 		self.progress.show()
 		self.finished_loading=False
 		self.rod=[]
@@ -335,7 +312,6 @@ class NotebookExample:
 		if (os.path.exists("sim.opvdm")==True) and (os.getcwd()!="C:\\opvdm"):
 			self.play.set_sensitive(True)
 			self.stop.set_sensitive(True)
-			self.mesh.set_sensitive(True)
 			self.examine.set_sensitive(True)
 			self.param_scan.set_sensitive(True)
 			self.optics_button.set_sensitive(True)
@@ -442,7 +418,6 @@ class NotebookExample:
 					hbox=gtk.HBox()
 					hbox.set_size_request(-1, 25)
 					mytext=cur_name
-					#logging.info('Adding page'+mytext)
 					if len(mytext)<10:
 						for i in range(len(mytext),10):
 							mytext=mytext+" "
@@ -526,7 +501,6 @@ class NotebookExample:
 		self.config.set_value("#one_plot_window",data.get_active())
 
 	def toggle_tab_visible(self,name):
-		logging.info('toggle_tab_visible '+str(self.finished_loading))
 		if self.finished_loading==True:
 			for i in range(0, self.number_of_tabs):
 				if self.rod[i].name==name:
@@ -641,7 +615,6 @@ class NotebookExample:
 
 
 	def callback_scan(self, widget, data=None):
-		logging.info('callback_scan')
 		self.tb_run_scan.set_sensitive(True)
 
 		if self.scan_window==None:
@@ -657,21 +630,16 @@ class NotebookExample:
 
 
 	def callback_plot_select(self, widget, data=None):
-		logging.info('callback_plot_select')
-		dialog = gtk.FileChooserDialog("Open graph..",
-                               None,
-                               gtk.FILE_CHOOSER_ACTION_OPEN,
-                               (gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL,
-                                gtk.STOCK_OPEN, gtk.RESPONSE_OK))
-		dialog.set_default_response(gtk.RESPONSE_OK)
 
-		filter = gtk.FileFilter()
-		filter.set_name("dat files")
-		filter.add_pattern("*.dat")
-		dialog.add_filter(filter)
+		dialog=opvdm_open()
+		dialog.show_inp_files=False
+		dialog.show_directories=False
 
-		response = dialog.run()
-		if response == gtk.RESPONSE_OK:
+		dialog.init(self.sim_dir)
+		response=dialog.run()
+
+		if response == True:
+			full_file_name=dialog.get_filename()
 			self.plot_open.set_sensitive(True)
 
 			plot_gen([dialog.get_filename()],[],"auto")
@@ -702,7 +670,6 @@ class NotebookExample:
 		plot_gen(["matrix.dat"],[],"")
 
 	def callback_import(self, widget, data=None):
-		logging.info('callback_import')
 		dialog = gtk.FileChooserDialog("Import..",
                                None,
                                gtk.FILE_CHOOSER_ACTION_OPEN,
@@ -724,7 +691,6 @@ class NotebookExample:
 		dialog.destroy()
 
 	def change_sim_dir(self,new_dir):
-		logging.info('change_sim_dir')
 		print "Changing directory to ",new_dir
 		os.chdir(new_dir)
 		self.sim_dir=os.getcwd()
@@ -738,7 +704,6 @@ class NotebookExample:
 			print "Can't stop start thread"
 
 	def callback_new(self, widget, data=None):
-		logging.info('callback_new')
 		dialog = gtk.FileChooserDialog("Make new opvdm simulation dir..",
                                None,
                                gtk.FILE_CHOOSER_ACTION_OPEN,
@@ -765,28 +730,9 @@ class NotebookExample:
 		elif response == gtk.RESPONSE_CANCEL:
 		    print 'Closed, no dir selected'
 		dialog.destroy()
-		logging.info('Leaving callback callback_new')
 
 	def change_dir_and_refresh_interface(self,new_dir):
-		logging.info('change_dir_and_refresh_interface')
-		#if os.path.isfile("ver.inp")==True:
-		#	f = open("ver.inp")
-		#	lines = f.readlines()
-		#	f.close()
-		#	for i in range(0, len(lines)):
-		#		lines[i]=lines[i].rstrip()
-		#
-		#	if lines[1]!=version:
-		#		myerror="I can only load files from opvdm version "+ver()+" current version "+lines[1]+"\n."
-		#		logging.info(os.getcwd())
-		#		logging.info(myerror)
-		#		message = gtk.MessageDialog(type=gtk.MESSAGE_ERROR, buttons=gtk.BUTTONS_OK)
-		#		message.set_markup(myerror)
-		#		message.run()
-		#		message.destroy()
-		#		sys.exit(myerror) 
-		
-		scan_items_clear()
+ 		scan_items_clear()
 
 		self.change_sim_dir(new_dir)
 		self.config.load(self.sim_dir)
@@ -807,19 +753,16 @@ class NotebookExample:
 
 
 		if self.scan_window!=None:
-			logging.info('Del scan_window')
 			del self.scan_window
 			self.scan_window=None
 
 
 		if self.electrical_mesh!=None:
-			logging.info('Del scan_window')
 			del self.electrical_mesh
 			self.electrical_mesh=tab_electrical_mesh()
 			self.electrical_mesh.init()
 
 		if self.time_mesh!=None:
-			logging.info('Del scan_window')
 			del self.time_mesh
 			self.time_mesh=tab_time_mesh()
 			self.time_mesh.init()
@@ -834,10 +777,7 @@ class NotebookExample:
 		myitem=self.item_factory.get_item("/Plots/Plot after simulation")
 		myitem.set_active(self.config.get_value("#plot_after_simulation",False))
 
-		logging.info('Finished change_dir_and_refresh_interface')
-
 	def callback_open(self, widget, data=None):
-		logging.info('callback_open')
 		dialog = gtk.FileChooserDialog("Open..",
                                None,
                                gtk.FILE_CHOOSER_ACTION_OPEN,
@@ -860,7 +800,6 @@ class NotebookExample:
 		dialog.destroy()
 
 	def callback_export(self, widget, data=None):
-		logging.info('callback_export')
 		dialog = gtk.FileChooserDialog("Save as..",
                                None,
                                gtk.FILE_CHOOSER_ACTION_SAVE,
@@ -905,7 +844,6 @@ class NotebookExample:
 
 
 	def callback_edit_file(self, widget, data=None):
-		logging.info('callback_edit_file')
 		page = notebook.get_current_page()
 		cmd = 'gnome-open '+self.rod[page].file_name
 		os.system(cmd)
@@ -949,12 +887,6 @@ class NotebookExample:
         		md.destroy()
 			return
 
-	def callback_edit_mesh(self, widget, data=None):
-		if self.electrical_mesh.get_property("visible")==True:
-			self.electrical_mesh.hide_all()
-		else:
-			self.electrical_mesh.show_all()
-
 	def callback_edit_time_mesh(self, widget, data=None):
 		if self.time_mesh.get_property("visible")==True:
 			self.time_mesh.hide_all()
@@ -964,8 +896,6 @@ class NotebookExample:
 	def callback_undo(self, widget, data=None):
 		l=self.undo_list.get_list()
 		if len(l)>0:
-			#print l[len(l)-1][0]
-			#print l[len(l)-1][1]
 			value=l[len(l)-1][2]
 			w_type=l[len(l)-1][3]
 
@@ -1000,7 +930,6 @@ class NotebookExample:
 		os.system(cmd)
 
 	def get_main_menu(self, window):
-		logging.info('get_main_menu')
 		accel_group = gtk.AccelGroup()
 
 
@@ -1008,10 +937,6 @@ class NotebookExample:
 
 		item_factory.create_items(self.menu_items)
 
-	        #import_image = gtk.Image()
-   		#import_image.set_from_file(find_data_file("gui/document-import-2.png"))
-		#myitem=item_factory.get_widget("/File/Import")
-		#myitem.set_image(import_image)
 
 		if os.path.exists("./server.inp")==False:
 			item_factory.delete_item("/Plots/Fit")
@@ -1062,18 +987,11 @@ class NotebookExample:
 		self.ti_light=tb_item_sun()
 		self.light=self.ti_light.light
 
-		print "one"
-
-		print "two"
-
 		toolbar.insert(self.ti_light, pos)
 		pos=pos+1
 
 		ti_progress = gtk.ToolItem()
 		hbox = gtk.HBox(False, 2)
-
-		#logging.info('__init__6')
-		#hbox.set_child_packing(self.progress, False, False, 0, 0)
 
 		sep = gtk.SeparatorToolItem()
 
@@ -1090,7 +1008,6 @@ class NotebookExample:
 		self.spin.stop()
 
 
-		#logging.info('__init__6.1')
 		gap=gtk.Label(" ")
 		hbox.add(gap)
 		hbox.add(self.spin)	
@@ -1100,7 +1017,6 @@ class NotebookExample:
 		gap.show()
 		hbox.show()
 
-		#logging.info('__init__6.2')
 		ti_progress.add(hbox)
 
 		toolbar.insert(ti_progress, pos)
@@ -1124,8 +1040,6 @@ class NotebookExample:
 		self.statusicon.set_tooltip("opvdm")
 		self.statusicon.connect('popup-menu', self.on_status_icon_right_click)
 
-		self.electrical_mesh=tab_electrical_mesh()
-		self.electrical_mesh.init()
 
 		self.time_mesh=tab_time_mesh()
 		self.time_mesh.init()
@@ -1133,7 +1047,6 @@ class NotebookExample:
 		self.qe=qe_window()
 		self.qe.init()
 
-		logging.info('__init__')
 		self.exe_dir= os.path.dirname(os.path.abspath(__file__))
 
 		print "opvdm exe in "+self.exe_dir
@@ -1341,14 +1254,6 @@ class NotebookExample:
 		pos=pos+1
 
 		image = gtk.Image()
-   		image.set_from_file(find_data_file("gui/mesh.png"))
-		self.mesh = gtk.ToolButton(image)
-		self.tooltips.set_tip(self.mesh, "Edit the electrical mesh")
-		self.mesh.connect("clicked", self.callback_edit_mesh)
-		toolbar.insert(self.mesh, pos)
-		pos=pos+1
-
-		image = gtk.Image()
    		image.set_from_file(find_data_file("gui/time.png"))
 		self.time_mesh_button = gtk.ToolButton(image)
 		self.tooltips.set_tip(self.time_mesh_button, "Edit the electrical mesh")
@@ -1408,16 +1313,9 @@ class NotebookExample:
 		handlebox.add(tb_vbox)
 
 		main_vbox.pack_start(handlebox, False, False, 0)
-		#self.progress = gtk.ProgressBar(adjustment=None)
-
-		#self.progress.hide()
-
-		#main_vbox.pack_start(self.progress, False, False, 0)#add(self.progress)
-
 
 		self.window.connect("delete-event", self.callback_close_window) 
 
-		logging.info('__init__7')
 		self.win_list.set_window(self.window,"main_window")
 
 
@@ -1430,12 +1328,10 @@ class NotebookExample:
 
 		process_events()
 
-		logging.info('__init__6.5')
 		self.thread = _FooThread()
 		self.thread.connect("file_changed", self.user_callback)
 		self.thread.daemon = True
 		self.thread.start()
-		logging.info('__init__6.6')
 		self.progress.stop()
 
 	def make_window2(self,main_vbox):

@@ -31,7 +31,8 @@ COL_PIXBUF = 1
 COL_IS_DIRECTORY = 2
 
 class opvdm_open(gtk.Dialog): 
-
+	show_inp_files=True
+	show_directories=True
 
 	def init(self,path):
 		self.file_path=""
@@ -121,7 +122,7 @@ class opvdm_open(gtk.Dialog):
 
 		for fl in os.listdir(self.dir):
 			file_name=os.path.join(self.dir, fl)
-			if os.path.isdir(file_name):
+			if os.path.isdir(file_name) and self.show_directories==True:
 			    self.store.append([fl, self.dir_icon, "dir"])
 			else:
 				append=False
@@ -134,7 +135,8 @@ class opvdm_open(gtk.Dialog):
 					if text=="#opvdm":
 						self.store.append([fl, self.dat_icon, "dat"])
 
-				if (file_name.endswith(".inp")==True):
+				if (file_name.endswith(".inp")==True) and self.show_inp_files==True:
+					print self.show_inp_files
 					self.store.append([fl, self.inp_icon, "inp"])
 
 	def on_home_clicked(self, widget):
