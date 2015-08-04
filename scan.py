@@ -73,7 +73,8 @@ class scan_class(gtk.Window):
 
 
 		item_factory.create_items(self.menu_items)
-
+		if debug_mode()==False:
+			item_factory.delete_item("/Advanced")
 
 		window.add_accel_group(accel_group)
 
@@ -473,23 +474,23 @@ class scan_class(gtk.Window):
 		    ( "/Simulations/_Clone simulation",     None, self.callback_copy_page, 0, "<StockItem>", "gtk-copy" ),
 			( "/Simulations/sep1",     None, None, 0, "<Separator>" ),
 		    ( "/Simulations/_Run simulation",     None, self.callback_run_simulation, 0, "<StockItem>", "gtk-media-play" ),
-		    ( "/Simulations/_Build simulation",     None, self.callback_build_simulation, 0, "<StockItem>", "gtk-cdrom" ),
-			( "/Simulations/_Run (no build)",     None, self.callback_run_simulation_no_build, 0, "<StockItem>", "gtk-media-play" ),
-			( "/Simulations/_Run nested simulation",     None, self.callback_nested_simulation, 0, "<StockItem>", "gtk-media-play" ),
-			( "/Simulations/_Clean simulation",     None, self.callback_clean_simulation, 0, "<StockItem>", "gtk-clear" ),
-			( "/Simulations/_Clean unconverged simulation",     None, self.callback_clean_unconverged_simulation, 0, "<StockItem>", "gtk-clear" ),
-			( "/Simulations/_Clean simulation output",     None, self.callback_clean_simulation_output, 0, "<StockItem>", "gtk-clear" ),
-			( "/Simulations/sep2",     None, None, 0, "<Separator>" ),
-			( "/Simulations/_Import from hpc",     None, self.callback_import_from_hpc, 0, "<StockItem>", "gtk-open" ),
-			( "/Simulations/_Push to hpc",     None, self.callback_push_to_hpc, 0, "<StockItem>", "gtk-save" ),
-			( "/Simulations/_Push unconverged to hpc",     None, self.callback_push_unconverged_to_hpc, 0, "<StockItem>", "gtk-save" ),
-			( "/Simulations/_Set hpc dir",     None, self.callback_set_hpc_dir, 0, "<StockItem>", "gtk-open" ),
+		    ( "/Advanced/_Build simulation",     None, self.callback_build_simulation, 0, "<StockItem>", "gtk-cdrom" ),
+			( "/Advanced/_Run (no build)",     None, self.callback_run_simulation_no_build, 0, "<StockItem>", "gtk-media-play" ),
+			( "/Advanced/_Run nested simulation",     None, self.callback_nested_simulation, 0, "<StockItem>", "gtk-media-play" ),
+			( "/Advanced/_Clean simulation",     None, self.callback_clean_simulation, 0, "<StockItem>", "gtk-clear" ),
+			( "/Advanced/_Clean unconverged simulation",     None, self.callback_clean_unconverged_simulation, 0, "<StockItem>", "gtk-clear" ),
+			( "/Advanced/_Clean simulation output",     None, self.callback_clean_simulation_output, 0, "<StockItem>", "gtk-clear" ),
+			( "/Advanced/sep2",     None, None, 0, "<Separator>" ),
+			( "/Advanced/_Import from hpc",     None, self.callback_import_from_hpc, 0, "<StockItem>", "gtk-open" ),
+			( "/Advanced/_Push to hpc",     None, self.callback_push_to_hpc, 0, "<StockItem>", "gtk-save" ),
+			( "/Advanced/_Push unconverged to hpc",     None, self.callback_push_unconverged_to_hpc, 0, "<StockItem>", "gtk-save" ),
+			( "/Advanced/_Set hpc dir",     None, self.callback_set_hpc_dir, 0, "<StockItem>", "gtk-open" ),
 
-		    ( "/Cluster/_Cluster sleep",     None, self.callback_cluster_sleep, 0, "<StockItem>", "gtk-copy" ),
-		    ( "/Cluster/_Cluster poweroff",     None, self.callback_cluster_poweroff, 0, "<StockItem>", "gtk-copy" ),
-		    ( "/Cluster/_Cluster wake",     None, self.callback_wol, 0, "<StockItem>", "gtk-copy" ),
+		    ( "/Advanced/_Cluster sleep",     None, self.callback_cluster_sleep, 0, "<StockItem>", "gtk-copy" ),
+		    ( "/Advanced/_Cluster poweroff",     None, self.callback_cluster_poweroff, 0, "<StockItem>", "gtk-copy" ),
+		    ( "/Advanced/_Cluster wake",     None, self.callback_wol, 0, "<StockItem>", "gtk-copy" ),
 
-		    ( "/Cluster/_Remove all results",     None, self.callback_remove_all_results, 0, "<StockItem>", "gtk-copy" ),
+		    ( "/Advanced/_Remove all results",     None, self.callback_remove_all_results, 0, "<StockItem>", "gtk-copy" ),
 		    ( "/_Help",         None,         None, 0, "<LastBranch>" ),
 		    ( "/_Help/Help",   None,         self.callback_help, 0, None ),
 		    ( "/_Help/About",   None,         about_dialog_show, 0, "<StockItem>", "gtk-about" ),

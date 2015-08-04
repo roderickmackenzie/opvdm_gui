@@ -388,7 +388,7 @@ class class_optical(gtk.Window):
 		inp_update_token_value("optics.inp", "#sun", cb_text,1)
 
 	def callback_help(self, widget, data=None):
-		webbrowser.open('firefox http://www.roderickmackenzie.eu/opvdm_wiki.html')
+		webbrowser.open('http://www.opvdm.com/man/index.html')
 
 	def load(self):
 		f = open("optics_epitaxy.inp")
@@ -540,12 +540,6 @@ class class_optical(gtk.Window):
 		toolbar.insert(help, tool_bar_pos)
 		help.connect("clicked", self.callback_help)
 		help.show()
-		tool_bar_pos=tool_bar_pos+1
-
-		close = gtk.ToolButton(gtk.STOCK_QUIT)
-		close.connect("clicked", self.callback_close)
-		toolbar.insert(close, tool_bar_pos)
-		close.show()
 		tool_bar_pos=tool_bar_pos+1
 
 		f = open("optics_epitaxy.inp")

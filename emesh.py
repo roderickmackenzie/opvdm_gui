@@ -142,7 +142,7 @@ class tab_electrical_mesh(gtk.Window):
 		dialog.destroy()
 
 	def callback_help(self, widget, data=None):
-		webbrowser.open('http://www.opvdm.com')
+		webbrowser.open('http://www.opvdm.com/man/index.html')
 
 	def init(self):
 		print "INIT!!"

@@ -1210,7 +1210,7 @@ class NotebookExample:
 		self.plot_open.set_sensitive(False)
 		pos=pos+1
 
-	        image = gtk.Image()
+		image = gtk.Image()
    		image.set_from_file(find_data_file("gui/plot_time.png"))
 		self.examine = gtk.ToolButton(image)
 		self.tooltips.set_tip(self.examine, "Examine results in time domain")
@@ -1225,14 +1225,14 @@ class NotebookExample:
 		pos=pos+1
 
 
-		if debug_mode()==True:
-			image = gtk.Image()
-	   		image.set_from_file(find_data_file("gui/time.png"))
-			self.time_mesh_button = gtk.ToolButton(image)
-			self.tooltips.set_tip(self.time_mesh_button, "Edit the time mesh")
-			self.time_mesh_button.connect("clicked", self.callback_edit_time_mesh)
-			toolbar.insert(self.time_mesh_button, pos)
-			pos=pos+1
+
+		image = gtk.Image()
+	   	image.set_from_file(find_data_file("gui/time.png"))
+		self.time_mesh_button = gtk.ToolButton(image)
+		self.tooltips.set_tip(self.time_mesh_button, "Edit the time mesh")
+		self.time_mesh_button.connect("clicked", self.callback_edit_time_mesh)
+		toolbar.insert(self.time_mesh_button, pos)
+		pos=pos+1
 
 
 

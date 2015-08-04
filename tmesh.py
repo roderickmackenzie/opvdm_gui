@@ -242,6 +242,7 @@ class tab_time_mesh(gtk.Window):
 		self.fig.legend((voltage, sun, laser), ('Voltage', 'Sun', 'Laser'), 'upper right')
 
 
+
 	def save_image(self,file_name):
 		self.fig.savefig(file_name)	
 		
@@ -318,6 +319,8 @@ class tab_time_mesh(gtk.Window):
 		renderer.set_property('editable', True)
 		column = gtk.TreeViewColumn("Multiply", renderer, text=SEG_MUL)
 		column.set_sort_column_id(SEG_MUL)
+		if debug_mode()==False:
+			column.set_visible(False)
 		treeview.append_column(column)
 
 		renderer = gtk.CellRendererText()
