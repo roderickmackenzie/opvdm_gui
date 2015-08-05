@@ -297,7 +297,7 @@ class cmp_class(gtk.Window):
 		dialog.destroy()
 
 	def callback_help(self, widget, data=None):
-		webbrowser.open('http://www.roderickmackenzie.eu/opvdm_wiki.html')
+		webbrowser.open('http://www.opvdm.com/man/opvdm.html')
 
 
 	def callback_toggle_subtract(self, widget, data):

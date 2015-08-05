@@ -40,6 +40,7 @@ from inp import inp_get_token_value
 import matplotlib.mlab as mlab
 from debug import debug_mode
 from inp import inp_write_lines_to_file
+import webbrowser
 
 (
 SEG_LENGTH,
@@ -218,28 +219,33 @@ class tab_time_mesh(gtk.Window):
 		layer=0
 		color =['r','g','b','y','o','r','g','b','y','o']
 
-		self.ax1.set_ylabel('Magnitude (au)')
-		#ax2.set_ylabel('Energy (eV)')
-		self.ax1.set_xlabel('Time (s)')
-		sun, = self.ax1.plot(self.time,self.sun, 'go-', linewidth=3 ,alpha=1.0)
-		laser, = self.ax1.plot(self.time,self.laser, 'bo-', linewidth=3 ,alpha=1.0)
-
-		if self.fs_laser_time!=-1:
-			if len(self.time)>2:
-				dt=(self.time[len(self.time)-1]-self.time[0])/100
-				start=self.fs_laser_time-dt*5
-				stop=self.fs_laser_time+dt*5
-				x = linspace(start,stop,100)
-				y=self.gaussian(x,self.fs_laser_time,dt)
-				#print y
-				fs_laser, = self.ax1.plot(x,y, 'g-', linewidth=3 ,alpha=1.0)
-
-		self.ax1.ticklabel_format(style='sci', axis='x', scilimits=(0,0))
-
+		self.ax1.set_ylabel('Voltage (Volts)')
+		voltage, = self.ax1.plot(self.time,self.voltage, 'ro-', linewidth=3 ,alpha=1.0)
 		self.ax2 = self.ax1.twinx()
-		voltage, = self.ax2.plot(self.time,self.voltage, 'ro-', linewidth=3 ,alpha=1.0)
-		self.ax2.set_ylabel('Voltage (Volts)')
-		self.fig.legend((voltage, sun, laser), ('Voltage', 'Sun', 'Laser'), 'upper right')
+
+		if debug_mode()==True:
+			self.ax2.set_ylabel('Magnitude (au)')
+			#ax2.set_ylabel('Energy (eV)')
+			self.ax2.set_xlabel('Time (s)')
+			sun, = self.ax2.plot(self.time,self.sun, 'go-', linewidth=3 ,alpha=1.0)
+			laser, = self.ax2.plot(self.time,self.laser, 'bo-', linewidth=3 ,alpha=1.0)
+
+			if self.fs_laser_time!=-1:
+				if len(self.time)>2:
+					dt=(self.time[len(self.time)-1]-self.time[0])/100
+					start=self.fs_laser_time-dt*5
+					stop=self.fs_laser_time+dt*5
+					x = linspace(start,stop,100)
+					y=self.gaussian(x,self.fs_laser_time,dt)
+					#print y
+					fs_laser, = self.ax2.plot(x,y, 'g-', linewidth=3 ,alpha=1.0)
+	
+			self.ax2.ticklabel_format(style='sci', axis='x', scilimits=(0,0))
+
+
+			self.fig.legend((voltage, sun, laser), ('Voltage', 'Sun', 'Laser'), 'upper right')
+		#else:
+			#self.fig.legend((voltage), ('Voltage'), 'upper right')
 
 
 
@@ -279,8 +285,7 @@ class tab_time_mesh(gtk.Window):
 		dialog.destroy()
 
 	def callback_help(self, widget, data=None):
-		cmd = 'firefox http://www.roderickmackenzie.eu/opvdm_wiki.html'
-		os.system(cmd)
+		webbrowser.open('http://www.opvdm.com/man/index.html')
 
 	def create_model(self):
 		store = gtk.ListStore(str, str, str, str, str, str)
@@ -379,6 +384,7 @@ class tab_time_mesh(gtk.Window):
 		laser_pulse_width=float(inp_get_token_value("optics.inp", "#laser_pulse_width"))
 
 
+		seg=0
 		for line in self.store:
 			end_time=pos+float(line[SEG_LENGTH])
 			dt=float(line[SEG_DT])
@@ -386,6 +392,10 @@ class tab_time_mesh(gtk.Window):
 			mul=float(line[SEG_MUL])
 			sun=float(line[SEG_SUN])
 			laser=float(line[SEG_LASER])
+			#print "VOLTAGE=",line[SEG_VOLTAGE],end_time,pos
+
+			if debug_mode()==False:
+				mul=1.0
 
 			if dt!=0.0 and mul!=0.0:
 				while(pos<end_time):
@@ -393,6 +403,7 @@ class tab_time_mesh(gtk.Window):
 					self.laser.append(laser)
 					self.sun.append(sun)
 					self.voltage.append(voltage)
+					#print seg,voltage
 					self.fs_laser.append(0.0)
 					pos=pos+dt
 
@@ -402,6 +413,10 @@ class tab_time_mesh(gtk.Window):
 							self.fs_laser[len(self.fs_laser)-1]=laser_pulse_width/dt
 
 					dt=dt*mul
+
+			seg=seg+1
+
+		print self.voltage
 
 		self.statusbar.push(0, str(len(self.time))+" mesh points")
 
@@ -445,6 +460,7 @@ class tab_time_mesh(gtk.Window):
 		treeview = gtk.TreeView(self.store)
 
 		tool_bar_pos=0
+
 		save = gtk.ToolButton(gtk.STOCK_SAVE)
 		tooltips.set_tip(save, "Save image")
 		save.connect("clicked", self.callback_save)
@@ -478,19 +494,20 @@ class tab_time_mesh(gtk.Window):
 			toolbar.insert(laser, tool_bar_pos)
 			tool_bar_pos=tool_bar_pos+1
 
-			image = gtk.Image()
-	   		image.set_from_file(find_data_file("gui/start.png"))
-			start = gtk.ToolButton(image)
-			tooltips.set_tip(start, "Simulation start time")
-			start.connect("clicked", self.callback_start_time,treeview)
-			toolbar.insert(start, tool_bar_pos)
-			tool_bar_pos=tool_bar_pos+1
+		image = gtk.Image()
+   		image.set_from_file(find_data_file("gui/start.png"))
+		start = gtk.ToolButton(image)
+		tooltips.set_tip(start, "Simulation start time")
+		start.connect("clicked", self.callback_start_time,treeview)
+		toolbar.insert(start, tool_bar_pos)
+		tool_bar_pos=tool_bar_pos+1
 
-		plot_toolbar = NavigationToolbar(canvas, self)
+		plot_toolbar = NavigationToolbar(self.fig.canvas, self)
 		plot_toolbar.show()
 		box=gtk.HBox(True, 1)
-		box.set_size_request(500,-1)
+		box.set_size_request(300,-1)
 		box.show()
+		box.pack_start(plot_toolbar, True, True, 0)
 		tb_comboitem = gtk.ToolItem();
 		tb_comboitem.add(box);
 		tb_comboitem.show()
@@ -508,12 +525,6 @@ class tab_time_mesh(gtk.Window):
 		toolbar.insert(help, tool_bar_pos)
 		help.connect("clicked", self.callback_help)
 		help.show()
-		tool_bar_pos=tool_bar_pos+1
-
-		close = gtk.ToolButton(gtk.STOCK_QUIT)
-		close.connect("clicked", self.callback_close)
-		toolbar.insert(close, tool_bar_pos)
-		close.show()
 		tool_bar_pos=tool_bar_pos+1
 
 		toolbar.show_all()

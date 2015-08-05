@@ -78,7 +78,7 @@ class welcome_class(gtk.HBox):
                 #         "title=\"Click to find out more\">www.opvdm.com</a>)\n\n"
 		#		+"To make a new simulation directory click <i>new</i> in the <i>file</i> menu\n"
 		#		+"or to open an existing simulation click on the <i>open</i> button.\n"
-		#		+"There is more help on the <a href=\"http://www.roderickmackenzie.eu/opvdm_wiki.html\">Wiki</a>.  "
+		#		+"There is more help on the <a href=\"http://www.opvdm.com/man/index.html">man pages</a>.  "
 
 		#		+"Please report bugs to\nroderick.mackenzie@nottingham.ac.uk.\n\n"
 		#		+"Rod\n18/10/13\n"
@@ -130,7 +130,7 @@ class welcome_class(gtk.HBox):
 		self.show_all()
 
 
-		#self.web.open("http://www.roderickmackenzie.eu/opvdm/welcome.html")
+		#self.web.open("http://www.opvdm/welcome.html")
 		self.add(vbox)
 
 		#self.add(label)

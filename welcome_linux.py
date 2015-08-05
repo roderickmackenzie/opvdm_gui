@@ -130,7 +130,7 @@ class welcome_class(gtk.HBox):
 		self.show_all()
 
 
-		self.web.open("http://www.roderickmackenzie.eu/opvdm/welcome.html")
+		self.web.open("http://www.opvdm.com/welcome.html")
 		self.add(vbox)
 
 		#self.add(label)
