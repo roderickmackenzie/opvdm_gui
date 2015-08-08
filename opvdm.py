@@ -44,7 +44,7 @@ from search import find_fit_error
 import signal
 import subprocess
 from inp import inp_get_token_value
-from util import get_exe_command
+from cal_path import get_exe_command
 from util import get_exe_name
 from util import opvdm_clone
 from export_as import export_as
@@ -85,17 +85,19 @@ from tab_main import tab_main
 from tb_item_sun import tb_item_sun
 from tb_item_sim_mode import tb_item_sim_mode
 from opvdm_open import opvdm_open
+from welcome import welcome_class
+from cal_path import calculate_paths
+
+calculate_paths()
 
 if running_on_linux()==True:
 	import pyinotify
 	import pynotify
-	from welcome_linux import welcome_class
 	from tab_terminal import tab_terminal
 	if os.geteuid() == 0:
 		exit("Don't run me as root!!")
 	
-else:
-	from welcome_windows import welcome_class	
+else:	
 	import win32file
 	import win32con
 	#ACTIONS = {
@@ -200,7 +202,7 @@ class NotebookExample:
 	#print exe_command
 
 	def check_model_error(self):
-			print "Thread ID=",threading.currentThread()
+			#print "Thread ID=",threading.currentThread()
 			f = open("error.dat")
 			lines = f.readlines()
 			f.close()
@@ -250,7 +252,7 @@ class NotebookExample:
 			if message!="":
 				pynotify.init ("opvdm")
 				Hello=pynotify.Notification ("opvdm:",message,find_data_file("gui/application-opvdm.svg"))
-				print find_data_file("gui/icon.png")
+				#print find_data_file("gui/icon.png")
 				Hello.set_timeout(2000)
 				Hello.show ()
 
@@ -274,7 +276,7 @@ class NotebookExample:
 			self.gui_sim_plot()
 
 		if (file_name=="error.dat"):
-			print "GUI found error"
+			#print "GUI found error"
 			self.check_model_error()
 
 		thread_data.task_done()
@@ -315,6 +317,7 @@ class NotebookExample:
 			self.plot_select.set_sensitive(True)
 			self.undo.set_sensitive(True)
 			self.save_sim.set_sensitive(True)
+			self.time_mesh_button.set_sensitive(False)
 
 			f = open("./device_epitaxy.inp")
 			lines = f.readlines()
@@ -434,7 +437,7 @@ class NotebookExample:
 					button = gtk.Button()
 					close_image = gtk.Image()
 					close_image.set_from_file(find_data_file("gui/close.png"))
-					print find_data_file("gui/close.png")
+					#print find_data_file("gui/close.png")
 					close_image.show()
 					# a button to contain the image widget
 					button = gtk.Button()
@@ -472,12 +475,19 @@ class NotebookExample:
 			self.plot_select.set_sensitive(False)
 			self.undo.set_sensitive(False)
 			self.save_sim.set_sensitive(False)
+			self.time_mesh_button.set_sensitive(False)
 
 
-		hello=welcome_class()
-		hello.wow(find_data_file("gui/image.jpg"))
-		hello.show()
-		notebook.append_page(hello, gtk.Label("Information"))
+		self.welcome=welcome_class()
+		self.welcome.init(find_data_file("gui/image.jpg"))
+		self.welcome.web.connect("got-data", self.welcome.update)
+		self.welcome.get_data()
+		self.welcome.show()
+
+		notebook.append_page(self.welcome, gtk.Label("Information"))
+
+		#print a.web.text
+		#a.label.hide()
 		self.finished_loading=True
 		self.progress.hide()
 		self.progress.set_fraction(0.0)
@@ -527,20 +537,6 @@ class NotebookExample:
 	def callback_view_toggle(self, widget, data):
 		self.toggle_tab_visible(data.get_label())
 
-
-	def gui_sim_plot(self):
-
-		#cmd = self.exe_command + ' --1fit\n'
-		#self.terminal.feed_child(cmd)
-		#ret= os.system(cmd)
-		#if ret!=0 :
-		#	message = gtk.MessageDialog(type=gtk.MESSAGE_ERROR, buttons=gtk.BUTTONS_OK)
-		#	message.set_markup("Error in solver")
-		#	message.run()
-		#	message.destroy()
-		#else:
-		print "Hello"
-		#load_graph("./one.plot")
 
 	def callback_run_scan(self, widget, data=None):
 		if self.scan_window!=None:
@@ -616,7 +612,7 @@ class NotebookExample:
 
 		if self.scan_window==None:
 			self.scan_window=scan_class(gtk.WINDOW_TOPLEVEL)
-			self.scan_window.init(self.exe_name,self.exe_command,self.progress,self.gui_sim_start,self.gui_sim_stop,self.terminal)
+			self.scan_window.init(self.progress,self.gui_sim_start,self.gui_sim_stop,self.terminal)
 
 
 		if self.scan_window.get_property("visible")==True:
@@ -868,7 +864,7 @@ class NotebookExample:
 
 	def callback_close_window(self, widget, data=None):
 		self.win_list.update(self.window,"main_window")
-		print "quiting"
+		#print "quiting"
 		gtk.main_quit()
 
 
@@ -997,6 +993,8 @@ class NotebookExample:
 		return toolbar
 
 	def __init__(self):
+		print get_exe_command()
+		print get_exe_name()
 		splash=splash_window()
 		splash.init()
 		self.progress=progress_class()
@@ -1021,8 +1019,8 @@ class NotebookExample:
 
 		self.exe_dir= os.path.dirname(os.path.abspath(__file__))
 
-		print "opvdm exe in "+self.exe_dir
-		print "current directory "+os.getcwd()
+		#print "opvdm exe in "+self.exe_dir
+		#print "current directory "+os.getcwd()
 
 		self.window = gtk.Window(gtk.WINDOW_TOPLEVEL)
 		self.window.set_border_width(10)
@@ -1232,6 +1230,7 @@ class NotebookExample:
 		self.tooltips.set_tip(self.time_mesh_button, "Edit the time mesh")
 		self.time_mesh_button.connect("clicked", self.callback_edit_time_mesh)
 		toolbar.insert(self.time_mesh_button, pos)
+		self.time_mesh_button.set_sensitive(False)
 		pos=pos+1
 
 

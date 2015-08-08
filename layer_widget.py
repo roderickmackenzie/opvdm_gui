@@ -120,7 +120,9 @@ class layer_widget(gtk.VBox):
 		dialog=opvdm_open()
 
 		dialog.init(get_phys_path())
+		dialog.show_inp_files=False
 		response=dialog.run()
+
 
 		if response == True:
 			full_file_name=dialog.get_filename()
@@ -170,7 +172,7 @@ class layer_widget(gtk.VBox):
 		self.model = self.__create_model()
 
 		self.treeview = gtk.TreeView(self.model)
-		self.treeview.set_size_request(300, 150)
+		self.treeview.set_size_request(380, 150)
 		self.treeview.set_rules_hint(True)
 		self.treeview.get_selection().set_mode(gtk.SELECTION_SINGLE)
 
@@ -219,10 +221,11 @@ class layer_widget(gtk.VBox):
 		#image = gtk.Image()
    		#image.set_from_file(find_data_file("gui/dir_file.png"))
 		#self.mesh = gtk.ToolButton(image)
-		#tooltips.set_tip(self.mesh, "Look at the materials database")
-		#self.mesh.connect("clicked", self.callback_view_materials)
-		#toolbar.insert(self.mesh, pos)
-		#pos=pos+1
+		self.mesh = gtk.ToolButton(gtk.STOCK_OPEN)
+		tooltips.set_tip(self.mesh, "Look at the materials database")
+		self.mesh.connect("clicked", self.callback_view_materials)
+		toolbar.insert(self.mesh, pos)
+		pos=pos+1
 
 		hbox0=gtk.HBox()
 

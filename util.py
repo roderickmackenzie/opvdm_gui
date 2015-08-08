@@ -361,22 +361,6 @@ def opvdm_clone():
 
 	shutil.copytree(os.path.join(src,"phys"), os.path.join(pwd,"phys"))
 
-def get_exe_command():
-	if running_on_linux() == True:
-		if os.path.isfile("./go.o")==True:
-			exe_command=os.path.join(os.getcwd(), "go.o")
-		elif os.path.isfile("./main.c")==True:
-			exe_command=os.path.join(os.getcwd(), "go.o")
-		else:
-			exe_command="opvdm_core"
-		return exe_command
-	else:
-		if os.path.isfile("opvdm.exe")==True:
-			exe_command=os.path.join(os.getcwd(), "opvdm.exe")
-		else:
-			exe_command="c:\\opvdm\\opvdm.exe"
-		return exe_command
-
 def get_exe_name():
 	if running_on_linux() == True:
 		if os.path.isfile("./go.o")==True:

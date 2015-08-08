@@ -26,7 +26,78 @@ import sys
 import os
 import shutil
 import commands
-#import webkit
+import subprocess
+from win_lin import running_on_linux
+from cal_path import get_exe_command
+import urllib2
+import socket 
+from threading import Thread
+import time
+from socket import setdefaulttimeout
+from socket import socket
+from socket import error
+from socket import AF_INET
+from socket import SOCK_STREAM
+from socket import SOL_SOCKET
+from socket import SO_REUSEADDR
+from socket import getdefaulttimeout
+import urlparse
+import re
+import os
+from ver import ver_core
+from ver import ver_mat
+from ver import ver_gui
+import gobject
+
+socket.setdefaulttimeout = 1.0
+os.environ['no_proxy'] = '127.0.0.1,localhost'
+linkRegex = re.compile('<a\s*href=[\'|"](.*?)[\'"].*?>')
+CRLF = "\r\n\r\n"
+
+#This is the welcome tab.  It sends a request to www.opvdm.com/update.php and then displays the text it fetches in the tab.  The idea of this is to tell people when updates are available.
+
+class web_thread(gtk.VBox):
+	def __init__(self):
+		self.__gobject_init__()
+		self.text="none"
+
+	def get_from_web(self,url):
+		setdefaulttimeout(4.0)
+		url = urlparse.urlparse(url)
+		HOST = url.netloc
+		PORT = 80
+		try:
+			s = socket(AF_INET, SOCK_STREAM)
+		except error as msg:
+			s = None
+
+		s.settimeout(4.0)
+
+
+		s.setsockopt(SOL_SOCKET, SO_REUSEADDR, 1)
+
+		try:
+			s.connect((HOST, PORT))
+		except error as msg:
+			s.close()
+			s = None
+
+		s.send("GET http://www.opvdm.com/update.php?ver_core="+ver_core()+"&ver_gui="+ver_gui()+"&ver_mat="+ver_mat()+" HTTP/1.0" +CRLF)
+		data = (s.recv(1000000))
+
+		s.shutdown(1)
+		s.close()
+		self.text=data.split('charset=UTF-8\r\n\r\n', 1)[-1]
+		self.emit("got-data")
+
+	def foo(self,n):
+		self.get_from_web('http://www.opvdm.com')
+
+	def start(self):
+		p = Thread(target=self.foo, args=(10,))
+		#multiprocessing.Process(target=self.foo, name="Foo", args=(10,))
+		p.daemon = True
+		p.start()
 
 class welcome_class(gtk.HBox):
 	
@@ -36,112 +107,40 @@ class welcome_class(gtk.HBox):
 	line_number=[]
 	save_file_name=""
 
-	# This callback quits the program
+
 	def delete_event(self, widget, event, data=None):
 		gtk.main_quit()
 		return False
 
-	#def on_active(self, widge, data=None):
-		'''When the user enters an address in the bar, we check to make
-		   sure they added the http://, if not we add it for them.  Once
-		   the url is correct, we just ask webkit to open that site.'''
-		#url = self.url_bar.get_text()
-		#try:
-		#    url.index("://")
-		#except:
-		#    url = "http://"+url
-		#self.url_bar.set_text(url)
-		#self.web.open(url)
+	def get_data(self):
+		self.web.start()
 
-	#def go_back(self, widget, data=None):
-		#self.web.go_back()
+	def init(self,image_name):
+		self.label = gtk.Label()
+		self.web=web_thread()
+		#self.web.connect("got-data", self.update)
 
-	#def go_forward(self, widget, data=None):
-	#	self.web.go_forward()
-
-	#def refresh(self, widget, data=None):
-	#	self.web.reload()
-
-	#def update_buttons(self, widget, data=None):
-	#	self.url_bar.set_text( widget.get_main_frame().get_uri() )
-	#	self.back_button.set_sensitive(self.web.can_go_back())
-	#	self.forward_button.set_sensitive(self.web.can_go_forward())
-
-
-	def wow(self,image_name):
 		print "Welcome"
-
-		output=str(commands.getstatusoutput('opvdm_core --version')[1])
-		#label = gtk.Label()
-		#label.set_markup("<big><b>Organic photovoltaic device model</b>\n"+
-		#		 "(<a href=\"http://www.opvdm.com\" "+
-                #         "title=\"Click to find out more\">www.opvdm.com</a>)\n\n"
-		#		+"To make a new simulation directory click <i>new</i> in the <i>file</i> menu\n"
-		#		+"or to open an existing simulation click on the <i>open</i> button.\n"
-		#		+"There is more help on the <a href=\"http://www.opvdm.com/man/index.html">man pages</a>.  "
-
-		#		+"Please report bugs to\nroderick.mackenzie@nottingham.ac.uk.\n\n"
-		#		+"Rod\n18/10/13\n"
-		#		+"~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n\n\n\n"
-		#		+output+"</big>")
+		self.text="<big><b>Organic photovoltaic device model</b>\n(<a href=\"http://www.opvdm.com\" title=\"Click to find out more\">www.opvdm.com</a>)\n\n To make a new simulation directory click <i>new</i> in the <i>file</i> menu\n or to open an existing simulation click on the <i>open</i> button.\n There is more help on the <a href=\"http://www.opvdm.com/man/index.html\">man pages</a>.  Please report bugs to\nroderick.mackenzie@nottingham.ac.uk.\n\n Rod\n18/10/13\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n\n\n\nChecking web for updates....."
+		read_page=False
 
 
-		#self.web = webkit.WebView() 
+		self.label.set_markup(self.text+"</big>")
+		self.label.set_alignment(0, 0.5)
+		self.pack_start(self.label, True, True, 0)
+		image = gtk.Image()
+   		image.set_from_file(image_name)
+		self.pack_start(image, False, False, 0)
 
-		sw = gtk.ScrolledWindow() 
-		#sw.add(self.web) 
-
-
-		toolbar = gtk.Toolbar()
-
-		self.back_button = gtk.ToolButton(gtk.STOCK_GO_BACK)
-		#self.back_button.connect("clicked", self.go_back)
-
-		self.forward_button = gtk.ToolButton(gtk.STOCK_GO_FORWARD)
-		#self.forward_button.connect("clicked", self.go_forward)
-
-		refresh_button = gtk.ToolButton(gtk.STOCK_REFRESH)
-		#refresh_button.connect("clicked", self.refresh)
-
-		toolbar.add(self.back_button)
-		toolbar.add(self.forward_button)
-		toolbar.add(refresh_button)
-
-		self.url_bar = gtk.Entry()
-		#self.url_bar.connect("activate", self.on_active)
-
-		box=gtk.HBox(True, 1)
-		box.set_size_request(500,-1)
-		box.show()
-		box.pack_start(self.url_bar, True, True, 0)
-		url_tb_item = gtk.ToolItem();
-		url_tb_item.add(box);
-		url_tb_item.show()
-		toolbar.add(url_tb_item)
-
-		#self.web.connect("load_committed", self.update_buttons)
+   		image.show()
+		self.label.show()
 
 
-		vbox = gtk.VBox(False, 0)
-		vbox.pack_start(toolbar, False, True, 0)
-		vbox.pack_start(self.url_bar, False, True, 0)
-		vbox.add(sw)
+	def update(self,data):
+		self.text=self.web.text
+		self.label.set_markup(self.text+"</big>")
+		#self.hide_all()
 
-		self.show_all()
-
-
-		#self.web.open("http://www.opvdm/welcome.html")
-		self.add(vbox)
-
-		#self.add(label)
-
-	   #     image = gtk.Image()
-   	#	image.set_from_file(image_name)
-	#	self.add(image)
-
-   	#	image.show()
-	#	label.show()
-		self.show_all()
-
-		
+gobject.type_register(web_thread)
+gobject.signal_new("got-data", web_thread, gobject.SIGNAL_RUN_FIRST,gobject.TYPE_NONE, ())
 

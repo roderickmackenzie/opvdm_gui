@@ -64,6 +64,7 @@ class electrical_mesh_editor(gtk.VBox):
 		render.set_property("editable", True)
 
 		column = gtk.TreeViewColumn("Thicknes", render, text=COLUMN_THICKNES,editable=True)
+
 		treeview.append_column(column)
 
 
@@ -78,7 +79,10 @@ class electrical_mesh_editor(gtk.VBox):
 		render.set_property("editable", True)
 
 		column = gtk.TreeViewColumn("Thicknes", render, text=MESH_THICKNES, editable=True)
+		if debug_mode()==False:
+			column.set_visible(False)
 		treeview.append_column(column)
+
 
 		# Thicknes
 		render = gtk.CellRendererText()
@@ -177,18 +181,16 @@ class electrical_mesh_editor(gtk.VBox):
 		iter = model.get_iter_from_string(path_string)
 		path = model.get_path(iter)[0]
 		column = cell.get_data("column")
-
+		print "update=",new_text,column
 
 		if column == MESH_THICKNES:
-
-			model.set(iter, column, new_text)
+			self.mesh_model.set(iter, column, new_text)
 
 		if column == MESH_POINTS:
-			#old_text = model.get_value(iter, column)
-			model.set(iter, column, new_text)
-		self.emit("refresh")
+			self.mesh_model.set(iter, column, new_text)
+
 		self.save_model()
-		self.update_graph()
+		#self.emit("refresh")
 
 	def refresh(self):
 		self.load()
@@ -300,18 +302,20 @@ class electrical_mesh_editor(gtk.VBox):
 		self.__add_columns_mesh(treeview)
 		vbox_mesh.pack_start(treeview, False, False, 0)
 
-		add_button = gtk.Button("Add",gtk.STOCK_ADD)
-		add_button.connect("clicked", self.on_add_mesh_clicked, self.mesh_model)
+		if debug_mode()==True:
+			add_button = gtk.Button("Add",gtk.STOCK_ADD)
+			add_button.connect("clicked", self.on_add_mesh_clicked, self.mesh_model)
 
-		delete_button = gtk.Button("Delete",gtk.STOCK_DELETE)
-		delete_button.connect("clicked", self.on_remove_from_mesh_click, treeview)
+			delete_button = gtk.Button("Delete",gtk.STOCK_DELETE)
+			delete_button.connect("clicked", self.on_remove_from_mesh_click, treeview)
 
-		hbox = gtk.HBox(False, 2)
-	    
-		hbox.pack_start(add_button, False, False, 0)
-		hbox.pack_start(delete_button, False, False, 0)
+			hbox = gtk.HBox(False, 2)
+			
+			hbox.pack_start(add_button, False, False, 0)
+			hbox.pack_start(delete_button, False, False, 0)
 
-		vbox_mesh.pack_start(hbox, False, False, 0)
+			vbox_mesh.pack_start(hbox, False, False, 0)
+
 		frame.add(vbox_mesh)
 		self.pack_start(frame, True, True, 0)
 

@@ -24,22 +24,53 @@ import os
 import shutil
 from win_lin import running_on_linux
 
-def get_phys_path():
-	path=os.path.join(os.getcwd(),"phys")
-	if os.path.isdir(path)==False:
-		if running_on_linux()==True:
-			path="/usr/lib64/phys/"
-		else:
-			path="c:\\opvdm\\phys\\"
-	return path
+phys_path=None
+light_dll_path=None
+exe_command=None
 
-def get_light_dll_path():
+def calculate_paths():
+	global phys_path
+	phys_path=os.path.join(os.getcwd(),"phys")
+	if os.path.isdir(phys_path)==False:
+		if running_on_linux()==True:
+			phys_path="/usr/lib64/phys/"
+		else:
+			phys_path="c:\\opvdm\\phys\\"
+
+	global exe_command
+	if running_on_linux() == True:
+		if os.path.isfile("./go.o")==True:
+			exe_command=os.path.join(os.getcwd(), "go.o")
+		elif os.path.isfile("./main.c")==True:
+			exe_command=os.path.join(os.getcwd(), "go.o")
+		else:
+			exe_command="opvdm_core"
+
+	else:
+		if os.path.isfile("opvdm.exe")==True:
+			exe_command=os.path.join(os.getcwd(), "opvdm.exe")
+		else:
+			exe_command="c:\\opvdm\\opvdm.exe"
+
+	global light_dll_path
 	local=os.path.join(os.getcwd(),"light")
 	if os.path.isfile(local):
-		path=local
+		light_dll_path=local
 	else:
 		if running_on_linux()==True:
-			path="/usr/lib64/opvdm/"
+			light_dll_path="/usr/lib64/opvdm/"
 		else:
-			path="c:\\opvdm\\light\\"
-	return path
+			light_dll_path="c:\\opvdm\\light\\"
+
+
+def get_phys_path():
+	global phys_path
+	return phys_path
+
+def get_light_dll_path():
+	global light_dll_path
+	return light_dll_path
+
+def get_exe_command():
+	global exe_command
+	return exe_command

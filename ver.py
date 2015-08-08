@@ -23,6 +23,21 @@ import sys
 from util import find_data_file
 from inp import inp_load_file
 
+def ver_core():
+	lines=[]
+	inp_load_file(lines,find_data_file("ver.inp"))
+	return lines[1]
+
+def ver_gui():
+	lines=[]
+	inp_load_file(lines,find_data_file("ver.inp"))
+	return lines[3]
+
+def ver_mat():
+	lines=[]
+	inp_load_file(lines,find_data_file("ver.inp"))
+	return lines[5]
+
 def ver():
 	lines=[]
 	inp_load_file(lines,find_data_file("ver.inp"))

@@ -69,6 +69,7 @@ from scan_io import scan_import_from_hpc
 from opvdm_open import opvdm_open
 from scan_tree import tree_load_flat_list
 from scan_tree import tree_save_flat_list
+from cal_path import get_exe_command
 
 class scan_vbox(gtk.VBox):
 
@@ -300,7 +301,7 @@ class scan_vbox(gtk.VBox):
 				self.myserver.add_job(commands[i])
 				print "Adding job"+commands[i]
 
-			self.myserver.start(self.exe_command)
+			self.myserver.start(get_exe_command())
 
 
 		else:
@@ -481,14 +482,14 @@ class scan_vbox(gtk.VBox):
 
 	def callback_examine(self, widget, data=None):
 		mycmp=cmp_class()
-		ret=mycmp.init(self.sim_dir,self.exe_command)
+		ret=mycmp.init(self.sim_dir,get_exe_command())
 		if ret==False:
 			md = gtk.MessageDialog(None, gtk.DIALOG_DESTROY_WITH_PARENT, gtk.MESSAGE_WARNING,  gtk.BUTTONS_CLOSE, "Re-run the simulation with 'dump all slices' set to one to use this tool.")
         		md.run()
         		md.destroy()
 			return
 
-	def init(self,myserver,tooltips,status_bar,context_id,exe_command,tab_label,scan_root_dir,sim_name):
+	def init(self,myserver,tooltips,status_bar,context_id,tab_label,scan_root_dir,sim_name):
 
 		self.tokens=tokens()
 		self.config=config()
@@ -498,6 +499,10 @@ class scan_vbox(gtk.VBox):
 
 		menu_item = gtk.MenuItem("Select parameter to scan")
 		menu_item.connect("activate", self.callback_show_list)
+		self.popup_menu.append(menu_item)
+		self.popup_menu.show_all()
+
+		menu_item = gtk.SeparatorMenuItem()
 		self.popup_menu.append(menu_item)
 		self.popup_menu.show_all()
 
@@ -539,7 +544,6 @@ class scan_vbox(gtk.VBox):
 		self.status_bar=status_bar
 		self.context_id=context_id
 		self.param_list=scan_items_get_list()
-		self.exe_command=exe_command
 		self.tab_label=tab_label
 		self.liststore_op_type = gtk.ListStore(str)
 
@@ -696,7 +700,7 @@ class scan_vbox(gtk.VBox):
 		cellrenderer_combo.connect("edited", self.combo_changed, self.liststore_combobox)
 
 		column_combo.pack_start(cellrenderer_combo, False)
-		#column_combo.set_min_width(240)
+		column_combo.set_min_width(240)
 		column_combo.add_attribute(cellrenderer_combo, "text", 0)
 
 		cellrenderer_mirror = gtk.CellRendererCombo()

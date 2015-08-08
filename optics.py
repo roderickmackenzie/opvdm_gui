@@ -49,7 +49,7 @@ import webbrowser
 from progress import progress_class
 from cal_path import get_phys_path
 from cal_path import get_light_dll_path
-from util import get_exe_command
+from cal_path import get_exe_command
 def find_modes(path):
 	result = []
 	file_names=[]
@@ -97,7 +97,7 @@ def find_light_source():
 	path=get_phys_path()
 
 	
-	for file in glob.glob(os.path.join(path,"*.inp")):
+	for file in glob.glob(os.path.join(path,"*.spectra")):
 		ret.append(os.path.splitext(os.path.basename(file))[0])
 
 	return ret
@@ -146,7 +146,7 @@ class class_optical(gtk.Window):
 			if (self.layer_end[i]>event.xdata):
 				break
 		pwd=os.getcwd()
-		plot_gen([os.path.join(pwd,"phys",self.layer_name[i],"alpha.inp")],[],None,"")
+		plot_gen([os.path.join(pwd,"phys",self.layer_name[i],"alpha.mat")],[],None,"")
 
 	def update_cb(self):
 		self.cb.handler_block(self.cb_id)
@@ -384,7 +384,7 @@ class class_optical(gtk.Window):
 
 	def on_light_source_model_changed(self, widget):
 		cb_text=widget.get_active_text()
-		cb_text=cb_text+".inp"
+		cb_text=cb_text+".spectra"
 		inp_update_token_value("optics.inp", "#sun", cb_text,1)
 
 	def callback_help(self, widget, data=None):

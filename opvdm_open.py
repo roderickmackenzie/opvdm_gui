@@ -77,7 +77,8 @@ class opvdm_open(gtk.Dialog):
 		self.dir_icon = self.get_icon("dir")
 		self.dat_icon = self.get_icon("dat")
 		self.inp_icon = self.get_icon("inp")
-
+		self.spectra_icon = self.get_icon("spectra")
+		self.mat_icon = self.get_icon("material")
 		sw = gtk.ScrolledWindow()
 		sw.set_shadow_type(gtk.SHADOW_ETCHED_IN)
 		sw.set_policy(gtk.POLICY_AUTOMATIC, gtk.POLICY_AUTOMATIC)
@@ -139,6 +140,13 @@ class opvdm_open(gtk.Dialog):
 					#print self.show_inp_files
 					self.store.append([fl, self.inp_icon, "inp"])
 
+				if (file_name.endswith(".spectra")==True):
+					#print self.show_inp_files
+					self.store.append([fl, self.spectra_icon, "spectra"])
+
+				if (file_name.endswith(".mat")==True):
+					#print self.show_inp_files
+					self.store.append([fl, self.mat_icon, "mat"])
 	def on_home_clicked(self, widget):
 		self.dir = self.root_dir
 		self.fill_store()

@@ -363,7 +363,7 @@ class scan_class(gtk.Window):
 		sim_name=os.path.basename(os.path.normpath(name))
 		print "Looking for",sim_name,name
 		self.rod.append(scan_vbox())
-		self.rod[len(self.rod)-1].init(self.myserver,self.tooltips,self.status_bar,self.context_id,self.exe_command,label,self.sim_dir,sim_name)
+		self.rod[len(self.rod)-1].init(self.myserver,self.tooltips,self.status_bar,self.context_id,label,self.sim_dir,sim_name)
 		label.set_justify(gtk.JUSTIFY_LEFT)
 		hbox.pack_start(label, False, True, 0)
 
@@ -412,13 +412,11 @@ class scan_class(gtk.Window):
 	def callback_wol(self, widget, data):
 		self.myserver.wake_nodes()
 
-	def init(self,exe_name,exe_command,progress,gui_sim_start,gui_sim_stop,terminal):
+	def init(self,progress,gui_sim_start,gui_sim_stop,terminal):
 		self.cluster_window=None
 		self.win_list=windows()
 		self.win_list.load()
 		self.win_list.set_window(self,"scan_window")
-		self.exe_name=exe_name
-		self.exe_command=exe_command
 		print "constructur"
 
 		self.rod=[]
@@ -517,10 +515,6 @@ class scan_class(gtk.Window):
 
 		self.tab_menu=gtk.Menu()
 		tb_new_scan.set_menu(self.tab_menu)
-
-		myitem=self.item_factory.get_item("/Cluster")
-		if os.path.isfile("fit.inp")==False:
-			myitem.hide()
 
 		toolbar.insert(tb_new_scan, pos)
 		pos=pos+1

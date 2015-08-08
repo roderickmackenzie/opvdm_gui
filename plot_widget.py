@@ -449,6 +449,7 @@ class plot_widget(gtk.VBox):
 		self.plot_id=plot_id
 
 	def load_data(self,input_files,config_file):
+
 		self.input_files=input_files
 		self.config_file=config_file
 
@@ -469,12 +470,13 @@ class plot_widget(gtk.VBox):
 				loaded=True
 
 		print "the config file is",config_file
+		print input_files,loaded
 		if loaded==True:
 
 			if len(self.plot_id)==0:
 				for i in range(0,len(input_files)):
 					self.plot_id.append(0)
-
+		
 			self.plot_token.path=os.path.dirname(config_file)
 			if self.plot_token.tag0=="":
 				self.plot_token.file0=os.path.basename(input_files[0])

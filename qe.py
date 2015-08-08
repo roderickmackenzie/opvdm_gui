@@ -25,7 +25,7 @@ import gtk
 import sys
 import os
 import shutil
-from util import get_exe_command
+from cal_path import get_exe_command
 from numpy import *
 from matplotlib.figure import Figure
 from numpy import arange, sin, pi

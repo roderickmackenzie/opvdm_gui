@@ -43,13 +43,12 @@ from scan_tree import tree_gen
 from scan_item import scan_item_load
 from scan_item import scan_items_index_item
 from server import server
-from util import get_exe_command
+from cal_path import get_exe_command
 import gtk
 from plot_state import plot_state
 from plot_io import plot_load_info
 from scan_plot import scan_gen_plot_data
 from server import server_find_simulations_to_run
-from util import get_exe_command
 
 def command_args(argc,argv):
 	if argc>=2:
