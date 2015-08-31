@@ -87,28 +87,22 @@ from tb_item_sim_mode import tb_item_sim_mode
 from opvdm_open import opvdm_open
 from welcome import welcome_class
 from cal_path import calculate_paths
+import glib
+from server import server
 
 calculate_paths()
 
 if running_on_linux()==True:
-	import pyinotify
-	import pynotify
 	from tab_terminal import tab_terminal
+	import dbus
+	from dbus.mainloop.glib import DBusGMainLoop
+	import pynotify
+
 	if os.geteuid() == 0:
 		exit("Don't run me as root!!")
 	
-else:	
-	import win32file
-	import win32con
-	#ACTIONS = {
-	#  1 : "Created",
-	#  2 : "Deleted",
-	#  3 : "Updated",
-	#  4 : "Renamed from something",
-	#  5 : "Renamed to something"
-	#}
-
-	FILE_LIST_DIRECTORY = 0x0001
+else:
+	from windows_pipe import win_pipe
 
 
 print notice()
@@ -128,70 +122,7 @@ def set_active_name(combobox, name):
         if liststore[i][0] == name:
             combobox.set_active(i)
 
-global thread_data
-
-class _IdleObject(gobject.GObject):
-	"""
-	Override gobject.GObject to always emit signals in the main thread
-	by emmitting on an idle handler
-	"""
-	def __init__(self):
-		gobject.GObject.__init__(self)
-	 
-	def emit(self, *args):
-		gobject.idle_add(gobject.GObject.emit,self,*args)
-
-class _FooThread(threading.Thread, _IdleObject):
-	__gsignals__ = {
-		"file_changed": (
-		gobject.SIGNAL_RUN_LAST, gobject.TYPE_NONE, [])
-		}
-	 
-	def __init__(self, *args):
-		threading.Thread.__init__(self)
-		_IdleObject.__init__(self)
- 
-	def onChange(self,ev):
-		if running_on_linux()==True:
-			file_name=os.path.basename(ev.pathname)
-		else:
-			file_name=os.path.basename(ev)
-
-		file_name=file_name.rstrip()
-		global thread_data
-		thread_data.put(file_name)
-		self.emit("file_changed")
-
-	def run(self):
-		watch_path=os.getcwd()
-		if running_on_linux()==True:
-			wm = pyinotify.WatchManager()
-			wm.add_watch(watch_path, pyinotify.IN_CLOSE_WRITE, self.onChange,False,False)
-			self.notifier = pyinotify.Notifier(wm)
-			self.notifier.loop()
-		else:
-			hDir = win32file.CreateFile (watch_path,FILE_LIST_DIRECTORY,win32con.FILE_SHARE_READ | win32con.FILE_SHARE_WRITE | win32con.FILE_SHARE_DELETE,None,win32con.OPEN_EXISTING,win32con.FILE_FLAG_BACKUP_SEMANTICS,None)
-
-			while 1:
-				results = win32file.ReadDirectoryChangesW (hDir,1024,True,
-				win32con.FILE_NOTIFY_CHANGE_FILE_NAME |
-				win32con.FILE_NOTIFY_CHANGE_DIR_NAME |
-				win32con.FILE_NOTIFY_CHANGE_ATTRIBUTES |
-				win32con.FILE_NOTIFY_CHANGE_SIZE |
-				win32con.FILE_NOTIFY_CHANGE_LAST_WRITE |
-				win32con.FILE_NOTIFY_CHANGE_SECURITY,
-				None,
-				None)
-
-				for action, file in results:
-					full_filename = os.path.join (watch_path, file)
-					#print full_filename, ACTIONS.get (action, "Unknown")
-					self.onChange(full_filename)
-
-	def stop(self):
-		self.notifier.stop()
-
-class NotebookExample:
+class opvdm_main_window(gobject.GObject):
 
 	icon_theme = gtk.icon_theme_get_default()
 	plot_after_run=False
@@ -201,21 +132,13 @@ class NotebookExample:
 	exe_command   =  get_exe_command()
 	#print exe_command
 
-	def check_model_error(self):
-			#print "Thread ID=",threading.currentThread()
-			f = open("error.dat")
-			lines = f.readlines()
-			f.close()
-			read_lines=lines[0].strip()
-			read_lines_split=read_lines.split()
-			if (read_lines_split.count('License')==0):
-				message = gtk.MessageDialog(type=gtk.MESSAGE_ERROR, buttons=gtk.BUTTONS_OK)
-				message.set_markup(lines[0].strip())
-				message.run()
-				message.destroy()
-			else:
-				c=copying()
-				c.wow(self.exe_command)
+	def adbus(self,bus, message):
+		data=message.get_member()
+		self.my_server.callback_dbus(data)
+
+	def win_dbus(self, widget, data):
+		self.my_server.callback_dbus(data)
+
 
 	def goto_terminal_page(self):
 		for i in range(0,len(notebook.get_children())):
@@ -257,30 +180,6 @@ class NotebookExample:
 				Hello.show ()
 
 
-
-	def user_callback(self,object):
-		global thread_data
-		file_name=thread_data.get()
-		if (file_name=="signal_start.dat"):
-			self.gui_sim_start()
-
-		if (file_name=="signal_stop.dat"):
-			#print "stopping!\n"
-			self.gui_sim_stop("")
-			if self.plot_after_run==True:
-				if self.plot_after_run_file!="":
-					plot_gen([self.plot_after_run_file,"old.dat"],[],"")
-
-		if (file_name=="signal_plot.dat"):
-			#print "stopping!\n"
-			self.gui_sim_plot()
-
-		if (file_name=="error.dat"):
-			#print "GUI found error"
-			self.check_model_error()
-
-		thread_data.task_done()
-
 	def make_menu(self,event_button, event_time, data=None):
 		menu = gtk.Menu()
 		#open_item = gtk.MenuItem("Open App")
@@ -301,8 +200,6 @@ class NotebookExample:
 		self.make_menu(event_button, event_time)
 
 	def notebook_load_pages(self):
-		global thread_data
-		thread_data = Queue(maxsize=0)
 		
 		self.progress.show()
 		self.finished_loading=False
@@ -317,7 +214,8 @@ class NotebookExample:
 			self.plot_select.set_sensitive(True)
 			self.undo.set_sensitive(True)
 			self.save_sim.set_sensitive(True)
-			self.time_mesh_button.set_sensitive(False)
+			if debug_mode()==True:
+				self.time_mesh_button.set_sensitive(True)
 
 			f = open("./device_epitaxy.inp")
 			lines = f.readlines()
@@ -541,41 +439,19 @@ class NotebookExample:
 	def callback_run_scan(self, widget, data=None):
 		if self.scan_window!=None:
 			self.scan_window.callback_run_simulation(None)
-		#try:
-		#	os.rename("error_sun_voc0_sim.dat", "old.dat")
-		#except:
-		#	pass
-		#
-		#cmd = "cd "+self.sim_dir+";"+self.exe_command + ' --1fit\n'
-		#self.terminal.feed_child(cmd)
-
 
 	def callback_simulate(self, widget, data=None):
 
-		#self.spin.start()
 		if self.plot_after_run==True:
 			try:
 				ret= os.system("cp "+self.plot_after_run_file+" old.dat")
 			except:
 				pass
 
-		if running_on_linux()==True:
-			cmd = "cd "+self.sim_dir+" \n"
-			self.terminal.feed_child(cmd)
+		self.my_server.clear_cache()
+		self.my_server.add_job(os.getcwd())
+		self.my_server.start(get_exe_command())
 
-			cmd = self.exe_command+" &\n"
-			self.terminal.feed_child(cmd)
-		else:
-			cmd = self.exe_command
-			subprocess.Popen([cmd])
-			#ret= os.system(cmd)
-
-		#
-
-
-
-
-		#self.spin.stop()
 	
 	def callback_start_cluster_server(self, widget, data=None):
 		self.goto_terminal_page()
@@ -612,7 +488,7 @@ class NotebookExample:
 
 		if self.scan_window==None:
 			self.scan_window=scan_class(gtk.WINDOW_TOPLEVEL)
-			self.scan_window.init(self.progress,self.gui_sim_start,self.gui_sim_stop,self.terminal)
+			self.scan_window.init(self.my_server,self.progress)
 
 
 		if self.scan_window.get_property("visible")==True:
@@ -687,14 +563,6 @@ class NotebookExample:
 		print "Changing directory to ",new_dir
 		os.chdir(new_dir)
 		self.sim_dir=os.getcwd()
-		try:
-			self.thread.stop()
-			self.thread = _FooThread()
-			self.thread.connect("file_changed", self.user_callback)
-			self.thread.daemon = True
-			self.thread.start()
-		except:
-			print "Can't stop start thread"
 
 	def callback_new(self, widget, data=None):
 		dialog = gtk.FileChooserDialog("Make new opvdm simulation dir..",
@@ -864,8 +732,11 @@ class NotebookExample:
 
 	def callback_close_window(self, widget, data=None):
 		self.win_list.update(self.window,"main_window")
-		#print "quiting"
 		gtk.main_quit()
+		#print "quiting"
+		#self.connect('event-after', gtk.main_quit)
+		#gtk.mainquit()
+		#glib.MainLoop().quit()
 
 
 	def callback_examine(self, widget, data=None):
@@ -993,6 +864,18 @@ class NotebookExample:
 		return toolbar
 
 	def __init__(self):
+		gobject.GObject.__init__(self)
+
+		if running_on_linux()==True:
+			DBusGMainLoop(set_as_default=True)
+			self.bus = dbus.SessionBus()
+			self.bus.add_match_string_non_blocking("type='signal',interface='org.my.test'")
+			self.bus.add_message_filter(self.adbus)
+		else:
+			self.win_pipe=win_pipe()
+			self.win_pipe.connect('new-data', self.win_dbus)
+			self.win_pipe.start()
+
 		print get_exe_command()
 		print get_exe_name()
 		splash=splash_window()
@@ -1230,7 +1113,8 @@ class NotebookExample:
 		self.tooltips.set_tip(self.time_mesh_button, "Edit the time mesh")
 		self.time_mesh_button.connect("clicked", self.callback_edit_time_mesh)
 		toolbar.insert(self.time_mesh_button, pos)
-		self.time_mesh_button.set_sensitive(False)
+		if debug_mode()==False:
+			self.time_mesh_button.set_sensitive(False)
 		pos=pos+1
 
 
@@ -1299,12 +1183,13 @@ class NotebookExample:
 		self.window.show()
 
 		process_events()
-
-		self.thread = _FooThread()
-		self.thread.connect("file_changed", self.user_callback)
-		self.thread.daemon = True
-		self.thread.start()
 		self.progress.stop()
+
+		self.my_server=server()
+		self.my_server.init(self.sim_dir)
+		self.my_server.setup_gui(self.gui_sim_start,self.gui_sim_stop)
+		self.my_server.set_terminal(self.terminal)
+
 
 	def make_window2(self,main_vbox):
 		notebook.set_tab_pos(gtk.POS_TOP)
@@ -1345,13 +1230,11 @@ class NotebookExample:
 		if main_vbox==None:
 			self.window2.show()
 
-def main():
-	random.seed()
-	gtk.main()
-	return 0
+
 
 if __name__ == "__main__":
+	main=opvdm_main_window()
+	random.seed()
+	gtk.main()
 
-	NotebookExample()
-	main()
 

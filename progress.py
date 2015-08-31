@@ -84,6 +84,9 @@ class progress_class(gtk.Window):
 	def set_fraction(self,fraction):
 		self.progress.set_fraction(fraction)
 
+	def pulse(self):
+		self.progress.pulse()
+
 	def start(self):
 		s=gtk.gdk.screen_get_default()
 		w,h=self.get_size()

@@ -26,7 +26,7 @@ import glob
 
 
 def find_fit_log(out_file,path):
-	pattern='fitlog.dat'
+	pattern='fitlog_time_error.dat'
 	fitlog = []
 	for root, dirs, files in os.walk(path):
 		for name in files:
@@ -42,7 +42,7 @@ def find_fit_log(out_file,path):
 
 	string="plot "
 	for my_file in fitlog:
-		 string=string+"'"+my_file+"' using ($2) with lp,"
+		 string=string+"'"+my_file+"' using ($1):($2) with lp,"
 
 	#for my_file in fitlog_time_speed:
 		# string=string+"'"+my_file+"' using ($2) axis x1y2 with lp,"

@@ -349,7 +349,7 @@ class tab_time_mesh(gtk.Window):
 	def load_data(self):
 		lines=[]
 		inp_load_file(lines,"time_mesh_config.inp")
-
+		print "lines",lines
 		pos=0
 		token,value,pos=inp_read_next_item(lines,pos)
 		self.start_time=float(value)

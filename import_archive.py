@@ -204,12 +204,12 @@ def import_archive(file_name,dest_dir,only_over_write):
 	else:
 		sim_path=file_name
 
-	files=[ "sim.inp", "device.inp", "stark.inp" ,"shg.inp" ,"dos0.inp", "dos1.inp"  ,"jv.inp" ,"celiv.inp" , "optics.inp", "math.inp",  "dump.inp" , "light.inp", "tpv.inp", "otrace.inp", "server.inp", "pulse_voc.inp","pulse.inp","light_exp.inp","time_mesh_config.inp" ]
+	files=[ "sim.inp", "device.inp", "stark.inp" ,"shg.inp" ,"dos0.inp", "dos1.inp"  ,"jv.inp" ,"celiv.inp" , "optics.inp", "math.inp",  "dump.inp" , "light.inp", "tpv.inp", "otrace.inp", "server.inp", "pulse_voc.inp","pulse.inp","light_exp.inp" ]
 
 	for i in files:
 		copy_check_ver(sim_path,i,dest_dir,only_over_write,True)
 
-	files=[ "device_epitaxy.inp", "optics_epitaxy.inp", "fit.inp", "constraints.inp","duplicate.inp", "thermal.inp","lumo0.inp","homo0.inp" ]
+	files=[ "device_epitaxy.inp", "optics_epitaxy.inp", "fit.inp", "constraints.inp","duplicate.inp", "thermal.inp","lumo0.inp","homo0.inp","time_mesh_config.inp" ]
 
 	for i in files:
 		copy_check_ver(sim_path,i,dest_dir,only_over_write,False)

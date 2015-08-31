@@ -48,6 +48,7 @@ from ver import ver_core
 from ver import ver_mat
 from ver import ver_gui
 import gobject
+import platform
 
 socket.setdefaulttimeout = 1.0
 os.environ['no_proxy'] = '127.0.0.1,localhost'
@@ -82,13 +83,14 @@ class web_thread(gtk.VBox):
 			s.close()
 			s = None
 
-		s.send("GET http://www.opvdm.com/update.php?ver_core="+ver_core()+"&ver_gui="+ver_gui()+"&ver_mat="+ver_mat()+" HTTP/1.0" +CRLF)
+		s.send("GET http://www.opvdm.com/update.php?ver_core="+ver_core()+"&ver_gui="+ver_gui()+"&ver_mat="+ver_mat()+"&os="+platform.system()+" HTTP/1.0" +CRLF)
 		data = (s.recv(1000000))
 
 		s.shutdown(1)
 		s.close()
 		self.text=data.split('charset=UTF-8\r\n\r\n', 1)[-1]
-		self.emit("got-data")
+		gobject.idle_add(gobject.GObject.emit,self,"got-data")
+		#self.emit("got-data")
 
 	def foo(self,n):
 		self.get_from_web('http://www.opvdm.com')

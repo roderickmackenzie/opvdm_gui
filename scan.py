@@ -335,6 +335,7 @@ class scan_class(gtk.Window):
 
 		get_scan_dirs(sim_dirs,self.sim_dir)
 
+		print sim_dirs,self.sim_dir
 		
 		if len(sim_dirs)==0:
 			sim_dirs.append("scan1")
@@ -412,7 +413,7 @@ class scan_class(gtk.Window):
 	def callback_wol(self, widget, data):
 		self.myserver.wake_nodes()
 
-	def init(self,progress,gui_sim_start,gui_sim_stop,terminal):
+	def init(self,my_server,progress):
 		self.cluster_window=None
 		self.win_list=windows()
 		self.win_list.load()
@@ -456,9 +457,6 @@ class scan_class(gtk.Window):
 		box.set_child_packing(self.status_bar, True, True, 0, 0)
 		self.progress = progress
 		#self.progress.set_size_request(100, -1)
-		self.gui_sim_start=gui_sim_start
-		self.gui_sim_stop=gui_sim_stop
-
 		box.show()
 
 
@@ -594,11 +592,7 @@ class scan_class(gtk.Window):
 		main_vbox.set_border_width(1)
 		self.add(main_vbox)
 		main_vbox.show()
-		self.myserver=server()
-		self.myserver.init(self.sim_dir)
-		self.myserver.setup_gui(self.gui_sim_start,self.gui_sim_stop)
-		self.myserver.set_terminal(terminal)
-
+		self.myserver=my_server
 		
 
 		self.notebook = gtk.Notebook()

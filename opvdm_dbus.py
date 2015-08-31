@@ -20,15 +20,30 @@
 #    with this program; if not, write to the Free Software Foundation, Inc.,
 #    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
-import sys
-import os
-from os.path import expanduser
+import glib
+import dbus
+from threading import Thread
+from dbus.mainloop.glib import DBusGMainLoop
 
-def debug_mode():
-	#return False
-	home = expanduser("~")
-	if os.path.isfile(os.path.join(home,".debugmode"))==True:
-		return True
-	else:
-		return False
+class dbus_thread():
+
+	def notifications(bus, message):
+		print message.get_member()
+
+
+	def foo(self,n):
+		DBusGMainLoop(set_as_default=True)
+
+		bus = dbus.SessionBus()
+		bus.add_match_string_non_blocking("type='signal',interface='org.my.test'")
+		bus.add_message_filter(self.notifications)
+
+		#mainloop = glib.MainLoop()
+		#mainloop.run()
+
+	def start(self):
+		#p = Thread(target=self.foo, args=(10,))
+		#p.daemon = True
+		#p.start()
+		self.foo(10)
 

@@ -41,8 +41,8 @@ from time import sleep
 from win_lin import running_on_linux
 import subprocess
 from util import gui_print_path
-from monitor_dir import _FooThread
 from progress import progress_class
+from copying import copying
 
 def server_find_simulations_to_run(commands,search_path):
 	for root, dirs, files in os.walk(search_path):
@@ -71,18 +71,7 @@ class server:
 		self.errors=""
 
 	def start_threads(self):
-		if self.cluster==False:
-			self.thread = _FooThread()
-			self.thread.set_watch_path(self.sim_dir,self.thread_data)
-			self.thread.connect("file_changed", self.callback)
-			self.thread.daemon = True
-			print "I am watching!!!!!!!!!!!!!!!!!!!!!!!!!!!!",self.sim_dir
-			if self.running==True:
-				print "thread:I'm still running!!!!!!!!!!!!!"
-				self.stop()
-			self.thread.start()
-
-		else:
+		if self.cluster==True:
 			if self.running==False:
 				try:
 					self.tcp_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -303,7 +292,6 @@ class server:
 		else:
 			if (len(self.jobs)==0):
 				return
-
 			for i in range(0, len(self.jobs)):
 				if (self.jobs_running<self.cpus):
 					if self.status[i]==0:
@@ -315,7 +303,7 @@ class server:
 						self.jobs_running=self.jobs_running+1
 						if running_on_linux()==True:
 							cmd="cd "+self.jobs[i]+";"
-							cmd=cmd+self.exe_command+" --lock "+os.path.join(self.sim_dir,"lock"+str(i)+".dat")+" &\n"
+							cmd=cmd+self.exe_command+" --lock "+"lock"+str(i)+" &\n"							
 							print "command="+cmd
 							if self.enable_gui==True:
 								self.terminal.feed_child(cmd)
@@ -324,11 +312,7 @@ class server:
 								os.system(cmd)
 							
 						else:
-		
-							#print "thread: forked"
-							#if os.fork() == 0:
-							#os.chdir(self.jobs[i])
-							cmd=self.exe_command+" --lock "+os.path.join(self.sim_dir,"lock"+str(i)+".dat")+" &\n"
+							cmd=self.exe_command+" --lock "+"lock"+str(i)+" &\n"
 							print cmd,self.jobs[i]
 							subprocess.Popen(cmd,cwd=self.jobs[i])
 							#os.system(cmd)
@@ -336,11 +320,7 @@ class server:
 							#sys.exit()
 
 	def stop(self):
-		if self.cluster==False:
-			print "server: Ask the thread to stop."
-			self.thread.stop()
-			self.running=False
-		else:
+		if self.cluster==True:
 			self.socket.close()
 			self.tcp_sock.close()
 
@@ -352,13 +332,7 @@ class server:
 		self.gui_sim_stop()
 		self.progress_window.set_fraction(0.0) 
 		self.running=False
-		ls=os.listdir(self.sim_dir)
 
-		for i in range(0, len(ls)):
-			if ls[i][:4]=="lock" and ls[i][-4:]==".dat":
-				del_file=os.path.join(self.sim_dir,ls[i])
-				print "delete file:",del_file
-				os.remove(del_file)
 	
 		print "I have shut down the server."
 
@@ -386,9 +360,46 @@ class server:
 
 			if self.jobs_run==len(self.jobs):
 				break
-				
+
+	def callback_dbus(self,data):
+		if data.startswith("lock"):
+			#print "I want to start a new job because",data
+			if str(data)>4:
+				test=data[:4]
+				if test=="lock":
+					rest=data[4:]
+					self.jobs_run=self.jobs_run+1
+					self.jobs_running=self.jobs_running-1
+					#print "here",self.progress_window,self.jobs_run,self.jobs_running
+					#print "I am going to see if I should launch a job"
+					#,float(self.jobs_run)/float(len(self.jobs))
+					self.progress_window.set_fraction(float(self.jobs_run)/float(len(self.jobs)))
+					self.run_jobs()
+					if (self.jobs_run==len(self.jobs)):
+						self.stop()
+
+		elif (data=="pulse"):
+			if len(self.jobs)==1:
+				splitup=data.split(":")
+				if len(splitup)>1:
+					text=data.split(":")[1]
+					self.progress_window.set_text(text)
+				self.progress_window.progress.set_pulse_step(0.01)
+				self.progress_window.pulse()
+		elif (data=="error"):
+			self.jobs_run=self.jobs_run+1
+			self.jobs_running=self.jobs_running-1
+			error_messsage=data.split(":")[1]
+			if (data.count('License')==0):
+				message = gtk.MessageDialog(type=gtk.MESSAGE_ERROR, buttons=gtk.BUTTONS_OK)
+				message.set_markup(error_messsage)
+				message.run()
+				message.destroy()
+			else:
+				c=copying()
+				c.wow(self.exe_command)			
+
 	def callback(self,object):
-		print "File!!!!!!!!!!!! changed"
 		file_name=self.thread_data[0]
 		if str(file_name)>4:
 			test=file_name[:4]
