@@ -140,17 +140,16 @@ class opvdm_main_window(gobject.GObject):
 		self.my_server.callback_dbus(data)
 
 
-	def goto_terminal_page(self):
+	def goto_page(self,page):
 		for i in range(0,len(notebook.get_children())):
-    			if notebook.get_nth_page(i).name=="Terminal":
-				if notebook.get_nth_page(i).visible==1:
+    			if notebook.get_nth_page(i).name==page:
 					notebook.set_current_page(i)
 					break
 
 	def gui_sim_start(self):
 		self.notebook_active_page=notebook.get_current_page()
 
-		self.goto_terminal_page()
+		self.goto_page("Terminal")
 
 		self.spin.start()
 		self.statusicon.set_from_stock(gtk.STOCK_NO) 
@@ -258,8 +257,8 @@ class opvdm_main_window(gobject.GObject):
 
 			self.ti_light.connect('refresh', self.main_tab.update)
 
-			internal_names = ["Device","JV Curve","JV simple","Output","CELIV","Numerics", "ToF", "stark", "Bands", "Pulse","Pulse voc", "imps","Exp. Optical Model","Terminal","Sun voc","TPC","fit","Thermal"]
-			internal_files = ["device.inp","jv.inp","jv_simple.inp","dump.inp","celiv.inp","math.inp","tof.inp","stark.inp","lumo0.inp","pulse.inp","pulse_voc.inp","imps.inp","light_exp.inp","terminal.inp","sun_voc.inp","tpc.inp","fit.inp","thermal.inp"]
+			internal_names = ["Device","JV Curve","JV simple","Output","CELIV","Numerics", "ToF", "stark", "Bands", "Pulse","Pulse voc", "imps","Exp. Optical Model","Sun voc","TPC","fit","Thermal"]
+			internal_files = ["device.inp","jv.inp","jv_simple.inp","dump.inp","celiv.inp","math.inp","tof.inp","stark.inp","lumo0.inp","pulse.inp","pulse_voc.inp","imps.inp","light_exp.inp","sun_voc.inp","tpc.inp","fit.inp","thermal.inp"]
 
 			i=0
 			while i<len(internal_names) :
@@ -284,21 +283,6 @@ class opvdm_main_window(gobject.GObject):
 				cur_name=names[i]
 				cur_visible=int(visible[i])
 				add_to_menu=False
-
-
-				if running_on_linux()==True:
-					if cur_file=="terminal.inp":
-						hello=tab_terminal()
-						add_to_menu=True
-						self.rod.append(hello)
-						self.rod[self.number_of_tabs].visible=cur_visible
-						self.rod[self.number_of_tabs].wow(os.getcwd())
-						self.rod[self.number_of_tabs].name=cur_name
-						self.rod[self.number_of_tabs].file_name=cur_file
-						self.terminal=hello.terminal
-				else:
-					self.terminal=None
-
 
 				if cur_file=="lumo0.inp":
 					hello=tab_bands()
@@ -376,13 +360,19 @@ class opvdm_main_window(gobject.GObject):
 			self.time_mesh_button.set_sensitive(False)
 
 
+
+		if self.terminal_widget!=None:
+			self.terminal_widget.show()
+			notebook.append_page(self.terminal_widget, gtk.Label("Terminal"))
+
+
 		self.welcome=welcome_class()
 		self.welcome.init(find_data_file("gui/image.jpg"))
 		self.welcome.web.connect("got-data", self.welcome.update)
 		self.welcome.get_data()
 		self.welcome.show()
-
 		notebook.append_page(self.welcome, gtk.Label("Information"))
+		self.goto_page("Welcome")
 
 		#print a.web.text
 		#a.label.hide()
@@ -454,7 +444,7 @@ class opvdm_main_window(gobject.GObject):
 
 	
 	def callback_start_cluster_server(self, widget, data=None):
-		self.goto_terminal_page()
+		self.goto_page("Terminal")
 
 		cmd = "cd "+self.sim_dir+" \n"
 		#self.terminal.feed_child(cmd)
@@ -594,8 +584,8 @@ class opvdm_main_window(gobject.GObject):
 
 	def change_dir_and_refresh_interface(self,new_dir):
  		scan_items_clear()
-
 		self.change_sim_dir(new_dir)
+		calculate_paths()
 		self.config.load(self.sim_dir)
 		self.exe_command= get_exe_command()
 		self.exe_name = get_exe_name()
@@ -605,6 +595,9 @@ class opvdm_main_window(gobject.GObject):
     			notebook.remove(child)
 
 		self.notebook_load_pages()
+
+		self.goto_page("tab_main")
+
 		self.plotted_graphs.init(os.getcwd(),self.callback_last_menu_click)
 
 		set_active_name(self.light, inp_get_token_value("light.inp", "#Psun"))
@@ -866,11 +859,17 @@ class opvdm_main_window(gobject.GObject):
 	def __init__(self):
 		gobject.GObject.__init__(self)
 
+		self.terminal_widget=None
+
 		if running_on_linux()==True:
 			DBusGMainLoop(set_as_default=True)
 			self.bus = dbus.SessionBus()
 			self.bus.add_match_string_non_blocking("type='signal',interface='org.my.test'")
 			self.bus.add_message_filter(self.adbus)
+
+			self.terminal_widget=tab_terminal()
+			self.terminal_widget.init()
+
 		else:
 			self.win_pipe=win_pipe()
 			self.win_pipe.connect('new-data', self.win_dbus)
@@ -1188,7 +1187,7 @@ class opvdm_main_window(gobject.GObject):
 		self.my_server=server()
 		self.my_server.init(self.sim_dir)
 		self.my_server.setup_gui(self.gui_sim_start,self.gui_sim_stop)
-		self.my_server.set_terminal(self.terminal)
+		self.my_server.set_terminal(self.terminal_widget.terminal)
 
 
 	def make_window2(self,main_vbox):

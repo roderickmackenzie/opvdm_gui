@@ -94,6 +94,7 @@ class server:
 
 	def set_terminal(self,terminal):
 		self.terminal=terminal
+
 	def gui_sim_start(self):
 		self.errors=""
 		self.progress_window.start()

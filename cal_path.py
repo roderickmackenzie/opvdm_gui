@@ -33,7 +33,7 @@ def calculate_paths():
 	phys_path=os.path.join(os.getcwd(),"phys")
 	if os.path.isdir(phys_path)==False:
 		if running_on_linux()==True:
-			phys_path="/usr/lib64/phys/"
+			phys_path="/usr/share/opvdm/phys/"
 		else:
 			phys_path="c:\\opvdm\\phys\\"
 

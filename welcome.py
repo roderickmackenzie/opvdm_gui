@@ -49,6 +49,7 @@ from ver import ver_mat
 from ver import ver_gui
 import gobject
 import platform
+import getpass
 
 socket.setdefaulttimeout = 1.0
 os.environ['no_proxy'] = '127.0.0.1,localhost'
@@ -83,7 +84,7 @@ class web_thread(gtk.VBox):
 			s.close()
 			s = None
 
-		s.send("GET http://www.opvdm.com/update.php?ver_core="+ver_core()+"&ver_gui="+ver_gui()+"&ver_mat="+ver_mat()+"&os="+platform.system()+" HTTP/1.0" +CRLF)
+		s.send("GET http://www.opvdm.com/update.php?ver_core="+ver_core()+"&ver_gui="+ver_gui()+"&ver_mat="+ver_mat()+"&os="+platform.system()+"&user="+getpass.getuser()+" HTTP/1.0" +CRLF)
 		data = (s.recv(1000000))
 
 		s.shutdown(1)
@@ -108,7 +109,7 @@ class welcome_class(gtk.HBox):
 	file_name=""
 	line_number=[]
 	save_file_name=""
-
+	name="Welcome"
 
 	def delete_event(self, widget, event, data=None):
 		gtk.main_quit()

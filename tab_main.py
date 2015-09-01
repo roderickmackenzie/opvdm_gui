@@ -35,6 +35,8 @@ from util import str2bool
 
 class tab_main(gtk.VBox):
 
+	name="tab_main"
+
 	def update(self,object):
 		self.darea.queue_draw()
 
@@ -158,9 +160,11 @@ class tab_main(gtk.VBox):
 				green=float(inp_search_token_value(lines, "#Green"))
 				blue=float(inp_search_token_value(lines, "#Blue"))
 			else:
+				print "Could not load",path
 				red=0.0
 				green=0.0
 				blue=0.0
+
 			self.draw_box(200,450.0-pos,thick*0.9,red,green,blue,model[l-i])
 		step=50.0
 

@@ -346,31 +346,38 @@ class tab_time_mesh(gtk.Window):
 			column.set_visible(False)
 		treeview.append_column(column)
 
-	def load_data(self):
+	def load_data(self,file_name):
 		lines=[]
-		inp_load_file(lines,"time_mesh_config.inp")
-		print "lines",lines
-		pos=0
-		token,value,pos=inp_read_next_item(lines,pos)
-		self.start_time=float(value)
-
-		token,value,pos=inp_read_next_item(lines,pos)
-		self.fs_laser_time=float(value)
-
-		token,value,pos=inp_read_next_item(lines,pos)
-		self.segments=int(value)
-
+		self.start_time=0.0
+		self.fs_laser_time=0.0
+		self.segments=0
 		self.list=[]
-		for i in range(0, self.segments):
-			token,length,pos=inp_read_next_item(lines,pos)
-			token,dt,pos=inp_read_next_item(lines,pos)
-			token,voltage,pos=inp_read_next_item(lines,pos)
-			token,mul,pos=inp_read_next_item(lines,pos)
-			token,sun,pos=inp_read_next_item(lines,pos)
-			token,laser,pos=inp_read_next_item(lines,pos)
-			self.list.append((length,dt,voltage,mul,sun,laser))
 
-		print self.list
+		ret=inp_load_file(lines,file_name)
+		if ret==True:
+			print "lines",lines
+			pos=0
+			token,value,pos=inp_read_next_item(lines,pos)
+			self.start_time=float(value)
+
+			token,value,pos=inp_read_next_item(lines,pos)
+			self.fs_laser_time=float(value)
+
+			token,value,pos=inp_read_next_item(lines,pos)
+			self.segments=int(value)
+
+			for i in range(0, self.segments):
+				token,length,pos=inp_read_next_item(lines,pos)
+				token,dt,pos=inp_read_next_item(lines,pos)
+				token,voltage,pos=inp_read_next_item(lines,pos)
+				token,mul,pos=inp_read_next_item(lines,pos)
+				token,sun,pos=inp_read_next_item(lines,pos)
+				token,laser,pos=inp_read_next_item(lines,pos)
+				self.list.append((length,dt,voltage,mul,sun,laser))
+
+			print self.list
+		else:
+			print "file "+file_name+"not found"
 
 	def update_mesh(self):
 		self.laser=[]
@@ -438,7 +445,7 @@ class tab_time_mesh(gtk.Window):
 
 		self.list=[]
 
-		self.load_data()
+		self.load_data("time_mesh_config.inp")
 
 		gui_pos=gui_pos+1
 

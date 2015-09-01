@@ -30,21 +30,10 @@ import vte
 
 class tab_terminal(gtk.VBox):
 
-	lines=[]
-	edit_list=[]
-	file_name=""
-	line_number=[]
 	name="Terminal"
-	visible=1
-	
 
-
-	def wow(self,sim_dir):
+	def init(self):
 		self.main_box=gtk.VBox()
-		self.sim_dir=sim_dir
-		self.edit_list=[]
-		self.line_number=[]
-
 
 		self.terminal     = vte.Terminal()
 		self.terminal.fork_command("/bin/sh")
