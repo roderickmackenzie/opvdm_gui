@@ -594,6 +594,7 @@ class class_optical(gtk.Window):
 		self.connect("delete-event", self.callback_close) 
 
 		self.add(self.main_vbox)
+		self.set_size_request(850,-1)
 		self.main_vbox.show()
 		self.draw_graph()
 		self.set_icon_from_file(find_data_file("gui/image.jpg"))

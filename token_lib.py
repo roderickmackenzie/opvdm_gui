@@ -89,7 +89,7 @@ class tokens:
 	lib.append(my_data("#spoty","m","Spot size y",["text"],"e",1.0))
 	lib.append(my_data("#pulseJ","J","Energy in pulse",["text"],"e",1.0))
 	lib.append(my_data("#gather","au","#gather",["text"],"e",1.0))
-	lib.append(my_data("#laser_pulse_width","m","#Length of pulse",["text"],"e",1.0))
+	lib.append(my_data("#laser_pulse_width","s","#Length of pulse",["text"],"e",1.0))
 	lib.append(my_data("#electron_eff","0-1","#electron_eff",["text"],"e",1.0))
 	lib.append(my_data("#hole_eff","0-1","#hole_eff",["text"],"e",1.0))
 	lib.append(my_data("#function","au","#function",["text"],"e",1.0))
@@ -390,6 +390,7 @@ class tokens:
 	lib.append(my_data("#pulse_laser_width","s","Laser pulse width",["text"],"e",1.0))
 	lib.append(my_data("#pulse_laser_power","Joules","Laser energy",["text"],"e",1.0))
 
+	lib.append(my_data("#flip_field","au","Filp the opticl field",["text"],["1","0"],1.0))
 
 
 
