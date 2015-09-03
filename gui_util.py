@@ -84,3 +84,8 @@ def dlg_get_multi_text( title_text,info, default=''):
 
 	d.destroy()
 	return ret
+
+def process_events():
+	while gtk.events_pending():
+		gtk.main_iteration(False)
+

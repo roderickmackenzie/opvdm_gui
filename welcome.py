@@ -50,6 +50,7 @@ from ver import ver_gui
 import gobject
 import platform
 import getpass
+from tab_base import tab_base
 
 socket.setdefaulttimeout = 1.0
 os.environ['no_proxy'] = '127.0.0.1,localhost'
@@ -102,7 +103,7 @@ class web_thread(gtk.VBox):
 		p.daemon = True
 		p.start()
 
-class welcome_class(gtk.HBox):
+class welcome_class(gtk.HBox,tab_base):
 	
 	lines=[]
 	edit_list=[]

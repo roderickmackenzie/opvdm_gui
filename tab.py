@@ -33,15 +33,15 @@ from inp import inp_get_token_value
 from undo import undo_list_class
 import zipfile
 import base64
+from tab_base import tab_base
 
-class tab_class(gtk.VBox):
+class tab_class(gtk.VBox,tab_base):
 	
 	lines=[]
 	edit_list=[]
-	file_name=""
+
 	line_number=[]
-	name=""
-	visible=1
+
 
 	def callback_edit(self, widget, data=None):
 		if type(widget)==gtk.Entry:

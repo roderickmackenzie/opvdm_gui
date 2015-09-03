@@ -180,6 +180,17 @@ def inp_search_token_value(lines, token):
 
 	return False
 
+def inp_get_next_token_array(lines,pos):
+
+	ret=[]
+	ret.append(lines[pos])
+	pos=pos+1
+	while (lines[pos][0]!="#"):
+		ret.append(lines[pos])
+		pos=pos+1
+
+	return ret,pos
+
 def inp_get_token_array(file_path, token):
 
 	lines=[]

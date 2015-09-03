@@ -32,22 +32,24 @@ from cal_path import get_phys_path
 from inp import inp_load_file
 from inp import inp_search_token_value
 from util import str2bool
+from tab_base import tab_base
 
-class tab_main(gtk.VBox):
+class tab_main(gtk.VBox,tab_base):
 
-	name="tab_main"
+	label_name="tab_main"
 
 	def update(self,object):
 		self.darea.queue_draw()
 
-	def init(self,tooltips):
+	def init(self):
 		self.sun=1
 		main_hbox=gtk.HBox()
 		self.darea = gtk.DrawingArea()
 		self.darea.connect("expose-event", self.expose)
 		#darea.show()
 
-		self.frame=layer_widget(tooltips)
+		self.tooltips=gtk.Tooltips()
+		self.frame=layer_widget(self.tooltips)
 		main_hbox.pack_start(self.frame, False, False, 0)
 		main_hbox.pack_start(self.darea, True, True, 0)
 

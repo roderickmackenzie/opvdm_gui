@@ -21,12 +21,15 @@
 #    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 
+
 import sys
+
 gui_dir='/usr/share/opvdm/gui/'
 lib_dir='/usr/lib64/opvdm/'
 sys.path.append('./gui/')
 sys.path.append(lib_dir)
 
+from win_lin import running_on_linux
 from command_args import command_args
 command_args(len(sys.argv),sys.argv)
 
@@ -39,7 +42,6 @@ import os
 import shutil
 from scan_item import scan_items_clear
 from scan import scan_class 
-from tab import tab_class
 from search import find_fit_error
 import signal
 import subprocess
@@ -50,7 +52,6 @@ from util import opvdm_clone
 from export_as import export_as
 from tmesh import tab_time_mesh
 from copying import copying
-from tab_homo import tab_bands
 from plot_gen import plot_gen
 from plot_gen import set_plot_auto_close
 from import_archive import import_archive
@@ -58,42 +59,34 @@ from about import about_dialog_show
 from util import find_data_file
 from notice import notice
 import os
-import threading
-import time
 import gobject
 from used_files_menu import used_files_menu
 from plot import load_graph
 from scan_item import scan_item_add
 from cmp_class import cmp_class
 from plot_state import plot_state
-from Queue import *
-from util import check_is_config_file
 from window_list import windows
 from config import config
 import random
-from import_archive import delete_scan_dirs
 from undo import undo_list_class
 from splash import splash_window
 from ver import ver
-from win_lin import running_on_linux
 import webbrowser
 from debug import debug_mode
-from progress import progress_class
 from qe import qe_window
 from opvdm_open import opvdm_open
-from tab_main import tab_main
 from tb_item_sun import tb_item_sun
 from tb_item_sim_mode import tb_item_sim_mode
 from opvdm_open import opvdm_open
-from welcome import welcome_class
 from cal_path import calculate_paths
 import glib
 from server import server
+from opvdm_notebook import opvdm_notebook
+from gui_util import process_events
 
 calculate_paths()
 
 if running_on_linux()==True:
-	from tab_terminal import tab_terminal
 	import dbus
 	from dbus.mainloop.glib import DBusGMainLoop
 	import pynotify
@@ -109,12 +102,6 @@ print notice()
 
 gobject.threads_init()
 
-	
-notebook = gtk.Notebook()
-
-def process_events():
-	while gtk.events_pending():
-		gtk.main_iteration(False)
 
 def set_active_name(combobox, name):
     liststore = combobox.get_model()
@@ -127,38 +114,31 @@ class opvdm_main_window(gobject.GObject):
 	icon_theme = gtk.icon_theme_get_default()
 	plot_after_run=False
 	plot_after_run_file=""
-	#electrical_mesh=None
 	scan_window=None
-	exe_command   =  get_exe_command()
-	#print exe_command
+
+	notebook=opvdm_notebook()
 
 	def adbus(self,bus, message):
 		data=message.get_member()
-		self.my_server.callback_dbus(data)
+		if data!=None:
+			self.my_server.callback_dbus(data)
 
 	def win_dbus(self, widget, data):
 		self.my_server.callback_dbus(data)
 
 
-	def goto_page(self,page):
-		for i in range(0,len(notebook.get_children())):
-    			if notebook.get_nth_page(i).name==page:
-					notebook.set_current_page(i)
-					break
-
 	def gui_sim_start(self):
-		self.notebook_active_page=notebook.get_current_page()
+		self.notebook_active_page=self.notebook.get_current_page()
 
-		self.goto_page("Terminal")
+		self.notebook.goto_page("Terminal")
 
 		self.spin.start()
 		self.statusicon.set_from_stock(gtk.STOCK_NO) 
 
 	def gui_sim_stop(self,text):
-		self.progress.hide()
 
 		message=""
-		notebook.set_current_page(self.notebook_active_page)
+		self.notebook.set_current_page(self.notebook_active_page)
 		self.spin.stop()
 		self.statusicon.set_from_stock(gtk.STOCK_YES)
 		if os.path.isfile("signal_stop.dat")==True:
@@ -198,188 +178,6 @@ class opvdm_main_window(gobject.GObject):
 	def on_status_icon_right_click(self,data, event_button, event_time):
 		self.make_menu(event_button, event_time)
 
-	def notebook_load_pages(self):
-		
-		self.progress.show()
-		self.finished_loading=False
-		self.rod=[]
-		self.number_of_tabs=0
-
-		if (os.path.exists("sim.opvdm")==True) and (os.getcwd()!="C:\\opvdm"):
-			self.play.set_sensitive(True)
-			self.stop.set_sensitive(True)
-			self.examine.set_sensitive(True)
-			self.param_scan.set_sensitive(True)
-			self.plot_select.set_sensitive(True)
-			self.undo.set_sensitive(True)
-			self.save_sim.set_sensitive(True)
-			if debug_mode()==True:
-				self.time_mesh_button.set_sensitive(True)
-
-			f = open("./device_epitaxy.inp")
-			lines = f.readlines()
-			f.close()
-			pos=0
-			for i in range(0, len(lines)):
-				lines[i]=lines[i].rstrip()
-
-			dos_files=int(lines[1])
-
-			visible = []
-			names = []
-			files = []
-
-			try:
-				f = open("./gui_config.inp")
-				lines = f.readlines()
-				f.close()
-
-				for i in range(0, len(lines)):
-					lines[i]=lines[i].rstrip()
-
-				i=0
-				while i<len(lines) :
-					visible.append(lines[i])
-					i=i+1
-
-					files.append(lines[i])
-
-					i=i+1
-					names.append(lines[i])
-					i=i+1
-			except:
-				print "No gui_config.inp file found\n"
-
-			self.main_tab=tab_main()
-			self.main_tab.init(self.tooltips)
-			self.main_tab.show()
-			notebook.append_page(self.main_tab, gtk.Label("Device structure"))
-
-			self.ti_light.connect('refresh', self.main_tab.update)
-
-			internal_names = ["Device","JV Curve","JV simple","Output","CELIV","Numerics", "ToF", "stark", "Bands", "Pulse","Pulse voc", "imps","Exp. Optical Model","Sun voc","TPC","fit","Thermal"]
-			internal_files = ["device.inp","jv.inp","jv_simple.inp","dump.inp","celiv.inp","math.inp","tof.inp","stark.inp","lumo0.inp","pulse.inp","pulse_voc.inp","imps.inp","light_exp.inp","sun_voc.inp","tpc.inp","fit.inp","thermal.inp"]
-
-			i=0
-			while i<len(internal_names) :
-				if (files.count(internal_files[i])==0):
-					visible.append("1")
-					files.append(internal_files[i])
-					names.append(internal_names[i])
-				i=i+1
-
-			for i in range(0, dos_files):
-				dos_file='dos'+str(i)+'.inp'
-				if files.count(dos_file) == 0:
-					visible.append("1")
-					files.append(dos_file)
-					names.append('DoS layer '+str(i))
-
-			for i in range(0, len(names)):
-				self.progress.set_fraction(float(i)/float(len(names)))
-				self.progress.set_text("Loading "+names[i])
-				process_events()
-				cur_file=files[i]
-				cur_name=names[i]
-				cur_visible=int(visible[i])
-				add_to_menu=False
-
-				if cur_file=="lumo0.inp":
-					hello=tab_bands()
-					hello.update()
-					if hello.enabled==True:
-						add_to_menu=True
-						self.rod.append(hello)
-						self.rod[self.number_of_tabs].visible=cur_visible
-						self.rod[self.number_of_tabs].wow()
-						self.rod[self.number_of_tabs].name=cur_name
-						self.rod[self.number_of_tabs].file_name=cur_file
-
-				elif check_is_config_file(cur_file)!="none":
-					add_to_menu=True
-					self.rod.append(tab_class())
-					self.rod[self.number_of_tabs].visible=cur_visible
-					self.rod[self.number_of_tabs].init(cur_file,cur_name)
-					self.rod[self.number_of_tabs].name=cur_name
-					self.rod[self.number_of_tabs].file_name=cur_file
-
-
-				if add_to_menu==True:
-					hbox=gtk.HBox()
-					hbox.set_size_request(-1, 25)
-					mytext=cur_name
-					if len(mytext)<10:
-						for i in range(len(mytext),10):
-							mytext=mytext+" "
-
-					label=gtk.Label(mytext)
-					label.set_justify(gtk.JUSTIFY_LEFT)
-					hbox.pack_start(label, False, True, 0)
-
-					button = gtk.Button()
-					close_image = gtk.Image()
-					close_image.set_from_file(find_data_file("gui/close.png"))
-					#print find_data_file("gui/close.png")
-					close_image.show()
-					# a button to contain the image widget
-					button = gtk.Button()
-					button.add(close_image)
-
-
-
-					button.props.relief = gtk.RELIEF_NONE
-					button.connect("clicked", self.callback_close_button,cur_name)
-					button.set_size_request(25, 25)
-					button.show()
-					
-
-					hbox.pack_end(button, False, False, 0)
-					hbox.show_all()
-
-					notebook.append_page(self.rod[self.number_of_tabs],hbox )
-
-					if (cur_visible==True):
-						self.rod[self.number_of_tabs].show()
-
-
-					notebook.set_tab_reorderable(self.rod[self.number_of_tabs],True)
-					a = (( "/View/"+cur_name,  None, self.callback_view_toggle, 0, "<ToggleItem>" ),   )
-					self.item_factory.create_items( a, )
-					myitem=self.item_factory.get_item("/View/"+cur_name)
-					myitem.set_active(cur_visible)
-					self.number_of_tabs=self.number_of_tabs+1
-		else:
-			self.play.set_sensitive(False)
-			self.stop.set_sensitive(False)
-			#self.mesh.set_sensitive(False)
-			self.examine.set_sensitive(False)
-			self.param_scan.set_sensitive(False)
-			self.plot_select.set_sensitive(False)
-			self.undo.set_sensitive(False)
-			self.save_sim.set_sensitive(False)
-			self.time_mesh_button.set_sensitive(False)
-
-
-
-		if self.terminal_widget!=None:
-			self.terminal_widget.show()
-			notebook.append_page(self.terminal_widget, gtk.Label("Terminal"))
-
-
-		self.welcome=welcome_class()
-		self.welcome.init(find_data_file("gui/image.jpg"))
-		self.welcome.web.connect("got-data", self.welcome.update)
-		self.welcome.get_data()
-		self.welcome.show()
-		notebook.append_page(self.welcome, gtk.Label("Information"))
-		self.goto_page("Welcome")
-
-		#print a.web.text
-		#a.label.hide()
-		self.finished_loading=True
-		self.progress.hide()
-		self.progress.set_fraction(0.0)
-
 
 	def callback_plot_after_run_toggle(self, widget, data):
 		self.plot_after_run=data.get_active()
@@ -394,36 +192,6 @@ class opvdm_main_window(gobject.GObject):
 	def callback_set_plot_auto_close(self, widget, data):
 		set_plot_auto_close(data.get_active())
 		self.config.set_value("#one_plot_window",data.get_active())
-
-	def toggle_tab_visible(self,name):
-		if self.finished_loading==True:
-			for i in range(0, self.number_of_tabs):
-				if self.rod[i].name==name:
-					widget=self.item_factory.get_widget("/View/"+name)
-					if self.rod[i].visible==0:
-						widget.set_active(True)
-						self.rod[i].show()
-						self.rod[i].visible=1
-					else:
-						widget.set_active(False)
-						self.rod[i].hide()
-						self.rod[i].visible=0
-
-
-	 		a = open("./gui_config.inp", "w")
-			for i in range(0, self.number_of_tabs):
-				a.write(str(self.rod[i].visible)+"\n")
-				a.write(self.rod[i].file_name+"\n")
-				a.write(self.rod[i].name+"\n")
-
-			a.close()
-
-	def callback_close_button(self, widget, data):
-		self.toggle_tab_visible(data)
-
-
-	def callback_view_toggle(self, widget, data):
-		self.toggle_tab_visible(data.get_label())
 
 
 	def callback_run_scan(self, widget, data=None):
@@ -441,12 +209,11 @@ class opvdm_main_window(gobject.GObject):
 		self.my_server.clear_cache()
 		self.my_server.add_job(os.getcwd())
 		self.my_server.start(get_exe_command())
-
 	
 	def callback_start_cluster_server(self, widget, data=None):
 		self.goto_page("Terminal")
 
-		cmd = "cd "+self.sim_dir+" \n"
+		cmd = "cd "+os.getcwd()+" \n"
 		#self.terminal.feed_child(cmd)
 
 		cmd = "./opvdm --server &\n"
@@ -463,13 +230,13 @@ class opvdm_main_window(gobject.GObject):
 
 	def callback_run_fit(self, widget, data=None):
 		if running_on_linux()==True:
-			cmd = "cd "+self.sim_dir+" \n"
+			cmd = "cd "+os.getcwd()+" \n"
 			self.terminal.feed_child(cmd)
 
-			cmd = self.exe_command+" --1fit&\n"
+			cmd = get_exe_command()+" --1fit&\n"
 			self.terminal.feed_child(cmd)
 		else:
-			cmd = self.exe_command+" --1fit"
+			cmd = get_exe_command()+" --1fit"
 			subprocess.Popen([cmd])
 
 
@@ -478,7 +245,7 @@ class opvdm_main_window(gobject.GObject):
 
 		if self.scan_window==None:
 			self.scan_window=scan_class(gtk.WINDOW_TOPLEVEL)
-			self.scan_window.init(self.my_server,self.progress)
+			self.scan_window.init(self.my_server)
 
 
 		if self.scan_window.get_property("visible")==True:
@@ -494,7 +261,7 @@ class opvdm_main_window(gobject.GObject):
 		dialog.show_inp_files=False
 		dialog.show_directories=False
 
-		dialog.init(self.sim_dir)
+		dialog.init(os.getcwd())
 		response=dialog.run()
 
 		if response == True:
@@ -549,10 +316,6 @@ class opvdm_main_window(gobject.GObject):
 		    print 'Closed, no files selected'
 		dialog.destroy()
 
-	def change_sim_dir(self,new_dir):
-		print "Changing directory to ",new_dir
-		os.chdir(new_dir)
-		self.sim_dir=os.getcwd()
 
 	def callback_new(self, widget, data=None):
 		dialog = gtk.FileChooserDialog("Make new opvdm simulation dir..",
@@ -573,7 +336,7 @@ class opvdm_main_window(gobject.GObject):
 			if not os.path.exists(dialog.get_filename()):
 				os.makedirs(dialog.get_filename())
 
-			self.change_sim_dir(dialog.get_filename())
+			os.chdir(dialog.get_filename())
 			opvdm_clone()
 
 			self.change_dir_and_refresh_interface(dialog.get_filename())
@@ -584,19 +347,38 @@ class opvdm_main_window(gobject.GObject):
 
 	def change_dir_and_refresh_interface(self,new_dir):
  		scan_items_clear()
-		self.change_sim_dir(new_dir)
+		os.chdir(new_dir)
 		calculate_paths()
-		self.config.load(self.sim_dir)
-		self.exe_command= get_exe_command()
+		self.config.load(os.getcwd())
 		self.exe_name = get_exe_name()
 		self.status_bar.push(self.context_id, os.getcwd())
 		self.plot_open.set_sensitive(False)
-		for child in notebook.get_children():
-    			notebook.remove(child)
 
-		self.notebook_load_pages()
+		self.notebook.set_item_factory(self.item_factory)
+		if self.notebook.load()==True:
+			self.ti_light.connect('refresh', self.notebook.main_tab.update)
+			self.play.set_sensitive(True)
+			self.stop.set_sensitive(True)
+			self.examine.set_sensitive(True)
+			self.param_scan.set_sensitive(True)
+			self.plot_select.set_sensitive(True)
+			self.undo.set_sensitive(True)
+			self.save_sim.set_sensitive(True)
+			if debug_mode()==True:
+				self.time_mesh_button.set_sensitive(True)
+		else:
+			self.play.set_sensitive(False)
+			self.stop.set_sensitive(False)
+			self.examine.set_sensitive(False)
+			self.param_scan.set_sensitive(False)
+			self.plot_select.set_sensitive(False)
+			self.undo.set_sensitive(False)
+			self.save_sim.set_sensitive(False)
+			self.time_mesh_button.set_sensitive(False)
 
-		self.goto_page("tab_main")
+		if self.notebook.terminal!=None:
+			self.my_server.set_terminal(self.notebook.terminal)
+		self.notebook.show()
 
 		self.plotted_graphs.init(os.getcwd(),self.callback_last_menu_click)
 
@@ -611,11 +393,6 @@ class opvdm_main_window(gobject.GObject):
 			del self.scan_window
 			self.scan_window=None
 
-
-		#if self.electrical_mesh!=None:
-		#	del self.electrical_mesh
-		#	self.electrical_mesh=tab_electrical_mesh()
-		#	self.electrical_mesh.init()
 
 		if self.time_mesh!=None:
 			del self.time_mesh
@@ -697,12 +474,6 @@ class opvdm_main_window(gobject.GObject):
 		    print 'Closed, no files selected'
 		dialog.destroy()
 
-
-	def callback_edit_file(self, widget, data=None):
-		page = notebook.get_current_page()
-		cmd = 'gnome-open '+self.rod[page].file_name
-		os.system(cmd)
-
 	def callback_about_dialog(self, widget, data=None):
 		about_dialog_show()
 
@@ -726,15 +497,11 @@ class opvdm_main_window(gobject.GObject):
 	def callback_close_window(self, widget, data=None):
 		self.win_list.update(self.window,"main_window")
 		gtk.main_quit()
-		#print "quiting"
-		#self.connect('event-after', gtk.main_quit)
-		#gtk.mainquit()
-		#glib.MainLoop().quit()
 
 
 	def callback_examine(self, widget, data=None):
 		mycmp=cmp_class()
-		ret=mycmp.init(self.sim_dir,self.exe_command)
+		ret=mycmp.init(os.getcwd(),get_exe_command())
 		if ret==False:
 			md = gtk.MessageDialog(None, gtk.DIALOG_DESTROY_WITH_PARENT, gtk.MESSAGE_WARNING,  gtk.BUTTONS_CLOSE, "Re-run the simulation with 'dump all slices' set to one to use this tool.")
         		md.run()
@@ -759,8 +526,6 @@ class opvdm_main_window(gobject.GObject):
 				self.undo_list.enable()
 
 			l.pop()
-
-#		self.file_name, data, widget.get_text(),widget
 
 
 	def callback_make(self, widget, data=None):
@@ -789,9 +554,6 @@ class opvdm_main_window(gobject.GObject):
 
 		return item_factory.get_widget("<main>")
 
-
-		#cmd = ['/bin/echo', 'File', ev.pathname, 'changed']
-	    #subprocess.Popen(cmd).communicate()
 
 	def make_tool_box1(self):
 		pos=0
@@ -859,7 +621,9 @@ class opvdm_main_window(gobject.GObject):
 	def __init__(self):
 		gobject.GObject.__init__(self)
 
-		self.terminal_widget=None
+		self.my_server=server()
+		self.my_server.init(os.getcwd())
+		self.my_server.setup_gui(self.gui_sim_start,self.gui_sim_stop)
 
 		if running_on_linux()==True:
 			DBusGMainLoop(set_as_default=True)
@@ -867,25 +631,16 @@ class opvdm_main_window(gobject.GObject):
 			self.bus.add_match_string_non_blocking("type='signal',interface='org.my.test'")
 			self.bus.add_message_filter(self.adbus)
 
-			self.terminal_widget=tab_terminal()
-			self.terminal_widget.init()
-
 		else:
 			self.win_pipe=win_pipe()
 			self.win_pipe.connect('new-data', self.win_dbus)
 			self.win_pipe.start()
 
-		print get_exe_command()
-		print get_exe_name()
+
 		splash=splash_window()
 		splash.init()
-		self.progress=progress_class()
-		self.progress.init()
-		self.progress.start()
-		self.progress.set_text("Loading..")
 		self.undo_list=undo_list_class()
 		self.undo_list.init()
-		self.sim_dir=os.getcwd()
 		self.statusicon = gtk.StatusIcon()
 		self.statusicon.set_from_stock(gtk.STOCK_YES) 
 		#self.statusicon.connect("popup-menu", self.right_click_event)
@@ -928,7 +683,6 @@ class opvdm_main_window(gobject.GObject):
 		    ( "/File/_Save...",     None, self.callback_export, 0, "<StockItem>", "gtk-save" ),
 		    ( "/File/Import",     None, self.callback_import, 0 , "<StockItem>", "gtk-harddisk"),
 		    ( "/File/Quit",     "<control>Q", gtk.main_quit, 0, "<StockItem>", "gtk-quit" ),
-		    ( "/_Edit/Edit file",   None,         self.callback_edit_file, 0, None ),
 		    ( "/_Simulate",      None,         None, 0, "<Branch>" ),
 		    ( "/Simulate/Run",  None,         self.callback_simulate, 0, "<StockItem>", "gtk-media-play" ),
 		    ( "/Simulate/Parameter scan",  None,         self.callback_scan , 0, None ),
@@ -965,9 +719,6 @@ class opvdm_main_window(gobject.GObject):
 
 		self.tooltips = gtk.Tooltips()
 
-		#window = gtk.Window(gtk.WINDOW_TOPLEVEL)
-		#window.connect("destroy", lambda w: gtk.main_quit())
-		#window.set_title("Item Factory")
 		self.window.set_size_request(-1, -1)
 		main_vbox = gtk.VBox(False, 5)
 		main_vbox.set_border_width(1)
@@ -979,9 +730,6 @@ class opvdm_main_window(gobject.GObject):
 		toolbar = gtk.Toolbar()
 		toolbar.set_style(gtk.TOOLBAR_ICONS)
 		toolbar.set_size_request(-1, 50)
-
-		#newtb = gtk.ToolButton(gtk.STOCK_NEW)
-		#opentb = gtk.ToolButton(gtk.STOCK_OPEN)
 
 		open_sim = gtk.ToolButton(gtk.STOCK_OPEN)
 		self.tooltips.set_tip(open_sim, "Open a simulation")
@@ -1182,18 +930,9 @@ class opvdm_main_window(gobject.GObject):
 		self.window.show()
 
 		process_events()
-		self.progress.stop()
-
-		self.my_server=server()
-		self.my_server.init(self.sim_dir)
-		self.my_server.setup_gui(self.gui_sim_start,self.gui_sim_stop)
-		self.my_server.set_terminal(self.terminal_widget.terminal)
 
 
 	def make_window2(self,main_vbox):
-		notebook.set_tab_pos(gtk.POS_TOP)
-		notebook.show()
-		notebook.set_current_page(1)
 
 		box=gtk.HBox()
 		self.status_bar = gtk.Statusbar()      
@@ -1203,7 +942,7 @@ class opvdm_main_window(gobject.GObject):
 		box.add(self.status_bar)
 
 		self.window2_box=gtk.VBox()
-		self.window2_box.add(notebook)
+		self.window2_box.add(self.notebook)
 		self.window2_box.add(box)
 		self.window2_box.set_child_packing(box, False, False, 0, 0)
 		self.window2_box.set_size_request(-1, 550)
@@ -1218,8 +957,6 @@ class opvdm_main_window(gobject.GObject):
 			self.window2.add(self.window2_box)
 		else:
 			main_vbox.add(self.window2_box)			
-
-
 
 		box.show()
 		self.status_bar.show()

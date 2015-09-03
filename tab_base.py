@@ -19,30 +19,7 @@
 #    with this program; if not, write to the Free Software Foundation, Inc.,
 #    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
-import pygtk
-pygtk.require('2.0')
-import gtk
-import sys
-import os
-import shutil
-from scan_item import scan_item
-import vte
-from tab_base import tab_base
-
-class tab_terminal(gtk.VBox,tab_base):
-
-	label_name="Terminal"
-
-	def init(self):
-		self.main_box=gtk.VBox()
-
-		self.terminal     = vte.Terminal()
-		self.terminal.fork_command("/bin/sh")
-		self.terminal.feed_child('opvdm --version\n')
-		self.terminal.set_scrollback_lines(10000)
-		self.terminal.show()
-		self.main_box.add(self.terminal)
-
-		self.add(self.main_box)
-		self.main_box.show()
-
+class tab_base():
+	file_name=""
+	label_name=""
+	visible=1

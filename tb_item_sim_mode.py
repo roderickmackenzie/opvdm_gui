@@ -29,6 +29,7 @@ import gobject
 from util import find_data_file
 from inp import inp_update_token_value
 from inp import inp_get_token_value
+from inp import inp_load_file
 
 class tb_item_sim_mode(gtk.ToolItem):
 
@@ -36,12 +37,12 @@ class tb_item_sim_mode(gtk.ToolItem):
 		self.sim_mode = gtk.combo_box_entry_new_text()
 		self.sim_mode.set_size_request(-1, 20)
 
-		f = open(find_data_file("sim_menu.inp"))
-		lines = f.readlines()
-		f.close()
+		lines=[]
+		inp_load_file(lines,find_data_file("sim_menu.inp"))
 
 		for i in range(0, len(lines)):
-			self.sim_mode.append_text(lines[i].rstrip())
+			if lines[i]!="":
+				self.sim_mode.append_text(lines[i].rstrip())
 
 		self.sim_mode.child.connect('changed', self.call_back_sim_mode_changed)
 		token=inp_get_token_value("sim.inp", "#simmode")

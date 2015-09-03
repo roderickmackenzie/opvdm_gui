@@ -109,6 +109,8 @@ class tokens:
 	lib.append(my_data("#dump_slices","1/0","Dump slices",["1","0"],"e",1.0))
 	lib.append(my_data("#dump_dynamic","1/0","Dump dynamic",["1","0"],"e",1.0))
 	lib.append(my_data("#dump_zip_files","1/0","Dump zip files",["1","0"],"e",1.0))
+	lib.append(my_data("#dump_write_out_band_structure","1/0","Write out band structure",["1","0"],"e",1.0))
+
 	lib.append(my_data("#tofstop","s","ToF stop time",["text"],"e",1.0))
 	lib.append(my_data("#tof_cap_escape_fx","s<sup>-1</sup>","Capture to escape frequency",["text"],"e",1.0))
 	lib.append(my_data("#toflaseroff","s","ToF laser off time",["text"],"e",1.0))
@@ -387,6 +389,8 @@ class tokens:
 	lib.append(my_data("#pulse_laser_on","s","Laser on time",["text"],"e",1.0))
 	lib.append(my_data("#pulse_laser_width","s","Laser pulse width",["text"],"e",1.0))
 	lib.append(my_data("#pulse_laser_power","Joules","Laser energy",["text"],"e",1.0))
+
+
 
 
 	def find(self,token):

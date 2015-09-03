@@ -560,7 +560,7 @@ class class_optical(gtk.Window):
 		self.notebook.append_page(optics_config,gtk.Label("Optical setup"))
 		optics_config.visible=True
 		optics_config.init("optics.inp","Config")
-		optics_config.name="Config"
+		optics_config.label_name="Optics config"
 		optics_config.file_name="optics.inp"
 
 		#Photon distribution

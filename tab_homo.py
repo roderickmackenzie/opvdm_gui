@@ -34,6 +34,7 @@ from numpy import arange, sin, pi
 from matplotlib.backends.backend_gtkagg import FigureCanvasGTKAgg as FigureCanvas
 import gobject
 from scan_item import scan_item_add
+from tab_base import tab_base
 
 (
   LUMO_FUNCTION,
@@ -57,16 +58,12 @@ from scan_item import scan_item_add
 articles = []
 HOMO_articles = []
 
-class tab_bands(gtk.HBox):
+class tab_bands(gtk.HBox,tab_base):
 	lines=[]
 	edit_list=[]
 
 	line_number=[]
 	save_file_name=""
-
-	file_name=""
-	name=""
-	visible=1
 
 	def update(self):
 		self.enabled=inp_isfile("./lumo0.inp")

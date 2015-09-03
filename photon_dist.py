@@ -27,7 +27,6 @@ import os
 import shutil
 from scan_item import scan_item_add
 from token_lib import tokens
-from util import check_is_config_file
 from inp import inp_update_token_value
 from inp import inp_get_token_value
 from undo import undo_list_class

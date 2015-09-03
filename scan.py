@@ -413,7 +413,7 @@ class scan_class(gtk.Window):
 	def callback_wol(self, widget, data):
 		self.myserver.wake_nodes()
 
-	def init(self,my_server,progress):
+	def init(self,my_server):
 		self.cluster_window=None
 		self.win_list=windows()
 		self.win_list.load()
@@ -455,8 +455,6 @@ class scan_class(gtk.Window):
 		box=gtk.HBox()
 		box.add(self.status_bar)
 		box.set_child_packing(self.status_bar, True, True, 0, 0)
-		self.progress = progress
-		#self.progress.set_size_request(100, -1)
 		box.show()
 
 
