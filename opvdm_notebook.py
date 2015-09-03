@@ -92,7 +92,7 @@ class opvdm_notebook(gtk.Notebook):
 						child.hide()
 						child.visible=False
 
-					print "gui_config.inp", "#"+child.file_name, str(int(child.visible)),2
+					#print "gui_config.inp", "#"+child.file_name, str(int(child.visible)),2
 					inp_update_token_value("gui_config.inp", "#"+child.file_name, str(int(child.visible)),2)
 
 	def add_to_menu(self,name,visible):
@@ -175,7 +175,7 @@ class opvdm_notebook(gtk.Notebook):
 						tab.file_name=file_name
 
 					if add_to_widget==True:
-						print file_name,name,visible,type(tab)
+						#print file_name,name,visible,type(tab)
 						hbox=gtk.HBox()
 						hbox.set_size_request(-1, 25)
 						mytext=name
@@ -218,8 +218,8 @@ class opvdm_notebook(gtk.Notebook):
 			else:
 				print "No gui_config.inp file found\n"
 
-			for child in self.get_children():
-					print type(child)
+			#for child in self.get_children():
+			#		print type(child)
 
 			if self.terminal_widget!=None:
 				self.terminal_widget.show()
