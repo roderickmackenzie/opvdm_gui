@@ -27,31 +27,26 @@ import sys
 import os
 import shutil
 from inp import inp_update_token_value
+from inp import inp_write_lines_to_file
+from inp import inp_load_file
+from inp import inp_search_token_value
 from scan_item import scan_item
 from scan_item import scan_item_add
 from util import find_data_file
-from numpy import *
-from matplotlib.figure import Figure
-from numpy import arange, sin, pi
-from matplotlib.backends.backend_gtkagg import FigureCanvasGTKAgg as FigureCanvas
-from matplotlib import ticker
-import matplotlib.cm as cm
-from matplotlib.mlab import griddata
 import glob
-from matplotlib import rcParams
 from util import time_with_units
-from matplotlib.backends.backend_gtkagg import NavigationToolbar2GTKAgg as NavigationToolbar
 from plot_widget import plot_widget
 from util import zip_get_data_file
 from window_list import windows
 from plot_state import plot_state
 from plot_io import plot_load_info
+from cal_path import get_exe_command
 
 class cmp_class(gtk.Window):
 	mix_y=None
 	max_y=None
 	max_z=1e24
-	icon_theme = gtk.icon_theme_get_default()
+
 	def check_2d_file(self,name):
 		mapfiles=["pt_map","nt_map"]
 		filename=os.path.basename(name)
@@ -128,11 +123,10 @@ class cmp_class(gtk.Window):
 		
 		files=self.entry2.get_text().split()
 		value=int(value)
+		print "hello"
 
 		if value>len(self.lines) or self.lines[0]=="none":
 			return
-
-		plus=files[0].count("%")
 
 
 		path0=self.entry0.get_active_text()
@@ -141,31 +135,18 @@ class cmp_class(gtk.Window):
 		labels=[]
 		zero_frame=[]
 
-		if plus==0:
-			title=self.lines[value].split()
-			self.plot.plot_title="Voltage="+title[0]+" time="+time_with_units(float(title[1]))
-			for i in range(0,len(files)):
-				self.file_names.append(os.path.join(path0,files[i]+"_"+str(int(value))+".dat"))
-				zero_frame.append(os.path.join(path0,files[i]+"_0.dat"))
-				labels.append(files[i])
+		title=self.lines[value].split()
 
-				self.file_names.append(os.path.join(path1,files[i]+"_"+str(int(value))+".dat"))
-				zero_frame.append(os.path.join(path1,files[i]+"_0.dat"))
-				labels.append("")
-		else:
-			for i in range(0,len(files)):
-				if files[i].count("%")!=1:
-					break
-				base_name, frame= files[i].split("%")
-				pos=int(frame)+value
-				if pos<len(self.lines):
-					title=time_with_units(float(self.lines[pos].split()[1]))
-				else:
-					title=""
+		self.plot.plot_title="Voltage="+title[0]+" time="+time_with_units(float(title[1]))
 
-				self.file_names.append(os.path.join(path0,base_name+"_"+str(int(pos))+".dat"))
-				zero_frame.append(os.path.join(path0,base_name+"_0.dat"))
-				labels.append(title)
+		for i in range(0,len(files)):
+			self.file_names.append(os.path.join(path0,files[i]+"_"+str(int(value))+".dat"))
+			zero_frame.append(os.path.join(path0,files[i]+"_0.dat"))
+			labels.append(files[i])
+
+			self.file_names.append(os.path.join(path1,files[i]+"_"+str(int(value))+".dat"))
+			zero_frame.append(os.path.join(path1,files[i]+"_0.dat"))
+			labels.append("")
 
 		plot_id=[]
 		if self.multi_plot==False:
@@ -183,7 +164,7 @@ class cmp_class(gtk.Window):
 			plot_id.append(i)
 		self.plot.zero_frame_list=zero_frame
 
-		print self.file_names
+		print "hi",self.file_names
 		print plot_id
 		self.plot.set_labels(labels)
 		self.plot.set_plot_ids(plot_id)
@@ -194,49 +175,44 @@ class cmp_class(gtk.Window):
 
 
 	def callback_scale(self, adj):
-		print "here",type(self.plot.plot_token.key_units)
+		self.update(self.adj1.value)
 
 		if plot_load_info(self.plot_token,self.file_names[0])==True:
-			print "here1",type(self.plot.plot_token.key_units)
-			self.update(self.adj1.value)
-			print "here2",type(self.plot.plot_token.key_units)
 			self.plot.do_plot()
 
 
 	def callback_edit(self,data):
-		print os.getcwd() 
-		a = open(os.path.join(self.sim_dir,"gui_cmp_config.inp"), "w")
-		a.write(self.entry0.get_active_text()+"\n")
-		a.write(self.entry1.get_active_text()+"\n")
-		a.write(self.entry2.get_text()+"\n")
-		a.write(self.entry3.get_text()+"\n")
-		a.close()
+		lines=[]
+		lines.append("#entry0")
+		lines.append(self.entry0.get_active_text())
+		lines.append("#entry1")
+		lines.append(self.entry1.get_active_text())
+		lines.append("#entry2")
+		lines.append(self.entry2.get_text())
+		lines.append("#entry3")
+		lines.append(self.entry3.get_text())
+		inp_write_lines_to_file("gui_cmp_config.inp",lines)
 		self.plot.gen_colors(2)
 		self.load_data_file()
-		print "Saved"
 
 	def config_load(self):
-		try:
-	 		f = open(os.path.join(self.sim_dir,"gui_cmp_config.inp"), "r")
-			lines = f.readlines()
-			f.close()
+		lines=[]
+		if inp_load_file(lines,"gui_cmp_config.inp")==True:
 
-			for i in range(0, len(lines)):
-				lines[i]=lines[i].rstrip()
-
-			if self.snapshot_list.count(lines[0])!=0:
-				self.entry0.set_active(self.snapshot_list.index(lines[0]))
+			if self.snapshot_list.count(inp_search_token_value(lines, "#entry0"))!=0:
+				self.entry0.set_active(self.snapshot_list.index(inp_search_token_value(lines, "#entry0")))
 			else:
 				self.entry0.set_active(0)
 
-			if self.snapshot_list.count(lines[1])!=0:
-				self.entry1.set_active(self.snapshot_list.index(lines[1]))
+			if self.snapshot_list.count(inp_search_token_value(lines, "#entry1"))!=0:
+				self.entry1.set_active(self.snapshot_list.index(inp_search_token_value(lines, "#entry1")))
 			else:
 				self.entry1.set_active(0)
 
-			self.entry2.set_text(lines[2])
-			self.entry3.set_text(lines[3])
-		except:
+			self.entry2.set_text(inp_search_token_value(lines, "#entry2"))
+			self.entry3.set_text(inp_search_token_value(lines, "#entry3"))
+
+		else:
 			self.entry0.set_active(0)
 			self.entry1.set_active(0)
 			self.entry2.set_text("n p")
@@ -318,7 +294,7 @@ class cmp_class(gtk.Window):
 	def update_snapshots_dir(self):
 
 		matches = []
-		for root, dirnames, filenames in os.walk(self.sim_dir, followlinks=True):
+		for root, dirnames, filenames in os.walk(os.getcwd(), followlinks=True):
 			for filename in dirnames:
 				mydir=os.path.join(root,filename)
 				if mydir.endswith("snapshots")==True:
@@ -326,9 +302,8 @@ class cmp_class(gtk.Window):
 
 		return matches
 
-	def init(self,sim_dir,exe_command):
+	def init(self):
 		self.plot_token=plot_state()
-		self.sim_dir=sim_dir
 		self.win_list=windows()
 		self.win_list.load()
 		self.win_list.set_window(self,"cmp_class")
@@ -356,13 +331,6 @@ class cmp_class(gtk.Window):
 		self.plot.item_factory.create_items(menu_items)
 
 
-		#self.add_accel_group(accel_group)
-
-		#menubar=item_factory.get_widget("<main>")
-		#menubar.show_all()
-		#vbox.pack_start(menubar, False, True, 0)
-
-
 
 		image = gtk.Image()
    		image.set_from_file(find_data_file(os.path.join("gui","video.png")))
@@ -371,12 +339,10 @@ class cmp_class(gtk.Window):
 		self.video.show()
 		self.video.connect("clicked", self.callback_save)
 
-	        image = gtk.Image()
+		image = gtk.Image()
    		image.set_from_file(find_data_file(os.path.join("gui","scale.png")))
 		self.scale = gtk.ToolButton(image)
 		self.plot.toolbar.add(self.scale)
-		#self.scale.connect("clicked", self.callback_auto_scale)
-
 
 		sep = gtk.SeparatorToolItem()
 		sep.set_draw(False)
@@ -484,18 +450,13 @@ class cmp_class(gtk.Window):
 		if found==False:
 			md = gtk.MessageDialog(None, 0, gtk.MESSAGE_QUESTION,  gtk.BUTTONS_YES_NO, "No slice data has been written to disk.  You need to re-run the simulation with the dump_slices set to 1.  Would you like to do this now?  Note: This generates lots of files and will slow down the simulation.")
 
-#gtk.MessageDialog(self, gtk.DIALOG_DESTROY_WITH_PARENT, gtk.MESSAGE_QUESTION, 
-		# gtk.BUTTONS_CLOSE, "Should I remove the simulation directory "+dir_to_del)
 			response = md.run()
 
 			if response == gtk.RESPONSE_YES:
 				inp_update_token_value("dump.inp", "#dump_1d_slices", "1",1)
-				cmd = exe_command
-				ret= os.system(cmd)
+				ret= os.system(get_exe_command())
 
 			md.destroy()
-
-
 
 
 		self.load_data_file()
@@ -515,8 +476,7 @@ class cmp_class(gtk.Window):
 		self.update(0)
 		if ret==True:
 			self.plot.do_plot()
-			print "CONVERTj!!!!!!!!!!!",type(self.plot.plot_token.key_units)
-		#["Ec","Ev","Fn","Fp"]
+			print "CONVERT!!!!!!!!!!!",type(self.plot.plot_token.key_units)
 		self.set_border_width(10)
 		self.set_title("Compare")
 		self.set_icon_from_file(find_data_file(os.path.join("gui/image.jpg")))

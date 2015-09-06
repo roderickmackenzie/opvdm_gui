@@ -156,7 +156,7 @@ def inp_write_lines_to_file(file_path,lines):
 
 	base_name=os.path.basename(file_path)
 
-	if os.path.isfile(file_path)==True or os.path.isfile(zip_file_name)==False:
+	if os.path.isfile(file_path)==True:  # or os.path.isfile(zip_file_name)==False
 		inp_save_lines(file_path,lines)
 	else:
 		replace_file_in_zip_archive(zip_file_name,base_name,lines)
@@ -218,4 +218,12 @@ def inp_get_token_value(file_path, token):
 			return lines[i+1]
 
 	return "0"
+
+def inp_sum_items(lines,token):
+	my_sum=0.0
+	for i in range(0, len(lines)):
+		if lines[i].startswith(token)==True:
+			my_sum=my_sum+float(lines[i+1])
+
+	return my_sum
 

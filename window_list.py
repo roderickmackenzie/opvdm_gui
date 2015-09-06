@@ -24,8 +24,9 @@ import pdb
 import pygtk
 pygtk.require('2.0')
 import gtk
-
 import os
+from inp import inp_load_file
+from inp import inp_write_lines_to_file
 
 class window_item:
 	name=""
@@ -56,14 +57,15 @@ class windows():
 			pos=len(wlist)-1
 
 
-		a = open("window_list.inp", "w")
-		a.write(str(len(wlist))+"\n")
-		for i in range(0,len(wlist)):
-			a.write(wlist[i].name+"\n")
-			a.write(str(wlist[i].x)+"\n")
-			a.write(str(wlist[i].y)+"\n")
+		lines=[]
+		lines.append(str(len(wlist)))
 
-		a.close()
+		for i in range(0,len(wlist)):
+			lines.append(wlist[i].name)
+			lines.append(str(wlist[i].x))
+			lines.append(str(wlist[i].y))
+
+		inp_write_lines_to_file("window_list.inp",lines)
 
 	def set_window(self,window,name):
 		global wlist
@@ -82,17 +84,12 @@ class windows():
 
 				window.move(x,y)
 				break
+
 	def load(self):
 		global wlist
 		wlist=[]
-		try:
-			f = open("window_list.inp")
-			lines = f.readlines()
-			f.close()
-
-			for i in range(0, len(lines)):
-				lines[i]=lines[i].rstrip()
-
+		lines=[]
+		if inp_load_file(lines,"window_list.inp")==True:
 			number=int(lines[0])
 			for i in range(0,number):
 				a=window_item()
@@ -100,6 +97,5 @@ class windows():
 				a.x=lines[i*3+2]
 				a.y=lines[i*3+3]
 				wlist.append(a)
-		except:
-			pass
+
 

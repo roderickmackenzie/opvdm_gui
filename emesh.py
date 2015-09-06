@@ -36,6 +36,11 @@ from util import find_data_file
 from scan_item import scan_item_add
 import webbrowser
 from electrical_mesh_editor import electrical_mesh_editor
+from inp import inp_load_file
+from inp import inp_sum_items
+from inp import inp_load_file
+from inp import inp_search_token_value
+from matplotlib.patches import Ellipse, PathPatch
 
 class tab_electrical_mesh(gtk.Window):
 	lines=[]
@@ -53,6 +58,9 @@ class tab_electrical_mesh(gtk.Window):
 		os.system(cmd)
 		self.update_graph()
 
+	def callback_update(self,data):
+		self.update_graph()
+
 	def update_graph(self):
 		self.fig.clf()
 		self.draw_graph()
@@ -60,13 +68,29 @@ class tab_electrical_mesh(gtk.Window):
 
 	def draw_graph(self):
 
+		lines=[]
+		total=10
+		pos=0
+		bands=10
+
+		#circle1=plt.Circle((10,10),4,color='r')
+
+		if inp_load_file(lines,"device_epitaxy.inp")==True:
+			total=inp_sum_items(lines, "#mesh_layer_points")
+
+		if inp_load_file(lines,"dump.inp")==True:
+			pos=int(inp_search_token_value(lines, "#dump_energy_slice_pos"))
+
+		if inp_load_file(lines,"dos0.inp")==True:
+			bands=int(inp_search_token_value(lines, "#srh_bands"))
+
 		n=0
 		
 		self.fig.clf()
+		
 		self.fig.subplots_adjust(bottom=0.2)
 		self.fig.subplots_adjust(left=0.1)
 		self.ax1 = self.fig.add_subplot(111)
-
 		#ax2 = ax1.twinx()
 		x_pos=0.0
 		layer=0
@@ -76,24 +100,45 @@ class tab_electrical_mesh(gtk.Window):
 		#ax2.set_ylabel('Energy (eV)')
 		self.ax1.set_xlabel('Position (nm)')
 		try:
-			t,s = loadtxt("Ec.dat", unpack=True)
-			t=t*1e9
-			Ec, = self.ax1.plot(t,s, 'ro-', linewidth=3 ,alpha=0.5)
 
-			t,s = loadtxt("Ev.dat", unpack=True)
+			t,Ec_data = loadtxt("Ec.dat", unpack=True)
 			t=t*1e9
-			Ev,=self.ax1.plot(t,s, 'go-', linewidth=3 ,alpha=0.5)
+			Ec, = self.ax1.plot(t,Ec_data, 'ro-', linewidth=3 ,alpha=0.5)
+
+			t,Ev_data = loadtxt("Ev.dat", unpack=True)
+			t=t*1e9
+			Ev,=self.ax1.plot(t,Ev_data, 'go-', linewidth=3 ,alpha=0.5)
+
+
+			if self.emesh_editor.mesh_dump_ctl.enable==True:
+
+				Ec_max=max(Ec_data)
+				Ev_min=min(Ev_data)
+
+				x_len=t[len(t)-1]-t[0]
+				y_len=Ec_max-Ev_min
+
+				x_pos=t[0]+(x_len)*(float(pos)/float(total))
+				x_size=(x_len)/float(total)/4
+				start=float(Ev_data[pos])
+				stop=float(Ec_data[pos])
+				y_pos=start
+				dy=(stop-start)/(bands*2)
+				while y_pos<stop:
+					self.ax1.add_patch(Ellipse((x_pos, y_pos), x_size,x_size*(y_len/x_len), facecolor='red', edgecolor=(0,0.0,0.0), linewidth=0, alpha=1.0))
+					y_pos=y_pos+dy
+
 
 			t,s = loadtxt("Fi.dat", unpack=True)
 			t=t*1e9
 			Fi,=self.ax1.plot(t,s, 'bo-', linewidth=3 ,alpha=0.5)
-			
+
 			if self.show_key==True:
 				self.fig.legend((Ec, Ev, Fi), ('LUMO', 'HOMO', 'Fi'), 'upper right')
 			else:
 				self.ax1.legend_ = None
-			self.fig.canvas.draw()
-			
+			#self.fig.canvas.draw()
+		
 		except:
 			print "No mode file\n"
 
@@ -146,6 +191,9 @@ class tab_electrical_mesh(gtk.Window):
 
 	def init(self):
 		print "INIT!!"
+
+		self.emesh_editor=electrical_mesh_editor()
+		self.emesh_editor.init()
 
 		#if self.electrical_mesh!=None:
 		#	logging.info('Del scan_window')
@@ -236,12 +284,12 @@ class tab_electrical_mesh(gtk.Window):
 
 
 		self.hbox.pack_start(canvas, True, True, 0)
-		self.emesh_editor=electrical_mesh_editor()
-		self.emesh_editor.init()		
+	
 		self.emesh_editor.show()
 		self.hbox.pack_start(self.emesh_editor, True, True, 0)
-
+		self.emesh_editor.mesh_dump_ctl.connect("update", self.callback_update)
 		window_main_vbox.add(self.hbox)
+
 		self.add(window_main_vbox)
 		self.set_title("Electrical Mesh Editor - (www.opvdm.com)")
 		self.set_icon_from_file(find_data_file("gui/mesh.png"))

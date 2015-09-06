@@ -257,13 +257,11 @@ class tokens:
 	lib.append(my_data("#dump_movie","","",["text"],"e",1.0))
 	lib.append(my_data("#dump_optics","1/0","Dump optical information",["1","0"],"e",1.0))
 	lib.append(my_data("#dump_optics_verbose","","",["text"],"e",1.0))
-	lib.append(my_data("#dump_energy_slice_switch","1/0","Dump energy slices",["1","0"],"e",1.0))
-	lib.append(my_data("#dump_energy_slice_pos","mesh position","Pos. of Eng. slice to dump",["text"],"e",1.0))
 	lib.append(my_data("#dump_print_newtonerror","1/0","Print newton error",["1","0"],"e",1.0))
 	lib.append(my_data("#dump_print_converge","1/0","Print solver convergence",["1","0"],"e",1.0))
 	lib.append(my_data("#dump_write_converge","1/0","Write newton solver convergence to disk",["1","0"],"e",1.0))
 	lib.append(my_data("#dump_print_pos_error","1/0","Print poisson solver convergence",["1","0"],"e",1.0))
-	lib.append(my_data("#dump_pl","1/0","Dump PL spectra",["text"],"e",1.0))
+	lib.append(my_data("#dump_pl","1/0","Dump PL spectra",["1","0"],"e",1.0))
 	lib.append(my_data("#dump_norm_time_to_one","1/0","Normalize output x-time to one",["1","0"],"e",1.0))
 
 

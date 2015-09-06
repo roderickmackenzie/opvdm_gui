@@ -30,7 +30,7 @@ from inp import inp_write_lines_to_file
 from inp import inp_load_file
 from debug import debug_mode
 from scan_item import scan_item_add
-
+from mesh_dump_ctl import mesh_dump_ctl
 (
   COLUMN_LAYER,
   COLUMN_THICKNES
@@ -317,7 +317,13 @@ class electrical_mesh_editor(gtk.VBox):
 			vbox_mesh.pack_start(hbox, False, False, 0)
 
 		frame.add(vbox_mesh)
+
 		self.pack_start(frame, True, True, 0)
+
+		self.mesh_dump_ctl=mesh_dump_ctl()
+		self.mesh_dump_ctl.init()
+		self.mesh_dump_ctl.show()
+		self.pack_start(self.mesh_dump_ctl, True, True, 0)
 
 		self.show_all()
 

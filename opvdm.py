@@ -501,7 +501,7 @@ class opvdm_main_window(gobject.GObject):
 
 	def callback_examine(self, widget, data=None):
 		mycmp=cmp_class()
-		ret=mycmp.init(os.getcwd(),get_exe_command())
+		ret=mycmp.init()
 		if ret==False:
 			md = gtk.MessageDialog(None, gtk.DIALOG_DESTROY_WITH_PARENT, gtk.MESSAGE_WARNING,  gtk.BUTTONS_CLOSE, "Re-run the simulation with 'dump all slices' set to one to use this tool.")
         		md.run()
