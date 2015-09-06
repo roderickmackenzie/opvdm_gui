@@ -427,13 +427,17 @@ class tab_time_mesh(gtk.Window):
 
 		self.statusbar.push(0, str(len(self.time))+" mesh points")
 
-		a = open("time_mesh.inp", "w")
-		a.write(str(len(self.time))+"\n")
+		lines=[]
+		
+		lines.append(str(len(self.time)))
 		for i in range(0,len(self.time)):
+			lines.append(str(self.time[i])+" "+str(self.laser[i])+" "+str(self.sun[i])+" "+str(self.voltage[i])+" "+str(self.fs_laser[i]))
+		lines.append("#ver")
+		lines.append("1.0")
+		lines.append("#end")
 
-			a.write(str(self.time[i])+" "+str(self.laser[i])+" "+str(self.sun[i])+" "+str(self.voltage[i])+" "+str(self.fs_laser[i])+"\n")
+		inp_write_lines_to_file("time_mesh.inp",lines)
 
-		a.close()
 	def init(self):
 		self.fig = Figure(figsize=(5,4), dpi=100)
 		self.ax1=None
