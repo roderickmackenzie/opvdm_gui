@@ -136,8 +136,8 @@ class cmp_class(gtk.Window):
 		zero_frame=[]
 
 		title=self.lines[value].split()
-
-		self.plot.plot_title="Voltage="+title[0]+" time="+time_with_units(float(title[1]))
+		mul,unit=time_with_units(float(title[1]))
+		self.plot.plot_title="Voltage="+title[0]+" time="+str(float(title[1])*mul)+" "+unit
 
 		for i in range(0,len(files)):
 			self.file_names.append(os.path.join(path0,files[i]+"_"+str(int(value))+".dat"))

@@ -301,7 +301,7 @@ class scan_vbox(gtk.VBox):
 				self.myserver.add_job(commands[i])
 				print "Adding job"+commands[i]
 
-			self.myserver.start(get_exe_command())
+			self.myserver.start()
 
 
 		else:

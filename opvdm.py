@@ -129,18 +129,14 @@ class opvdm_main_window(gobject.GObject):
 
 	def gui_sim_start(self):
 		self.notebook_active_page=self.notebook.get_current_page()
-
 		self.notebook.goto_page("Terminal")
-
 		self.spin.start()
-		self.statusicon.set_from_stock(gtk.STOCK_NO) 
 
 	def gui_sim_stop(self,text):
-
 		message=""
 		self.notebook.set_current_page(self.notebook_active_page)
 		self.spin.stop()
-		self.statusicon.set_from_stock(gtk.STOCK_YES)
+
 		if os.path.isfile("signal_stop.dat")==True:
 			f = open('signal_stop.dat')
 			lines = f.readlines()
@@ -208,7 +204,7 @@ class opvdm_main_window(gobject.GObject):
 
 		self.my_server.clear_cache()
 		self.my_server.add_job(os.getcwd())
-		self.my_server.start(get_exe_command())
+		self.my_server.start()
 	
 	def callback_start_cluster_server(self, widget, data=None):
 		self.goto_page("Terminal")
@@ -364,8 +360,8 @@ class opvdm_main_window(gobject.GObject):
 			self.plot_select.set_sensitive(True)
 			self.undo.set_sensitive(True)
 			self.save_sim.set_sensitive(True)
-			if debug_mode()==True:
-				self.time_mesh_button.set_sensitive(True)
+			self.time_mesh_button.set_sensitive(True)
+
 		else:
 			self.play.set_sensitive(False)
 			self.stop.set_sensitive(False)
@@ -623,12 +619,13 @@ class opvdm_main_window(gobject.GObject):
 
 		self.my_server=server()
 		self.my_server.init(os.getcwd())
+		self.my_server.statusicon.connect('popup-menu', self.on_status_icon_right_click)
 		self.my_server.setup_gui(self.gui_sim_start,self.gui_sim_stop)
 
 		if running_on_linux()==True:
 			DBusGMainLoop(set_as_default=True)
 			self.bus = dbus.SessionBus()
-			self.bus.add_match_string_non_blocking("type='signal',interface='org.my.test'")
+			self.bus.add_match_string_non_blocking("type='signal',interface='org.my.opvdm'")
 			self.bus.add_message_filter(self.adbus)
 
 		else:
@@ -641,11 +638,6 @@ class opvdm_main_window(gobject.GObject):
 		splash.init()
 		self.undo_list=undo_list_class()
 		self.undo_list.init()
-		self.statusicon = gtk.StatusIcon()
-		self.statusicon.set_from_stock(gtk.STOCK_YES) 
-		#self.statusicon.connect("popup-menu", self.right_click_event)
-		self.statusicon.set_tooltip("opvdm")
-		self.statusicon.connect('popup-menu', self.on_status_icon_right_click)
 
 
 		self.time_mesh=tab_time_mesh()
@@ -860,8 +852,6 @@ class opvdm_main_window(gobject.GObject):
 		self.tooltips.set_tip(self.time_mesh_button, "Edit the time mesh")
 		self.time_mesh_button.connect("clicked", self.callback_edit_time_mesh)
 		toolbar.insert(self.time_mesh_button, pos)
-		if debug_mode()==False:
-			self.time_mesh_button.set_sensitive(False)
 		pos=pos+1
 
 

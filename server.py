@@ -43,6 +43,7 @@ import subprocess
 from util import gui_print_path
 from progress import progress_class
 from copying import copying
+from cal_path import get_exe_command
 
 def server_find_simulations_to_run(commands,search_path):
 	for root, dirs, files in os.walk(search_path):
@@ -57,6 +58,12 @@ class server:
 		self.thread_data=[""]
 		self.enable_gui=False
 
+		self.statusicon = gtk.StatusIcon()
+		self.statusicon.set_from_stock(gtk.STOCK_YES) 
+		#self.statusicon.connect("popup-menu", self.right_click_event)
+		self.statusicon.set_tooltip("opvdm")
+
+
 	def init(self,sim_dir):
 		self.terminate_on_finish=False
 		self.mylock=False
@@ -68,7 +75,8 @@ class server:
 		self.sim_dir=sim_dir
 		self.cluster=str2bool(inp_get_token_value("server.inp","#cluster"))
 		self.server_ip=inp_get_token_value("server.inp","#server_ip");
-		self.errors=""
+		self.error_messages=[]
+		self.finished_jobs=[]
 
 	def start_threads(self):
 		if self.cluster==True:
@@ -96,20 +104,26 @@ class server:
 		self.terminal=terminal
 
 	def gui_sim_start(self):
-		self.errors=""
 		self.progress_window.start()
-
+		self.statusicon.set_from_stock(gtk.STOCK_NO)
 		self.extern_gui_sim_start()
 
 	def gui_sim_stop(self):
 		self.progress_window.stop()
+		self.statusicon.set_from_stock(gtk.STOCK_YES)
 		self.extern_gui_sim_stop("Finished simulation")
-		if self.errors!="":
-			message = gtk.MessageDialog(type=gtk.MESSAGE_ERROR, buttons=gtk.BUTTONS_OK)
-			message.set_markup(self.errors)
-			message.run()
-			message.destroy()
-		self.errors=""
+
+		if len(self.error_messages)!=0:
+			text='\n'.join(self.error_messages)
+			if (text.count('License')==0):
+				message = gtk.MessageDialog(type=gtk.MESSAGE_ERROR, buttons=gtk.BUTTONS_OK)
+				message.set_markup(text)
+				message.run()
+				message.destroy()
+			else:
+				c=copying()
+				c.wow(get_exe_command())
+
 
 	def setup_gui(self,extern_gui_sim_start,extern_gui_sim_stop):
 		self.enable_gui=True
@@ -150,12 +164,13 @@ class server:
 				print "I have finished waiting"
 
 
-	def start(self,exe_command):
+	def start(self):
+		self.finished_jobs=[]
+		self.error_messages=[]
 		if self.enable_gui==True:
 			self.progress_window.show()
 			self.gui_sim_start()
 		#self.statusicon.set_from_stock(gtk.STOCK_NO) 
-		self.exe_command=exe_command
 		self.running=True
 		self.run_jobs()
 
@@ -193,7 +208,7 @@ class server:
 				self.mylock=False
 			if data.startswith("node_error"):
 				command=data.split("#")
-				self.errors=self.errors+"Node error!!! "+command[1]
+				self.error_messages.append("Node error!!! "+command[1])
 				#self.mylock.set()
 			if data.startswith("load"):
 				if data.count("#")>1:
@@ -231,7 +246,7 @@ class server:
 			s.sendto("killall", (self.server_ip, port))
 			s.close()
 		else:
-			exe_name=os.path.basename(self.exe_command)
+			exe_name=os.path.basename(get_exe_command())
 			cmd = 'killall '+exe_name
 			ret= os.system(cmd)
 
@@ -282,7 +297,7 @@ class server:
 			self.wait_lock()
 
 			self.mylock=True
-			s.sendto("set_exe#"+self.exe_command, (self.server_ip, port))
+			s.sendto("set_exe#"+get_exe_command(), (self.server_ip, port))
 			self.wait_lock()
 
 			#self.mylock.clear()
@@ -304,7 +319,7 @@ class server:
 						self.jobs_running=self.jobs_running+1
 						if running_on_linux()==True:
 							cmd="cd "+self.jobs[i]+";"
-							cmd=cmd+self.exe_command+" --lock "+"lock"+str(i)+" &\n"							
+							cmd=cmd+get_exe_command()+" --lock "+"lock"+str(i)+" &\n"							
 							print "command="+cmd
 							if self.enable_gui==True:
 								self.terminal.feed_child(cmd)
@@ -313,7 +328,7 @@ class server:
 								os.system(cmd)
 							
 						else:
-							cmd=self.exe_command+" --lock "+"lock"+str(i)+" &\n"
+							cmd=get_exe_command()+" --lock "+"lock"+str(i)+" &\n"
 							print cmd,self.jobs[i]
 							subprocess.Popen(cmd,cwd=self.jobs[i])
 							#os.system(cmd)
@@ -338,8 +353,7 @@ class server:
 		print "I have shut down the server."
 
 
-	def simple_run(self,exe_command):
-		self.exe_command=exe_command
+	def simple_run(self):
 		ls=os.listdir(self.sim_dir)
 		for i in range(0, len(ls)):
 			if ls[i][:4]=="lock" and ls[i][-4:]==".dat":
@@ -362,57 +376,36 @@ class server:
 			if self.jobs_run==len(self.jobs):
 				break
 
-	def callback_dbus(self,data):
-		if data.startswith("lock"):
-			#print "I want to start a new job because",data
-			if str(data)>4:
-				test=data[:4]
-				if test=="lock":
-					rest=data[4:]
-					self.jobs_run=self.jobs_run+1
-					self.jobs_running=self.jobs_running-1
-					#print "here",self.progress_window,self.jobs_run,self.jobs_running
-					#print "I am going to see if I should launch a job"
-					#,float(self.jobs_run)/float(len(self.jobs))
-					self.progress_window.set_fraction(float(self.jobs_run)/float(len(self.jobs)))
-					self.run_jobs()
-					if (self.jobs_run==len(self.jobs)):
-						self.stop()
+	def callback_dbus(self,data_in):
+		if data_in.startswith("hex"):
+			data_in=data_in[3:]
+			data=data_in.decode("hex")
 
-		elif (data=="pulse"):
-			if len(self.jobs)==1:
-				splitup=data.split(":")
-				if len(splitup)>1:
-					text=data.split(":")[1]
-					self.progress_window.set_text(text)
-				self.progress_window.progress.set_pulse_step(0.01)
-				self.progress_window.pulse()
-		elif (data=="error"):
-			self.jobs_run=self.jobs_run+1
-			self.jobs_running=self.jobs_running-1
-			error_messsage=data.split(":")[1]
-			if (data.count('License')==0):
-				message = gtk.MessageDialog(type=gtk.MESSAGE_ERROR, buttons=gtk.BUTTONS_OK)
-				message.set_markup(error_messsage)
-				message.run()
-				message.destroy()
-			else:
-				c=copying()
-				c.wow(self.exe_command)			
+			if data.startswith("lock"):
+				if str(data)>4:
+					test=data[:4]
+					if test=="lock":
+						if self.finished_jobs.count(data)==0:
+							self.finished_jobs.append(data)
 
-	def callback(self,object):
-		file_name=self.thread_data[0]
-		if str(file_name)>4:
-			test=file_name[:4]
-			if test=="lock":
-				rest=file_name[4:]
-				finished=int(os.path.splitext(rest)[0])
-				#print self.jobs[finished]
-				#self.print_jobs()
-				self.jobs_run=self.jobs_run+1
-				self.jobs_running=self.jobs_running-1
-				self.progress_window.set_fraction(float(self.jobs_run)/float(len(self.jobs)))
-				self.run_jobs()
-				if (self.jobs_run==len(self.jobs)):
-					self.stop()
+							rest=data[4:]
+							self.jobs_run=self.jobs_run+1
+							self.jobs_running=self.jobs_running-1
+							self.progress_window.set_fraction(float(self.jobs_run)/float(len(self.jobs)))
+							self.run_jobs()
+							if (self.jobs_run==len(self.jobs)):
+								self.stop()
+
+			elif (data=="pulse"):
+				if len(self.jobs)==1:
+					splitup=data.split(":")
+					if len(splitup)>1:
+						text=data.split(":")[1]
+						self.progress_window.set_text(text)
+					self.progress_window.progress.set_pulse_step(0.01)
+					self.progress_window.pulse()
+			elif data.startswith("error")==True:
+				error_messsage=data.split(":")[1]
+				self.error_messages.append(error_messsage)		
+
 

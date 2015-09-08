@@ -41,15 +41,17 @@ import matplotlib.mlab as mlab
 from debug import debug_mode
 from inp import inp_write_lines_to_file
 import webbrowser
+from util import time_with_units
 
 (
 SEG_LENGTH,
 SEG_DT,
-SEG_VOLTAGE,
+SEG_VOLTAGE_START,
+SEG_VOLTAGE_STOP,
 SEG_MUL,
 SEG_SUN,
 SEG_LASER
-) = range(6)
+) = range(7)
 
 mesh_articles = []
 
@@ -78,8 +80,10 @@ class tab_time_mesh(gtk.Window):
 			out_text.append(str(line[SEG_LENGTH]))
 			out_text.append("#time_segment"+str(i)+"_dt")
 			out_text.append(str(line[SEG_DT]))
-			out_text.append("#time_segment"+str(i)+"_voltage")
-			out_text.append(str(line[SEG_VOLTAGE]))
+			out_text.append("#time_segment"+str(i)+"_voltage_start")
+			out_text.append(str(line[SEG_VOLTAGE_START]))
+			out_text.append("#time_segment"+str(i)+"_voltage_stop")
+			out_text.append(str(line[SEG_VOLTAGE_STOP]))
 			out_text.append("#time_segment"+str(i)+"_mul")
 			out_text.append(str(line[SEG_MUL]))
 			out_text.append("#time_segment"+str(i)+"_sun")
@@ -174,8 +178,15 @@ class tab_time_mesh(gtk.Window):
 		self.fig.canvas.draw()
 		self.save_data()
 
-	def on_cell_edited_voltage(self, cell, path, new_text, model):
-		model[path][SEG_VOLTAGE] = new_text
+	def on_cell_edited_voltage_start(self, cell, path, new_text, model):
+		model[path][SEG_VOLTAGE_START] = new_text
+		self.update_mesh()
+		self.draw_graph()
+		self.fig.canvas.draw()
+		self.save_data()
+
+	def on_cell_edited_voltage_stop(self, cell, path, new_text, model):
+		model[path][SEG_VOLTAGE_STOP] = new_text
 		self.update_mesh()
 		self.draw_graph()
 		self.fig.canvas.draw()
@@ -208,7 +219,10 @@ class tab_time_mesh(gtk.Window):
 	def draw_graph(self):
 
 		n=0
-		
+		mul,unit=time_with_units(float(self.time[len(self.time)-1]-self.time[0]))
+		time=[]
+		for i in range(0,len(self.time)):
+			time.append(self.time[i]*mul)
 		self.fig.clf()
 		self.fig.subplots_adjust(bottom=0.2)
 		self.fig.subplots_adjust(left=0.1)
@@ -220,19 +234,20 @@ class tab_time_mesh(gtk.Window):
 		color =['r','g','b','y','o','r','g','b','y','o']
 
 		self.ax1.set_ylabel('Voltage (Volts)')
-		voltage, = self.ax1.plot(self.time,self.voltage, 'ro-', linewidth=3 ,alpha=1.0)
-		self.ax2 = self.ax1.twinx()
+		voltage, = self.ax1.plot(time,self.voltage, 'ro-', linewidth=3 ,alpha=1.0)
+		self.ax1.set_xlabel('Time ('+unit+')')
 
 		if debug_mode()==True:
+			self.ax2 = self.ax1.twinx()
 			self.ax2.set_ylabel('Magnitude (au)')
 			#ax2.set_ylabel('Energy (eV)')
-			self.ax2.set_xlabel('Time (s)')
-			sun, = self.ax2.plot(self.time,self.sun, 'go-', linewidth=3 ,alpha=1.0)
-			laser, = self.ax2.plot(self.time,self.laser, 'bo-', linewidth=3 ,alpha=1.0)
+
+			sun, = self.ax2.plot(time,self.sun, 'go-', linewidth=3 ,alpha=1.0)
+			laser, = self.ax2.plot(time,self.laser, 'bo-', linewidth=3 ,alpha=1.0)
 
 			if self.fs_laser_time!=-1:
 				if len(self.time)>2:
-					dt=(self.time[len(self.time)-1]-self.time[0])/100
+					dt=(self.time[len(time)-1]-self.time[0])/100
 					start=self.fs_laser_time-dt*5
 					stop=self.fs_laser_time+dt*5
 					x = linspace(start,stop,100)
@@ -288,10 +303,10 @@ class tab_time_mesh(gtk.Window):
 		webbrowser.open('http://www.opvdm.com/man/index.html')
 
 	def create_model(self):
-		store = gtk.ListStore(str, str, str, str, str, str)
+		store = gtk.ListStore(str, str, str, str, str, str, str)
 
 		for line in self.list:
-			store.append([str(line[SEG_LENGTH]), str(line[SEG_DT]), str(line[SEG_VOLTAGE]), str(line[SEG_MUL]), str(line[SEG_SUN]), str(line[SEG_LASER])])
+			store.append([str(line[SEG_LENGTH]), str(line[SEG_DT]), str(line[SEG_VOLTAGE_START]), str(line[SEG_VOLTAGE_STOP]), str(line[SEG_MUL]), str(line[SEG_SUN]), str(line[SEG_LASER])])
 
 		return store
 
@@ -313,10 +328,17 @@ class tab_time_mesh(gtk.Window):
 		treeview.append_column(column)
 
 		renderer = gtk.CellRendererText()
-		renderer.connect("edited", self.on_cell_edited_voltage, model)
-		column = gtk.TreeViewColumn("Voltage", renderer, text=SEG_VOLTAGE)
+		renderer.connect("edited", self.on_cell_edited_voltage_start, model)
+		column = gtk.TreeViewColumn("Start Voltage", renderer, text=SEG_VOLTAGE_START)
 		renderer.set_property('editable', True)
-		column.set_sort_column_id(SEG_VOLTAGE)
+		column.set_sort_column_id(SEG_VOLTAGE_START)
+		treeview.append_column(column)
+
+		renderer = gtk.CellRendererText()
+		renderer.connect("edited", self.on_cell_edited_voltage_stop, model)
+		column = gtk.TreeViewColumn("Stop Voltage", renderer, text=SEG_VOLTAGE_STOP)
+		renderer.set_property('editable', True)
+		column.set_sort_column_id(SEG_VOLTAGE_STOP)
 		treeview.append_column(column)
 
 		renderer = gtk.CellRendererText()
@@ -369,11 +391,12 @@ class tab_time_mesh(gtk.Window):
 			for i in range(0, self.segments):
 				token,length,pos=inp_read_next_item(lines,pos)
 				token,dt,pos=inp_read_next_item(lines,pos)
-				token,voltage,pos=inp_read_next_item(lines,pos)
+				token,voltage_start,pos=inp_read_next_item(lines,pos)
+				token,voltage_stop,pos=inp_read_next_item(lines,pos)
 				token,mul,pos=inp_read_next_item(lines,pos)
 				token,sun,pos=inp_read_next_item(lines,pos)
 				token,laser,pos=inp_read_next_item(lines,pos)
-				self.list.append((length,dt,voltage,mul,sun,laser))
+				self.list.append((length,dt,voltage_start,voltage_stop,mul,sun,laser))
 
 			print self.list
 		else:
@@ -395,7 +418,8 @@ class tab_time_mesh(gtk.Window):
 		for line in self.store:
 			end_time=pos+float(line[SEG_LENGTH])
 			dt=float(line[SEG_DT])
-			voltage=float(line[SEG_VOLTAGE])
+			voltage_start=float(line[SEG_VOLTAGE_START])
+			voltage_stop=float(line[SEG_VOLTAGE_STOP])
 			mul=float(line[SEG_MUL])
 			sun=float(line[SEG_SUN])
 			laser=float(line[SEG_LASER])
@@ -405,6 +429,8 @@ class tab_time_mesh(gtk.Window):
 				mul=1.0
 
 			if dt!=0.0 and mul!=0.0:
+				voltage=voltage_start
+				dv=(voltage_stop-voltage_start)/(float(line[SEG_LENGTH])/dt)
 				while(pos<end_time):
 					self.time.append(pos)
 					self.laser.append(laser)
@@ -413,6 +439,7 @@ class tab_time_mesh(gtk.Window):
 					#print seg,voltage
 					self.fs_laser.append(0.0)
 					pos=pos+dt
+					voltage=voltage+dv
 
 					if fired==False:
 						if pos>self.fs_laser_time:
@@ -423,7 +450,7 @@ class tab_time_mesh(gtk.Window):
 
 			seg=seg+1
 
-		print self.voltage
+		#print self.voltage
 
 		self.statusbar.push(0, str(len(self.time))+" mesh points")
 

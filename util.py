@@ -263,19 +263,26 @@ def zip_get_data_file(file_name):
 
 def time_with_units(time):
 	ret=str(time)
+	mul=1.0
 	if (time<1000e-15):
-		ret=str(time*1e15)+" fs"
+		ret="fs"
+		mul=1e15
 	elif (time<1000e-12):
-		ret=str(time*1e12)+" ps"
+		ret="ps"
+		mul=1e12
 	elif (time<1000e-9):
-		ret=str(time*1e9)+" ns"
+		ret="ns"
+		mul=1e9
 	elif (time<1000e-6):
-		ret=str(time*1e6)+" us"
+		ret="us"
+		mul=1e6
 	elif (time<1000e-3):
-		ret=str(time*1e3)+" ms"
+		ret="ms"
+		mul=1e3
 	else:
-		ret=str(time)+" s"
-	return ret
+		ret="s"
+		mul=1.0
+	return mul,ret
 
 def fx_with_units(fx):
 	ret=str(fx)
