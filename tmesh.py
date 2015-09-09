@@ -99,7 +99,7 @@ class tab_time_mesh(gtk.Window):
 		inp_write_lines_to_file(os.path.join(os.getcwd(),"time_mesh_config.inp"),out_text)
 
 	def callback_add_section(self, widget, treeview):
-		data=["0.0", "0.0", "0.0", "0.0", "0.0", "0.0"]
+		data=["0.0", "0.0", "0.0", "0.0", "0.0", "0.0", "0.0"]
 		selection = treeview.get_selection()
 		model, iter = selection.get_selected()
 

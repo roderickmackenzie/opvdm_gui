@@ -409,9 +409,10 @@ def replace_file_in_zip_archive(zip_file_name,target,lines):
 
 	source.close()
 
-	build=""
-	for i in range(0,len(lines)):
-		build=build+lines[i]+"\n"
+	build='\n'.join(lines)
+
+	#for i in range(0,len(lines)):
+	#	build=build+lines[i]+"\n"
 
 	zf.writestr(target, build)
 

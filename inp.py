@@ -78,9 +78,11 @@ def inp_update_token_value(file_path, token, replace,line_number):
 
 	if os.path.isfile(file_path):
 		fh, abs_path = mkstemp()
-		dump=""
-		for item in lines:
-			dump=dump+item+"\n"
+
+		dump='\n'.join(lines)
+
+		#for item in lines:
+		#	dump=dump+item+"\n"
 
 		dump=dump.rstrip("\n")
 		f=open(abs_path, mode='wb')
