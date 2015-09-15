@@ -377,7 +377,8 @@ class tab_time_mesh(gtk.Window):
 
 		ret=inp_load_file(lines,file_name)
 		if ret==True:
-			#print "lines",lines
+			print "lines",lines
+			print os.getcwd()
 			pos=0
 			token,value,pos=inp_read_next_item(lines,pos)
 			self.start_time=float(value)

@@ -29,7 +29,7 @@ from inp import inp_load_file
 from inp import inp_sum_items
 from inp import inp_search_token_value
 from inp import inp_update_token_value
-
+from util import str2bool
 class mesh_dump_ctl(gtk.VBox):
 
 	def scroll(self, adj):
@@ -51,7 +51,7 @@ class mesh_dump_ctl(gtk.VBox):
 			total=inp_sum_items(lines, "#mesh_layer_points")
 
 		if inp_load_file(lines,"dump.inp")==True:
-			self.pos=int(inp_search_token_value(lines, "#dump_energy_slice_pos"))
+			self.pos=str2bool(inp_search_token_value(lines, "#dump_energy_slice_pos"))
 
 
 		label=gtk.Label("Energy slice dump")
@@ -71,7 +71,7 @@ class mesh_dump_ctl(gtk.VBox):
 
 		self.enable=False
 		if inp_load_file(lines,"dump.inp")==True:
-			self.enable=bool(int(inp_search_token_value(lines, "#dump_energy_slice_switch")))
+			self.enable=str2bool(inp_search_token_value(lines, "#dump_energy_slice_switch"))
 
 		check.set_active(self.enable)
 		self.vscale.set_sensitive(self.enable)

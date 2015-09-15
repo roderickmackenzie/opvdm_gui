@@ -378,10 +378,10 @@ def get_exe_name():
 			exe_name="opvdm_core"
 		return exe_name
 	else:
-		if os.path.isfile("opvdm.exe")==True:
-			exe_name="opvdm.exe"
+		if os.path.isfile("opvdm_core.exe")==True:
+			exe_name="opvdm_core.exe"
 		else:
-			exe_name="opvdm.exe"
+			exe_name="opvdm_core.exe"
 		return exe_name
 
 def get_orig_inp_file_path():

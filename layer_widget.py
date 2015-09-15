@@ -421,9 +421,6 @@ class layer_widget(gtk.VBox):
 		if self.optics_window==False:
 			self.optics_window=class_optical()
 			self.optics_window.init()
-			if self.optics_window.enabled==True:
-				self.optics_window.wow()
-				self.optics_window.hide()
 
 		if self.optics_window.get_property("visible")==True:
 			self.optics_window.hide()

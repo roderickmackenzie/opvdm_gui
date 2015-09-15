@@ -281,15 +281,6 @@ class opvdm_main_window(gobject.GObject):
 		plot_gen([file_to_load],[],"auto")
 		self.plot_after_run_file=file_to_load
 
-	def callback_plot_fit_erros(self, widget, data=None):
-		find_fit_error()	
-		load_graph("./plot/fit_errors.plot")
-
-	def callback_plot_converge(self, widget, data=None):
-		load_graph("./plot/converge.plot")
-
-	def callback_plot_matrix(self, widget, data=None):
-		plot_gen(["matrix.dat"],[],"")
 
 	def callback_import(self, widget, data=None):
 		dialog = gtk.FileChooserDialog("Import..",
@@ -314,7 +305,7 @@ class opvdm_main_window(gobject.GObject):
 
 
 	def callback_new(self, widget, data=None):
-		dialog = gtk.FileChooserDialog("Make new opvdm simulation dir..",
+		dialog = gtk.FileChooserDialog("Make new opvdm simulation",
                                None,
                                gtk.FILE_CHOOSER_ACTION_OPEN,
                                (gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL,
@@ -406,22 +397,23 @@ class opvdm_main_window(gobject.GObject):
 		myitem.set_active(self.config.get_value("#plot_after_simulation",False))
 
 	def callback_open(self, widget, data=None):
-		dialog = gtk.FileChooserDialog("Open..",
+		dialog = gtk.FileChooserDialog("Open an existing opvdm simulation",
                                None,
                                gtk.FILE_CHOOSER_ACTION_OPEN,
                                (gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL,
                                 gtk.STOCK_OPEN, gtk.RESPONSE_OK))
 		dialog.set_default_response(gtk.RESPONSE_OK)
-		dialog.set_action(gtk.FILE_CHOOSER_ACTION_SELECT_FOLDER)
+		#dialog.set_action(gtk.FILE_CHOOSER_ACTION_SELECT_FILE)
 
 		filter = gtk.FileFilter()
-		filter.set_name("All files")
-		filter.add_pattern("*")
+		filter.set_name("opvdm")
+		filter.add_pattern("*.opvdm")
 		dialog.add_filter(filter)
 
 		response = dialog.run()
 		if response == gtk.RESPONSE_OK:
-			self.change_dir_and_refresh_interface(dialog.get_filename())
+			new_path=os.path.dirname(dialog.get_filename())
+			self.change_dir_and_refresh_interface(new_path)
 
 		elif response == gtk.RESPONSE_CANCEL:
 		    print 'Closed, no files selected'
@@ -540,8 +532,9 @@ class opvdm_main_window(gobject.GObject):
 		item_factory.create_items(self.menu_items)
 
 
-		if os.path.exists("./server.inp")==False:
-			item_factory.delete_item("/Plots/Fit")
+		if debug_mode()==False:
+			item_factory.delete_item("/Advanced")
+			item_factory.delete_item("/Simulate/Start cluster server")
 
 
 		window.add_accel_group(accel_group)
@@ -646,11 +639,6 @@ class opvdm_main_window(gobject.GObject):
 		self.qe=qe_window()
 		self.qe.init()
 
-		self.exe_dir= os.path.dirname(os.path.abspath(__file__))
-
-		#print "opvdm exe in "+self.exe_dir
-		#print "current directory "+os.getcwd()
-
 		self.window = gtk.Window(gtk.WINDOW_TOPLEVEL)
 		self.window.set_border_width(10)
 		self.window.set_title("Organic Photovoltaic Device Model (www.opvdm.com)")
@@ -670,10 +658,10 @@ class opvdm_main_window(gobject.GObject):
 
 		self.menu_items = (
 		    ( "/_File",         None,         None, 0, "<Branch>" ),
-			("/File/_New", "<control>N", self.callback_new, 0, "<StockItem>", "gtk-new" ),
-			("/File/_Open", "<control>O", self.callback_open, 0, "<StockItem>", "gtk-open" ),
-		    ( "/File/_Save...",     None, self.callback_export, 0, "<StockItem>", "gtk-save" ),
-		    ( "/File/Import",     None, self.callback_import, 0 , "<StockItem>", "gtk-harddisk"),
+			("/File/_New simulation", "<control>N", self.callback_new, 0, "<StockItem>", "gtk-new" ),
+			("/File/_Open simulation", "<control>O", self.callback_open, 0, "<StockItem>", "gtk-open" ),
+		    ( "/File/_Export data",     None, self.callback_export, 0, "<StockItem>", "gtk-save" ),
+		    ( "/File/Import data",     None, self.callback_import, 0 , "<StockItem>", "gtk-harddisk"),
 		    ( "/File/Quit",     "<control>Q", gtk.main_quit, 0, "<StockItem>", "gtk-quit" ),
 		    ( "/_Simulate",      None,         None, 0, "<Branch>" ),
 		    ( "/Simulate/Run",  None,         self.callback_simulate, 0, "<StockItem>", "gtk-media-play" ),
@@ -681,13 +669,7 @@ class opvdm_main_window(gobject.GObject):
 		    ( "/Simulate/Start cluster server",  None,         self.callback_start_cluster_server , 0, None ),
 		    ( "/_View",      None,         None, 0, "<Branch>" ),
 		    ( "/_Plots",      None,         None, 0, "<Branch>" ),
-		    ( "/Plots/Open plot file",  None,         self.callback_plot_select, 0, "<StockItem>", "gtk-open"),
-		    ( "/_Plots/",     None, None, 0, "<Separator>" ),
-		    ( "/Plots/Numerics",  None,         None, 0, "<Branch>" ),
-		    ( "/Plots/Numerics/Converge",  None,         self.callback_plot_converge, 0, None ),
-		    ( "/Plots/Numerics/Matrix",  None,         self.callback_plot_matrix, 0, None ),
-		    ( "/Plots/Fit",      None,         None, 0, "<Branch>" ),
-		    ( "/Plots/Fit/Fit errors",  None,         self.callback_plot_fit_erros, 0, None ),
+		    ( "/Plots/Plot simulation result",  None,         self.callback_plot_select, 0, "<StockItem>", "gtk-open"),
 		    ( "/_Plots/",     None, None, 0, "<Separator>" ),
 		    ( "/_Help",         None,         None, 0, "<LastBranch>" ),
 			( "/_Help/Help Index",   None,         self.callback_help, 0, "<StockItem>", "gtk-help"  ),

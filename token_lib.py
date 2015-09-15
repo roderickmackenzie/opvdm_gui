@@ -68,7 +68,6 @@ class tokens:
 
 	lib.append(my_data("#simplephotondensity","m<sup>-2</sup>s<sup>-1</sup>","Photon density",["text"],"e",1.0))
 	lib.append(my_data("#simple_alpha","m<sup>-1</sup>","Absorption of material",["text"],"e",1.0))
-	lib.append(my_data("#plot","1/0","Plot bands etc.. ",["1","0"],"e",1.0))
 	lib.append(my_data("#celiv_laser_eff","1/0","#celiv_laser_eff",["text"],"e",1.0))
 	lib.append(my_data("#doping","m<sup>-3</sup>","Doping",["text"],"e",1.0))
 	lib.append(my_data("#simmode","au","#simmode",["text"],"e",1.0))
@@ -106,10 +105,6 @@ class tokens:
 	lib.append(my_data("#invert_current","true/false","Invert output",["text"],"e",1.0))
 	lib.append(my_data("#lr_bias","left/right","Bias left or right",["left","right"],"s",1.0))
 	lib.append(my_data("#otherlayers","m","Other layers",["text"],"e",1.0))
-	lib.append(my_data("#dump_slices","1/0","Dump slices",["1","0"],"e",1.0))
-	lib.append(my_data("#dump_dynamic","1/0","Dump dynamic",["1","0"],"e",1.0))
-	lib.append(my_data("#dump_zip_files","1/0","Dump zip files",["1","0"],"e",1.0))
-	lib.append(my_data("#dump_write_out_band_structure","1/0","Write out band structure",["1","0"],"e",1.0))
 
 	lib.append(my_data("#tofstop","s","ToF stop time",["text"],"e",1.0))
 	lib.append(my_data("#tof_cap_escape_fx","s<sup>-1</sup>","Capture to escape frequency",["text"],"e",1.0))
@@ -152,8 +147,7 @@ class tokens:
 	lib.append(my_data("#Dphotoneff","0-1","Photon efficiency",["text"],"e",1.0))
 	lib.append(my_data("#jv_step_mul","0-2.0","JV voltage step multiplyer",["text"],"e",1.0))
 	lib.append(my_data("#jv_max_j","A m^{-2}","Maximum current density",["text"],"e",1.0))
-	lib.append(my_data("#dump_slices_by_time","1/0","dump slices by time",["1","0"],"e",1.0))
-	lib.append(my_data("#dump_1d_slices","1/0","Dump 1D slices",["1","0"],"e",1.0))
+
 	lib.append(my_data("#voc","V","V<sub>oc</sub>",["text"],"e",1.0))
 
 	lib.append(my_data("#imps_r","Amps","Re(i)",["text"],"e",1.0))
@@ -211,7 +205,6 @@ class tokens:
 	lib.append(my_data("#homodelstop","","",["text"],"e",1.0))
 	lib.append(my_data("#gaus_mull","","",["text"],"e",1.0))
 	lib.append(my_data("#Esteps","","",["text"],"e",1.0))
-	lib.append(my_data("#dump_band_structure","","",["text"],"e",1.0))
 
 	lib.append(my_data("#pulse_voc_dt","s","dt",["text"],"e",1.0))
 	lib.append(my_data("#pulse_voc_dt_mul","au","dt multiplier",["text"],"e",1.0))
@@ -248,21 +241,10 @@ class tokens:
 	lib.append(my_data("#jv_light_efficiency","","",["text"],"e",1.0))
 	lib.append(my_data("#light_model","","",["text"],"e",1.0))
 	lib.append(my_data("#NDfilter","","",["text"],"e",1.0))
-	lib.append(my_data("#newton_dump","1/0","Dump from newton solver",["1","0"],"e",1.0))
 	lib.append(my_data("#plottime","","",["text"],"e",1.0))
 	lib.append(my_data("#startstop","","",["text"],"e",1.0))
 	lib.append(my_data("#dumpitdos","","",["text"],"e",1.0))
 	lib.append(my_data("#plotfile","","",["text"],"e",1.0))
-	lib.append(my_data("#dump_iodump","","",["text"],"e",1.0))
-	lib.append(my_data("#dump_movie","","",["text"],"e",1.0))
-	lib.append(my_data("#dump_optics","1/0","Dump optical information",["1","0"],"e",1.0))
-	lib.append(my_data("#dump_optics_verbose","","",["text"],"e",1.0))
-	lib.append(my_data("#dump_print_newtonerror","1/0","Print newton error",["1","0"],"e",1.0))
-	lib.append(my_data("#dump_print_converge","1/0","Print solver convergence",["1","0"],"e",1.0))
-	lib.append(my_data("#dump_write_converge","1/0","Write newton solver convergence to disk",["1","0"],"e",1.0))
-	lib.append(my_data("#dump_print_pos_error","1/0","Print poisson solver convergence",["1","0"],"e",1.0))
-	lib.append(my_data("#dump_pl","1/0","Dump PL spectra",["1","0"],"e",1.0))
-	lib.append(my_data("#dump_norm_time_to_one","1/0","Normalize output x-time to one",["1","0"],"e",1.0))
 
 
 	lib.append(my_data("#celiv_dt","","",["text"],"e",1.0))
@@ -389,6 +371,28 @@ class tokens:
 	lib.append(my_data("#pulse_laser_power","Joules","Laser energy",["text"],"e",1.0))
 
 	lib.append(my_data("#flip_field","au","Filp the opticl field",["text"],["1","0"],1.0))
+
+
+	lib.append(my_data("#newton_dump","True/False","Dump from newton solver",["true","false"],"e",1.0))
+	lib.append(my_data("#plot","True/False","Plot bands etc.. ",["true","false"],"e",1.0))
+	lib.append(my_data("#dump_band_structure","","",["text"],"e",1.0))
+	lib.append(my_data("#dump_slices_by_time","True/False","dump slices by time",["true","false"],"e",1.0))
+	lib.append(my_data("#dump_1d_slices","True/False","Dump 1D slices",["true","false"],"e",1.0))
+	lib.append(my_data("#dump_slices","True/False","Dump slices",["true","false"],"e",1.0))
+	lib.append(my_data("#dump_dynamic","True/False","Dump dynamic",["true","false"],"e",1.0))
+	lib.append(my_data("#dump_zip_files","True/False","Dump zip files",["true","false"],"e",1.0))
+	lib.append(my_data("#dump_write_out_band_structure","True/False","Write out band structure",["true","false"],"e",1.0))
+	lib.append(my_data("#dump_iodump","","",["text"],"e",1.0))
+	lib.append(my_data("#dump_movie","","",["text"],"e",1.0))
+	lib.append(my_data("#dump_optics","True/False","Dump optical information",["true","false"],"e",1.0))
+	lib.append(my_data("#dump_optics_verbose","","",["text"],"e",1.0))
+	lib.append(my_data("#dump_print_newtonerror","True/False","Print newton error",["true","false"],"e",1.0))
+	lib.append(my_data("#dump_print_converge","True/False","Print solver convergence",["true","false"],"e",1.0))
+	lib.append(my_data("#dump_write_converge","True/False","Write newton solver convergence to disk",["true","false"],"e",1.0))
+	lib.append(my_data("#dump_print_pos_error","True/False","Print poisson solver convergence",["true","false"],"e",1.0))
+	lib.append(my_data("#dump_pl","True/False","Dump PL spectra",["true","false"],"e",1.0))
+	lib.append(my_data("#dump_norm_time_to_one","True/False","Normalize output x-time to one",["true","false"],"e",1.0))
+
 
 
 

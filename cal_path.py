@@ -47,10 +47,10 @@ def calculate_paths():
 			exe_command="opvdm_core"
 
 	else:
-		if os.path.isfile("opvdm.exe")==True:
-			exe_command=os.path.join(os.getcwd(), "opvdm.exe")
+		if os.path.isfile("opvdm_core.exe")==True:
+			exe_command=os.path.join(os.getcwd(), "opvdm_core.exe")
 		else:
-			exe_command="c:\\opvdm\\opvdm.exe"
+			exe_command="c:\\opvdm\\opvdm_core.exe"
 
 	global light_dll_path
 	local=os.path.join(os.getcwd(),"light")

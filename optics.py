@@ -50,6 +50,8 @@ from progress import progress_class
 from cal_path import get_phys_path
 from cal_path import get_light_dll_path
 from cal_path import get_exe_command
+from inp import inp_load_file
+
 def find_modes(path):
 	result = []
 	file_names=[]
@@ -124,7 +126,6 @@ class class_optical(gtk.Window):
 	icon_theme = gtk.icon_theme_get_default()
 	
 
-	lines=[]
 	edit_list=[]
 
 	line_number=[]
@@ -134,10 +135,177 @@ class class_optical(gtk.Window):
 	visible=1
 
 	def init(self):
-		self.config_file="optics_epitaxy.inp"
-		self.enabled=os.path.exists(self.config_file)
 		self.progress_window=progress_class()
 		self.progress_window.init()
+
+		self.load()
+		self.articles=[]
+		self.dump_dir=os.path.join(os.getcwd(),"light_dump")
+		find_models()
+		self.main_vbox=gtk.VBox()
+		self.gen_main_menu(self,self.main_vbox)
+		toolbar = gtk.Toolbar()
+
+		toolbar.set_style(gtk.TOOLBAR_ICONS)
+		toolbar.set_size_request(-1, 50)
+		self.main_vbox.pack_start(toolbar, False, False, 0)
+
+
+		#self.optical_mode_file=self.dump_dir+"/light_1d_photons_tot_norm.dat"
+		self.optical_mode_file="light_1d_photons_tot_norm.dat"
+		
+		self.edit_list=[]
+		self.line_number=[]
+
+
+		self.cb = gtk.combo_box_new_text()
+		self.cb.set_wrap_width(5)
+		self.cb_id=self.cb.connect("changed", self.on_changed)
+		self.update_cb()
+
+
+		self.cb_model = gtk.combo_box_new_text()
+		self.cb_model.set_wrap_width(5)
+		self.cb_model.connect("changed", self.on_cb_model_changed)
+		self.update_cb_model()
+
+		self.light_source_model = gtk.combo_box_new_text()
+		self.light_source_model.set_wrap_width(5)
+		self.light_source_model.connect("changed", self.on_light_source_model_changed)
+		self.update_light_source_model()
+		self.light_source_model.show()
+
+		self.fig = Figure(figsize=(5,4), dpi=100)
+		self.canvas = FigureCanvas(self.fig)  # a gtk.DrawingArea
+	
+		cid = self.fig.canvas.mpl_connect('button_press_event', self.onclick)
+		canvas_vbox=gtk.VBox()
+		canvas_vbox.show()
+		self.canvas.figure.patch.set_facecolor('white')
+		self.canvas.set_size_request(600, 400)
+		self.canvas.show()
+
+
+		self.connect('key_press_event', self.on_key_press_event)
+
+		tool_bar_pos=0
+		save = gtk.ToolButton(gtk.STOCK_SAVE)
+		save.connect("clicked", self.callback_save_image)
+		toolbar.insert(save, tool_bar_pos)
+		toolbar.show_all()
+		tool_bar_pos=tool_bar_pos+1
+
+		image = gtk.Image()
+   		image.set_from_file(find_data_file("gui/play.png"))
+		self.play = gtk.ToolButton(image)
+   		#image.set_from_file(self.icon_theme.lookup_icon("media-playback-start", 32, 0).get_filename())
+		refresh = gtk.ToolButton(image)
+		refresh.connect("clicked", self.callback_refresh)
+		toolbar.insert(refresh, tool_bar_pos)
+		toolbar.show_all()
+		tool_bar_pos=tool_bar_pos+1
+
+		ti_light = gtk.ToolItem()
+		lable=gtk.Label("Optical mode:")
+		lable.show()
+		ti_hbox = gtk.HBox(False, 2)
+		ti_hbox.show()
+        
+		ti_hbox.pack_start(lable, False, False, 0)
+		ti_hbox.pack_start(self.cb, False, False, 0)
+		self.cb.show()
+
+		lable=gtk.Label("Optical model:")
+		lable.show()
+	        ti_hbox.pack_start(lable, False, False, 0)
+		ti_hbox.pack_start(self.cb_model, False, False, 0)
+		self.cb_model.show()
+		
+
+		ti_light.add(ti_hbox);
+		toolbar.insert(ti_light, tool_bar_pos)
+		ti_light.show()
+
+		tool_bar_pos=tool_bar_pos+1
+
+		sep = gtk.SeparatorToolItem()
+		sep.set_draw(False)
+		sep.set_expand(False)
+		toolbar.insert(sep, tool_bar_pos)
+		sep.show()
+		tool_bar_pos=tool_bar_pos+1
+
+		lable=gtk.Label("Light source:")
+		lable.show()
+		ti_hbox.pack_start(lable, False, False, 0)
+		ti_hbox.pack_start(self.light_source_model, False, False, 0)
+		self.cb_model.show()
+
+		sep = gtk.SeparatorToolItem()
+		sep.set_draw(False)
+		sep.set_expand(True)
+		toolbar.insert(sep, tool_bar_pos)
+		sep.show()
+		tool_bar_pos=tool_bar_pos+1
+
+		help = gtk.ToolButton(gtk.STOCK_HELP)
+		toolbar.insert(help, tool_bar_pos)
+		help.connect("clicked", self.callback_help)
+		help.show()
+		tool_bar_pos=tool_bar_pos+1
+
+
+		canvas_vbox.pack_start(self.canvas, False, False, 0)
+		self.notebook.append_page(canvas_vbox,gtk.Label("Device configuration") )
+		self.main_vbox.pack_start(self.notebook, False, False, 0)
+
+		optics_config=tab_class()
+		optics_config.show()
+		self.notebook.append_page(optics_config,gtk.Label("Optical setup"))
+		optics_config.visible=True
+		optics_config.init("optics.inp","Config")
+		optics_config.label_name="Optics config"
+		optics_config.file_name="optics.inp"
+
+		#Photon distribution
+		photon_dist=photon_dist_class()
+		photon_dist.show()
+
+##################
+		input_files=[]
+		input_files.append("./light_dump/light_2d_photons.dat")
+		input_files.append("./light_dump/light_2d_photons_asb.dat")
+		input_files.append("./light_dump/reflect.dat")
+
+		plot_labels=[]
+		plot_labels.append("Photon dist.")
+		plot_labels.append("Photon dist ads.")
+		plot_labels.append("Reflection")
+
+		self.plot_widgets=[]
+		self.progress_window.start()
+		for i in range(0,len(input_files)):
+			self.plot_widgets.append(plot_widget())
+			self.plot_widgets[i].init(self)
+			self.plot_widgets[i].set_labels([plot_labels[0]])
+			self.plot_widgets[i].load_data([input_files[i]],os.path.splitext(input_files[i])[0]+".oplot")
+
+			self.plot_widgets[i].do_plot()
+			self.plot_widgets[i].show()
+
+			self.notebook.append_page(self.plot_widgets[i],gtk.Label(plot_labels[i]))
+
+		self.connect("delete-event", self.callback_close) 
+
+		self.add(self.main_vbox)
+		self.set_size_request(850,-1)
+		self.main_vbox.show()
+		self.draw_graph()
+		self.set_icon_from_file(find_data_file("gui/image.jpg"))
+		self.set_title("Optical Model - (www.opvdm.com)")
+		self.set_position(gtk.WIN_POS_CENTER)
+		self.progress_window.stop()
+
 		
 	def onclick(self, event):
 		print 'button=%d, x=%d, y=%d, xdata=%f, ydata=%f'%(
@@ -391,215 +559,36 @@ class class_optical(gtk.Window):
 		webbrowser.open('http://www.opvdm.com/man/index.html')
 
 	def load(self):
-		f = open("optics_epitaxy.inp")
-		self.lines = f.readlines()
-		f.close()
-
-		for i in range(0, len(self.lines)):
-			self.lines[i]=self.lines[i].rstrip()
-
-		pos=0
-		pos=pos+1
-		items=int(self.lines[pos])
-
-		self.edit_list=[]
-		self.line_number=[]
-
-		layer=0
-		self.thick=[]
-		self.material=[]
-		self.device=[]
-
-		for i in range(0, items):
+		lines=[]
+		if inp_load_file(lines,"optics_epitaxy.inp")==True:
+			print lines
+			pos=0
 			pos=pos+1
-			label=self.lines[pos]	#read label
+			items=int(lines[pos])
 
-			pos=pos+1
-			self.thick.append(float(self.lines[pos]))
+			self.edit_list=[]
+			self.line_number=[]
 
-			pos=pos+1
-			self.material.append(self.lines[pos])
+			layer=0
+			self.thick=[]
+			self.material=[]
+			self.device=[]
 
-			pos=pos+1
-			self.device.append(self.lines[pos]) 	#value
+			for i in range(0, items):
+				pos=pos+1
+				label=lines[pos]	#read label
+
+				pos=pos+1
+				self.thick.append(float(lines[pos]))
+
+				pos=pos+1
+				self.material.append(lines[pos])
+
+				pos=pos+1
+				self.device.append(lines[pos]) 	#value
 			
-			layer=layer+1
-
-	def wow(self):
-		self.load()
-		self.articles=[]
-		self.dump_dir=os.path.join(os.getcwd(),"light_dump")
-		find_models()
-		self.main_vbox=gtk.VBox()
-		self.gen_main_menu(self,self.main_vbox)
-		toolbar = gtk.Toolbar()
-
-		toolbar.set_style(gtk.TOOLBAR_ICONS)
-		toolbar.set_size_request(-1, 50)
-		self.main_vbox.pack_start(toolbar, False, False, 0)
-
-
-		#self.optical_mode_file=self.dump_dir+"/light_1d_photons_tot_norm.dat"
-		self.optical_mode_file="light_1d_photons_tot_norm.dat"
-		
-		self.edit_list=[]
-		self.line_number=[]
-
-
-		self.cb = gtk.combo_box_new_text()
-		self.cb.set_wrap_width(5)
-		self.cb_id=self.cb.connect("changed", self.on_changed)
-		self.update_cb()
-
-
-		self.cb_model = gtk.combo_box_new_text()
-		self.cb_model.set_wrap_width(5)
-		self.cb_model.connect("changed", self.on_cb_model_changed)
-		self.update_cb_model()
-
-		self.light_source_model = gtk.combo_box_new_text()
-		self.light_source_model.set_wrap_width(5)
-		self.light_source_model.connect("changed", self.on_light_source_model_changed)
-		self.update_light_source_model()
-		self.light_source_model.show()
-
-		self.fig = Figure(figsize=(5,4), dpi=100)
-		self.canvas = FigureCanvas(self.fig)  # a gtk.DrawingArea
-	
-		cid = self.fig.canvas.mpl_connect('button_press_event', self.onclick)
-		canvas_vbox=gtk.VBox()
-		canvas_vbox.show()
-		self.canvas.figure.patch.set_facecolor('white')
-		self.canvas.set_size_request(600, 400)
-		self.canvas.show()
-
-
-		self.connect('key_press_event', self.on_key_press_event)
-
-		tool_bar_pos=0
-		save = gtk.ToolButton(gtk.STOCK_SAVE)
-		save.connect("clicked", self.callback_save_image)
-		toolbar.insert(save, tool_bar_pos)
-		toolbar.show_all()
-		tool_bar_pos=tool_bar_pos+1
-
-		image = gtk.Image()
-   		image.set_from_file(find_data_file("gui/play.png"))
-		self.play = gtk.ToolButton(image)
-   		#image.set_from_file(self.icon_theme.lookup_icon("media-playback-start", 32, 0).get_filename())
-		refresh = gtk.ToolButton(image)
-		refresh.connect("clicked", self.callback_refresh)
-		toolbar.insert(refresh, tool_bar_pos)
-		toolbar.show_all()
-		tool_bar_pos=tool_bar_pos+1
-
-		ti_light = gtk.ToolItem()
-		lable=gtk.Label("Optical mode:")
-		lable.show()
-		ti_hbox = gtk.HBox(False, 2)
-		ti_hbox.show()
-        
-		ti_hbox.pack_start(lable, False, False, 0)
-		ti_hbox.pack_start(self.cb, False, False, 0)
-		self.cb.show()
-
-		lable=gtk.Label("Optical model:")
-		lable.show()
-	        ti_hbox.pack_start(lable, False, False, 0)
-		ti_hbox.pack_start(self.cb_model, False, False, 0)
-		self.cb_model.show()
-		
-
-		ti_light.add(ti_hbox);
-		toolbar.insert(ti_light, tool_bar_pos)
-		ti_light.show()
-
-		tool_bar_pos=tool_bar_pos+1
-
-		sep = gtk.SeparatorToolItem()
-		sep.set_draw(False)
-		sep.set_expand(False)
-		toolbar.insert(sep, tool_bar_pos)
-		sep.show()
-		tool_bar_pos=tool_bar_pos+1
-
-		lable=gtk.Label("Light source:")
-		lable.show()
-		ti_hbox.pack_start(lable, False, False, 0)
-		ti_hbox.pack_start(self.light_source_model, False, False, 0)
-		self.cb_model.show()
-
-		sep = gtk.SeparatorToolItem()
-		sep.set_draw(False)
-		sep.set_expand(True)
-		toolbar.insert(sep, tool_bar_pos)
-		sep.show()
-		tool_bar_pos=tool_bar_pos+1
-
-		help = gtk.ToolButton(gtk.STOCK_HELP)
-		toolbar.insert(help, tool_bar_pos)
-		help.connect("clicked", self.callback_help)
-		help.show()
-		tool_bar_pos=tool_bar_pos+1
-
-		f = open("optics_epitaxy.inp")
-		self.lines = f.readlines()
-		f.close()
-
-		for i in range(0, len(self.lines)):
-			self.lines[i]=self.lines[i].rstrip()
-
-
-
-		canvas_vbox.pack_start(self.canvas, False, False, 0)
-		self.notebook.append_page(canvas_vbox,gtk.Label("Device configuration") )
-		self.main_vbox.pack_start(self.notebook, False, False, 0)
-
-		optics_config=tab_class()
-		optics_config.show()
-		self.notebook.append_page(optics_config,gtk.Label("Optical setup"))
-		optics_config.visible=True
-		optics_config.init("optics.inp","Config")
-		optics_config.label_name="Optics config"
-		optics_config.file_name="optics.inp"
-
-		#Photon distribution
-		photon_dist=photon_dist_class()
-		photon_dist.show()
-
-##################
-		input_files=[]
-		input_files.append("./light_dump/light_2d_photons.dat")
-		input_files.append("./light_dump/light_2d_photons_asb.dat")
-		input_files.append("./light_dump/reflect.dat")
-
-		plot_labels=[]
-		plot_labels.append("Photon dist.")
-		plot_labels.append("Photon dist ads.")
-		plot_labels.append("Reflection")
-
-		self.plot_widgets=[]
-		self.progress_window.start()
-		for i in range(0,len(input_files)):
-			self.plot_widgets.append(plot_widget())
-			self.plot_widgets[i].init(self)
-			self.plot_widgets[i].set_labels([plot_labels[0]])
-			self.plot_widgets[i].load_data([input_files[i]],os.path.splitext(input_files[i])[0]+".oplot")
-
-			self.plot_widgets[i].do_plot()
-			self.plot_widgets[i].show()
-
-			self.notebook.append_page(self.plot_widgets[i],gtk.Label(plot_labels[i]))
-
-		self.connect("delete-event", self.callback_close) 
-
-		self.add(self.main_vbox)
-		self.set_size_request(850,-1)
-		self.main_vbox.show()
-		self.draw_graph()
-		self.set_icon_from_file(find_data_file("gui/image.jpg"))
-		self.set_title("Optical Model - (www.opvdm.com)")
-		self.set_position(gtk.WIN_POS_CENTER)
-		self.progress_window.stop()
-
+				layer=layer+1
+			return True
+		else:
+			return False
 
