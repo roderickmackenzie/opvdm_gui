@@ -6,16 +6,6 @@ import matplotlib
 import shutil
 import glob
 
-#sys.path.append('./gui/')
-
-#includes = os.listdir(os.path.join(os.getcwd(),"gui"))
-#for i in range(0,len(includes)):
-#	includes[i]=os.path.join(os.getcwd(),"gui",includes[i])
-#	print includes[i]
-#
-#__import__('gtk')
-#m = sys.modules['gtk']
-#gtk_base_path = m.__path__[0]
 dest_path=os.path.join(os.getcwd(),"dist")
 
 #if os.path.isdir(dest_path):
@@ -95,3 +85,7 @@ if os.path.isdir(path_to_del)==True:
 	print "Delete",path_to_del
 	shutil.rmtree(path_to_del)
 
+path_to_del=os.path.join(dest_path,"share","icons","Tango","scalable")
+if os.path.isdir(path_to_del)==True:
+	print "Delete",path_to_del
+	shutil.rmtree(path_to_del)

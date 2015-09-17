@@ -85,7 +85,7 @@ class web_thread(gtk.VBox):
 			s.close()
 			s = None
 
-		s.send("GET http://www.opvdm.com/update.php?ver_core="+ver_core()+"&ver_gui="+ver_gui()+"&ver_mat="+ver_mat()+"&os="+platform.system()+"&user="+getpass.getuser()+" HTTP/1.0" +CRLF)
+		s.send("GET http://www.opvdm.com/update.php?ver_core="+ver_core()+"&ver_gui="+ver_gui()+"&ver_mat="+ver_mat()+"&os="+platform.system()+" HTTP/1.0" +CRLF)
 		data = (s.recv(1000000))
 
 		s.shutdown(1)
