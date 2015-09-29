@@ -42,6 +42,7 @@ from debug import debug_mode
 from inp import inp_write_lines_to_file
 import webbrowser
 from util import time_with_units
+from inp import inp_search_token_value
 
 (
 SEG_LENGTH,
@@ -93,7 +94,7 @@ class tab_time_mesh(gtk.Window):
 			i=i+1
 
 		out_text.append("#ver")
-		out_text.append("1.0")
+		out_text.append("1.1")
 		out_text.append("#end")
 		
 		inp_write_lines_to_file(os.path.join(os.getcwd(),"time_mesh_config.inp"),out_text)
@@ -377,29 +378,31 @@ class tab_time_mesh(gtk.Window):
 
 		ret=inp_load_file(lines,file_name)
 		if ret==True:
-			print "lines",lines
-			print os.getcwd()
-			pos=0
-			token,value,pos=inp_read_next_item(lines,pos)
-			self.start_time=float(value)
+			if inp_search_token_value(lines, "#ver")=="1.1":
+				pos=0
+				token,value,pos=inp_read_next_item(lines,pos)
+				self.start_time=float(value)
 
-			token,value,pos=inp_read_next_item(lines,pos)
-			self.fs_laser_time=float(value)
+				token,value,pos=inp_read_next_item(lines,pos)
+				self.fs_laser_time=float(value)
 
-			token,value,pos=inp_read_next_item(lines,pos)
-			self.segments=int(value)
+				token,value,pos=inp_read_next_item(lines,pos)
+				self.segments=int(value)
 
-			for i in range(0, self.segments):
-				token,length,pos=inp_read_next_item(lines,pos)
-				token,dt,pos=inp_read_next_item(lines,pos)
-				token,voltage_start,pos=inp_read_next_item(lines,pos)
-				token,voltage_stop,pos=inp_read_next_item(lines,pos)
-				token,mul,pos=inp_read_next_item(lines,pos)
-				token,sun,pos=inp_read_next_item(lines,pos)
-				token,laser,pos=inp_read_next_item(lines,pos)
-				self.list.append((length,dt,voltage_start,voltage_stop,mul,sun,laser))
+				for i in range(0, self.segments):
+					token,length,pos=inp_read_next_item(lines,pos)
+					token,dt,pos=inp_read_next_item(lines,pos)
+					token,voltage_start,pos=inp_read_next_item(lines,pos)
+					token,voltage_stop,pos=inp_read_next_item(lines,pos)
+					token,mul,pos=inp_read_next_item(lines,pos)
+					token,sun,pos=inp_read_next_item(lines,pos)
+					token,laser,pos=inp_read_next_item(lines,pos)
+					self.list.append((length,dt,voltage_start,voltage_stop,mul,sun,laser))
 
-			print self.list
+				print self.list
+			else:
+				print "file "+file_name+"wrong version"
+				exit("")
 		else:
 			print "file "+file_name+"not found"
 
@@ -526,7 +529,7 @@ class tab_time_mesh(gtk.Window):
 
 		if debug_mode()==True:
 			image = gtk.Image()
-	   		image.set_from_file(find_data_file("gui/laser.png"))
+	   		image.set_from_file(find_data_file(os.path.join("gui","laser.png")))
 			laser = gtk.ToolButton(image)
 			tooltips.set_tip(laser, "Laser start time")
 			laser.connect("clicked", self.callback_laser,treeview)
@@ -534,7 +537,7 @@ class tab_time_mesh(gtk.Window):
 			tool_bar_pos=tool_bar_pos+1
 
 		image = gtk.Image()
-   		image.set_from_file(find_data_file("gui/start.png"))
+   		image.set_from_file(find_data_file(os.path.join("gui","start.png")))
 		start = gtk.ToolButton(image)
 		tooltips.set_tip(start, "Simulation start time")
 		start.connect("clicked", self.callback_start_time,treeview)
@@ -599,7 +602,7 @@ class tab_time_mesh(gtk.Window):
 
 		self.add(self.vbox)
 		self.set_title("Time domain mesh editor - (www.opvdm.com)")
-		self.set_icon_from_file(find_data_file("gui/time.png"))
+		self.set_icon_from_file(find_data_file(os.path.join("gui","time.png")))
 		self.connect("delete-event", self.callback_close)
 		self.set_position(gtk.WIN_POS_CENTER)
 

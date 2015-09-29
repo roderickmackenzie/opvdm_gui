@@ -24,7 +24,6 @@
 
 import sys
 
-gui_dir='/usr/share/opvdm/gui/'
 lib_dir='/usr/lib64/opvdm/'
 sys.path.append('./gui/')
 sys.path.append(lib_dir)
@@ -47,7 +46,7 @@ import signal
 import subprocess
 from inp import inp_get_token_value
 from cal_path import get_exe_command
-from util import get_exe_name
+from cal_path import get_exe_name
 from util import opvdm_clone
 from export_as import export_as
 from tmesh import tab_time_mesh
@@ -83,7 +82,6 @@ import glib
 from server import server
 from opvdm_notebook import opvdm_notebook
 from gui_util import process_events
-
 calculate_paths()
 
 if running_on_linux()==True:
@@ -96,6 +94,7 @@ if running_on_linux()==True:
 	
 else:
 	from windows_pipe import win_pipe
+
 
 
 print notice()
@@ -149,8 +148,7 @@ class opvdm_main_window(gobject.GObject):
 		if running_on_linux()==True:
 			if message!="":
 				pynotify.init ("opvdm")
-				Hello=pynotify.Notification ("opvdm:",message,find_data_file("gui/application-opvdm.svg"))
-				#print find_data_file("gui/icon.png")
+				Hello=pynotify.Notification ("opvdm:",message,find_data_file(os.path.join("gui","application-opvdm.svg")))
 				Hello.set_timeout(2000)
 				Hello.show ()
 
@@ -220,7 +218,7 @@ class opvdm_main_window(gobject.GObject):
 		#self.spin.stop()
 
 	def callback_simulate_stop(self, widget, data=None):
-		cmd = 'killall '+self.exe_name
+		cmd = 'killall '+get_exe_name()
 		ret= os.system(cmd)
 		self.spin.stop()
 
@@ -283,7 +281,7 @@ class opvdm_main_window(gobject.GObject):
 
 
 	def callback_import(self, widget, data=None):
-		dialog = gtk.FileChooserDialog("Import..",
+		dialog = gtk.FileChooserDialog("Import an old opvdm simulation",
                                None,
                                gtk.FILE_CHOOSER_ACTION_OPEN,
                                (gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL,
@@ -291,13 +289,13 @@ class opvdm_main_window(gobject.GObject):
 		dialog.set_default_response(gtk.RESPONSE_OK)
 
 		filter = gtk.FileFilter()
-		filter.set_name(".tar.gz")
-		filter.add_pattern("*.tar.gz")
+		filter.set_name(".opvdm")
+		filter.add_pattern("*.opvdm")
 		dialog.add_filter(filter)
 
 		response = dialog.run()
 		if response == gtk.RESPONSE_OK:
-			import_archive(dialog.get_filename(),"./",False)
+			import_archive(dialog.get_filename(),os.path.join(os.getcwd(),"sim.opvdm"),False)
 			self.change_dir_and_refresh_interface(os.getcwd())
 		elif response == gtk.RESPONSE_CANCEL:
 		    print 'Closed, no files selected'
@@ -337,7 +335,6 @@ class opvdm_main_window(gobject.GObject):
 		os.chdir(new_dir)
 		calculate_paths()
 		self.config.load(os.getcwd())
-		self.exe_name = get_exe_name()
 		self.status_bar.push(self.context_id, os.getcwd())
 		self.plot_open.set_sensitive(False)
 
@@ -553,7 +550,7 @@ class opvdm_main_window(gobject.GObject):
 
 		if debug_mode()==True:
 			image = gtk.Image()
-	   		image.set_from_file(find_data_file("gui/qe.png"))
+	   		image.set_from_file(find_data_file(os.path.join("gui","qe.png")))
 			self.qe_button = gtk.ToolButton(image)
 			self.tooltips.set_tip(self.qe_button, "Quantum efficiency")
 			self.qe_button.connect("clicked", self.callback_qe_window)
@@ -739,7 +736,7 @@ class opvdm_main_window(gobject.GObject):
 		pos=pos+1
 
 	        image = gtk.Image()
-   		image.set_from_file(find_data_file("gui/play.png"))
+   		image.set_from_file(find_data_file(os.path.join("gui","play.png")))
 		self.play = gtk.ToolButton(image)
 		self.tooltips.set_tip(self.play, "Run the simulation")
 		toolbar.insert(self.play, pos)
@@ -747,7 +744,7 @@ class opvdm_main_window(gobject.GObject):
 		pos=pos+1
 
 		image = gtk.Image()
-   		image.set_from_file(find_data_file("gui/forward.png"))
+   		image.set_from_file(find_data_file(os.path.join("gui","forward.png")))
 		self.tb_run_scan = gtk.ToolButton(image)
 		self.tb_run_scan.connect("clicked", self.callback_run_scan)
 		self.tooltips.set_tip(self.tb_run_scan, "Run parameter scan")
@@ -757,7 +754,7 @@ class opvdm_main_window(gobject.GObject):
 
 		if debug_mode()==True:
 			image = gtk.Image()
-	   		image.set_from_file(find_data_file("gui/fit.png"))
+	   		image.set_from_file(find_data_file(os.path.join("gui","fit.png")))
 			self.tb_run_fit = gtk.ToolButton(image)
 			self.tb_run_fit.connect("clicked", self.callback_run_fit)
 			self.tooltips.set_tip(self.tb_run_fit, "Run a fit command")
@@ -766,7 +763,7 @@ class opvdm_main_window(gobject.GObject):
 			pos=pos+1
 
 	        image = gtk.Image()
-   		image.set_from_file(find_data_file("gui/pause.png"))
+   		image.set_from_file(find_data_file(os.path.join("gui","pause.png")))
 		self.stop = gtk.ToolButton(image )
 		self.tooltips.set_tip(self.stop, "Stop the simulation")
 		self.stop.connect("clicked", self.callback_simulate_stop)
@@ -780,7 +777,7 @@ class opvdm_main_window(gobject.GObject):
 		pos=pos+1
 
 		image = gtk.Image()
-   		image.set_from_file(find_data_file("gui/scan.png"))
+   		image.set_from_file(find_data_file(os.path.join("gui","scan.png")))
 		self.param_scan = gtk.ToolButton(image)
 		self.param_scan.connect("clicked", self.callback_scan)
 		self.tooltips.set_tip(self.param_scan, "Parameter scan")
@@ -794,7 +791,7 @@ class opvdm_main_window(gobject.GObject):
 		pos=pos+1
 
 	        image = gtk.Image()
-   		image.set_from_file(find_data_file("gui/plot.png"))
+   		image.set_from_file(find_data_file(os.path.join("gui","plot.png")))
 		self.plot_select = gtk.MenuToolButton(image,"hello")
 		self.tooltips.set_tip(self.plot_select, "Find a file to plot")
 		self.plotted_graphs = used_files_menu()
@@ -805,7 +802,7 @@ class opvdm_main_window(gobject.GObject):
 		pos=pos+1
 
 	        image = gtk.Image()
-   		image.set_from_file(find_data_file("gui/refresh.png"))
+   		image.set_from_file(find_data_file(os.path.join("gui","refresh.png")))
 		self.plot_open = gtk.ToolButton(image)
 		self.tooltips.set_tip(self.plot_open, "Replot the graph")
 		toolbar.insert(self.plot_open, pos)
@@ -813,7 +810,7 @@ class opvdm_main_window(gobject.GObject):
 		pos=pos+1
 
 		image = gtk.Image()
-   		image.set_from_file(find_data_file("gui/plot_time.png"))
+   		image.set_from_file(find_data_file(os.path.join("gui","plot_time.png")))
 		self.examine = gtk.ToolButton(image)
 		self.tooltips.set_tip(self.examine, "Examine results in time domain")
 		self.examine.connect("clicked", self.callback_examine)
@@ -829,7 +826,7 @@ class opvdm_main_window(gobject.GObject):
 
 
 		image = gtk.Image()
-	   	image.set_from_file(find_data_file("gui/time.png"))
+	   	image.set_from_file(find_data_file(os.path.join("gui","time.png")))
 		self.time_mesh_button = gtk.ToolButton(image)
 		self.tooltips.set_tip(self.time_mesh_button, "Edit the time mesh")
 		self.time_mesh_button.connect("clicked", self.callback_edit_time_mesh)
@@ -924,7 +921,7 @@ class opvdm_main_window(gobject.GObject):
 		self.window2.set_title("Organic Photovoltaic Device Model (www.opvdm.com)")
 		self.window2.connect("delete-event", self.callback_close_window2)
 
-		self.window2.set_icon_from_file(find_data_file("gui/image.jpg"))
+		self.window2.set_icon_from_file(find_data_file(os.path.join("gui","image.jpg")))
 		if main_vbox==None:
 			self.window2.add(self.window2_box)
 		else:

@@ -28,6 +28,7 @@ import subprocess
 from tempfile import mkstemp
 import logging
 import zipfile
+from util import zip_remove_file
 
 def inp_read_next_item(lines,pos):
 	token=lines[pos]
@@ -120,21 +121,25 @@ def inp_isfile(file_path):
 
 
 def inp_load_file(lines,file_path):
+	zip_file_path=os.path.join(os.path.dirname(file_path),"sim.opvdm")
+	file_name=os.path.basename(file_path)
+	return inp_load_file_giving_archiv(lines,zip_file_path,file_name)
 
-	path=os.path.dirname(file_path)
+def inp_load_file_giving_archiv(lines,zip_file_path,file_name):
+
+	file_path=os.path.join(os.path.dirname(zip_file_path),file_name)
 
 	read_lines=[]
-	zip_file_name=os.path.join(path,"sim.opvdm")
 
 	if os.path.isfile(file_path):
 		f=open(file_path, mode='rb')
     		read_lines = f.read()
 		f.close()
 	else:
-		if os.path.isfile(zip_file_name):
-			zf = zipfile.ZipFile(zip_file_name, 'r')
+		if os.path.isfile(zip_file_path):
+			zf = zipfile.ZipFile(zip_file_path, 'r')
 			if zf.namelist().count(os.path.basename(file_path))>0:
-				read_lines = zf.read(os.path.basename(file_path))
+				read_lines = zf.read(file_name)
 				zf.close()
 			else:
 				zf.close()
@@ -150,18 +155,22 @@ def inp_load_file(lines,file_path):
 		lines.append(read_lines[i].rstrip())
 
 	return True
-
+	
 def inp_write_lines_to_file(file_path,lines):
-	path=os.path.dirname(file_path)
+	archive_path=os.path.join(os.path.dirname(file_path),"sim.opvdm")
+	file_name=os.path.basename(file_path)
+	inp_write_lines_to_file_giving_archive(archive_path,file_name,lines)
 
-	zip_file_name=os.path.join(path,"sim.opvdm")
+def inp_write_lines_to_file_giving_archive(archive_path,file_name,lines):
 
-	base_name=os.path.basename(file_path)
+	file_path=os.path.join(os.path.dirname(archive_path),file_name)
 
 	if os.path.isfile(file_path)==True:  # or os.path.isfile(zip_file_name)==False
+		zip_remove_file(archive_path,file_name)
 		inp_save_lines(file_path,lines)
 	else:
-		replace_file_in_zip_archive(zip_file_name,base_name,lines)
+		replace_file_in_zip_archive(archive_path,file_name,lines)
+
 
 def inp_save_lines(file_path,lines):
 	dump=""
@@ -228,4 +237,21 @@ def inp_sum_items(lines,token):
 			my_sum=my_sum+float(lines[i+1])
 
 	return my_sum
+
+def inp_merge(dest,src):
+	ret=[]
+	for i in range(0,len(dest)):
+		if dest[i].startswith("#") and dest[i]!="#ver" and dest[i]!="#end":
+			lookfor=dest[i]
+			found=False
+			for ii in range(0,len(src)):
+				if src[ii]==lookfor:
+					#print "Found",dest_lines[i],orig_lines[ii]
+					dest[i+1]=src[ii+1]
+					found=True
+					break
+			if found==False:
+				ret.append("Warning: token "+lookfor+" not found in archive")
+
+	return ret
 

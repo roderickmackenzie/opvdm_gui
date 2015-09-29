@@ -32,21 +32,8 @@ from numpy import zeros
 import hashlib
 import glob
 from win_lin import running_on_linux
+from cal_path import get_inp_file_path
 
-
-if running_on_linux() == True:
-	inp_dir='/usr/share/opvdm/'
-else:
-	inp_dir='c:\\opvdm\\'
-
-def get_scan_dirs(scan_dirs,sim_dir):
-	ls=os.listdir(sim_dir)
-
-	for i in range(0, len(ls)):
-		dir_name=os.path.join(sim_dir,ls[i])
-		full_name=os.path.join(sim_dir,ls[i],"opvdm_gui_config.inp")
-		if os.path.isfile(full_name):
-			scan_dirs.append(dir_name)
 
 def gui_print_path(text,path,length):
 	remove=len(text)+len(path)-length
@@ -320,7 +307,7 @@ def find_data_file(name):
 	if os.path.isfile("main.c")==True:
 		ret=local_file
 	else:
-		ret=os.path.join(inp_dir,name)
+		ret=os.path.join(get_orig_inp_file_path(),name)
 	return ret
 
 def opvdm_copy_src(new_dir):
@@ -349,7 +336,7 @@ def opvdm_copy_src(new_dir):
 
 
 def opvdm_clone():
-	src=get_orig_inp_file_path()
+	src=get_inp_file_path()
 	source = os.listdir(src)
 	pwd=os.getcwd()
 	destination=pwd
@@ -367,36 +354,6 @@ def opvdm_clone():
 		shutil.copytree(os.path.join(src,"exp"), os.path.join(pwd,"exp"))
 
 	shutil.copytree(os.path.join(src,"phys"), os.path.join(pwd,"phys"))
-
-def get_exe_name():
-	if running_on_linux() == True:
-		if os.path.isfile("./go.o")==True:
-			exe_name="go.o"
-		elif os.path.isfile("./main.c")==True:
-			exe_name="go.o"
-		else:
-			exe_name="opvdm_core"
-		return exe_name
-	else:
-		if os.path.isfile("opvdm_core.exe")==True:
-			exe_name="opvdm_core.exe"
-		else:
-			exe_name="opvdm_core.exe"
-		return exe_name
-
-def get_orig_inp_file_path():
-	if running_on_linux() == True:
-		if os.path.isfile("opvdm.py")==True:
-			path=os.getcwd()
-		else:
-			path="/usr/share/opvdm/"
-		return path
-	else:
-		if os.path.isfile("opvdm.py")==True:
-			path=os.path.join(os.getcwd(), "\\")
-		else:
-			path="c:\\opvdm\\"
-		return path
 
 def replace_file_in_zip_archive(zip_file_name,target,lines):
 	fh, abs_path = mkstemp()

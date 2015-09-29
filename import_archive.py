@@ -23,109 +23,51 @@
 import sys
 import pygtk
 from win_lin import running_on_linux
-
-if running_on_linux()==True:
-	inp_dir='/usr/share/opvdm/'
-	gui_dir='/usr/share/opvdm/gui/'
-	lib_dir='/usr/lib64/opvdm/'
-else:
-	inp_dir='c:\\opvdm\\'
-	gui_dir='c:\\opvdm\\gui\\'
-	lib_dir='c:\\opvdm\\'
-
-sys.path.append('./gui/')
-sys.path.append(lib_dir)
-
 import os
 import shutil
 import signal
 import subprocess
-from util import get_scan_dirs 
+from scan_io import get_scan_dirs 
 from inp import inp_update_token_value
 from util import replace_file_in_zip_archive
 import os, fnmatch
 import stat 
 import zipfile
-from util import zip_remove_file
 from util import copy_scan_dir
 from util import delete_second_level_link_tree
+from inp import inp_load_file_giving_archiv
+from inp import inp_search_token_value
+from inp import inp_merge
+from inp import inp_write_lines_to_file_giving_archive
 import tempfile
 
-def copy_check_ver(orig,file_name,dest,only_over_write,clever):
+
+def copy_check_ver(dest_archive,src_archive,file_name,only_over_write,clever):
+	if dest_archive==src_archive:
+		print "I can't opperate on the same .opvdm file"
+		return
 	#remove the dest file if both exist ready to copy
 	do_copy=True
-	orig_ver=""
+	src_ver=""
 	dest_ver=""
-	orig_file=os.path.join(orig,file_name)
-	dest_file=os.path.join(dest,file_name)
-	orig_zip_file=os.path.join(orig,"sim.opvdm")
-	dest_zip_file=os.path.join(dest,"sim.opvdm")
-	in_dest_zip_file=False
 	orig_exists=False
 	dest_exists=False
-	orig_lines=[]
+	src_lines=[]
 	dest_lines=[]
 
-	#read in the src file where ever it may be
-	if os.path.isfile(orig_file)==True:
-		f = open(orig_file)
-		lines = f.readlines()
-		f.close()
-		orig_exists=True
-	elif os.path.isfile(orig_zip_file):
-		zf = zipfile.ZipFile(orig_zip_file, 'r')
-		items=zf.namelist()
-		if items.count(file_name)>0:
-			lines = zf.read(file_name).split("\n")
-			orig_exists=True
-		zf.close()
-	else:
-		orig_exists=False
+	orig_exists=inp_load_file_giving_archiv(src_lines,src_archive,file_name)
 
 	if orig_exists==True:
-		for i in range(0, len(lines)):
-			lines[i]=lines[i].rstrip()
-			if lines[i]!="":
-				orig_lines.append(lines[i])
-
-		if orig_lines.count("#ver")>0:
-			i=orig_lines.index('#ver')+1
-			orig_ver=orig_lines[i]
+		src_ver=inp_search_token_value(src_lines, "#ver")
 	else:
-		print "Warning: ",orig_file," no origonal file to copy"
+		print "Warning: ",src_archive,file_name," no origonal file to copy"
 		return
 
 	#read in the dest file where ever it may be
-	if os.path.isfile(dest_file)==True:
-		f = open(dest_file)
-		lines = f.readlines()
-		f.close()
-		dest_exists=True
-		if file_name=="device.inp":
-			print dest_lines
-	elif os.path.isfile(dest_zip_file):
-		zf = zipfile.ZipFile(dest_zip_file, 'r')
-		items=zf.namelist()
-		if items.count(file_name)>0:
-			lines = zf.read(file_name).split("\n")
-			in_dest_zip_file=True
-			dest_exists=True
-		zf.close()
-	else:
-		dest_exists=False
-
-
+	dest_exists=inp_load_file_giving_archiv(dest_lines,dest_archive,file_name)
 
 	if dest_exists==True:
-		for i in range(0, len(lines)):
-			lines[i]=lines[i].rstrip()
-			if lines[i]!="":
-				dest_lines.append(lines[i])
-
-		if dest_lines.count('#ver')>0:
-			i=dest_lines.index('#ver')+1
-			dest_ver=dest_lines[i]
-
+		dest_ver=inp_search_token_value(dest_lines, "#ver")
 
 
 	#if we are only over writing only copy if dest file exists
@@ -137,84 +79,50 @@ def copy_check_ver(orig,file_name,dest,only_over_write,clever):
 			do_copy=False
 			return
 
-	if orig_ver!=dest_ver:
-		print "Warning: Verstion numbers do not match for files",orig_file,orig_ver,dest+file_name,dest_ver
+	if src_ver!=dest_ver:
+		print "Warning: Verstion numbers do not match for files",dest_archive,src_archive,file_name
+		print "dest ver=",dest_ver,"src_ver=",src_ver
+
 		if clever==False:
+			print "Not copying that file you will have to deal that with by hand"
 			return
 
 	if clever==True:
-		for i in range(0,len(dest_lines)):
-			if dest_lines[i].startswith("#") and dest_lines[i]!="#ver" and dest_lines[i]!="#end":
-				lookfor=dest_lines[i]
-				found=False
-				for ii in range(0,len(orig_lines)):
-					if orig_lines[ii]==lookfor:
-						#print "Found",dest_lines[i],orig_lines[ii]
-						dest_lines[i+1]=orig_lines[ii+1]
-						found=True
-						break
-				if found==False:
-					print "Warning: token ",lookfor, " in ",file_name," not found in archive" 
+		errors=inp_merge(dest_lines,src_lines) 
+		if len(errors)!=0:
+			print "File ",file_name,errors
 	else:
-		dest_lines=orig_lines
-
-
+		dest_lines=src_lines
 
 	if (do_copy==True):
-		if in_dest_zip_file==True:
-			#print "Updating archive",file_name,dest_lines
-			replace_file_in_zip_archive(dest_zip_file,file_name,dest_lines)
-		else:
-			#if it is in the dest file remove it
-			zip_remove_file(dest_zip_file,file_name)
-			a = open(dest_file, "w")
-			for i in range(0,len(dest_lines)):
-				a.write(dest_lines[i]+"\n")
-			a.close()
-
-			return
+		inp_write_lines_to_file_giving_archive(dest_archive,file_name,dest_lines)
 
 
-def import_archive(file_name,dest_dir,only_over_write):
-	if file_name.endswith('.tar.gz')==True:
-		tmp_dir=os.path.join(tempfile.gettempdir(), "opvdm")
+def import_archive(src_archive,dest_archive,only_over_write):
+	if src_archive.endswith('.opvdm')==False:
+		print "I can only import from .opvdm files"
+		return
 
-		if os.path.exists(tmp_dir):
-			shutil.rmtree(tmp_dir)
+	if dest_archive.endswith('.opvdm')==False:
+		print "I can only import to .opvdm files"
+		return
 
-		if not os.path.exists(tmp_dir):
-			os.makedirs(tmp_dir)
-
-		cmd = 'tar -xzf '+file_name+' -C '+tmp_dir+'/'
-		os.system(cmd)
-
-		pattern='sim.opvdm'
-		path=tmp_dir
-		res=""
-		for root, dirs, files in os.walk(path):
-			for name in files:
-				if fnmatch.fnmatch(name, pattern):
-					res=os.path.join(root, name)
-					break
-			if res!="":
-				break
-
-		sim_path=os.path.dirname(res)
-
-	else:
-		sim_path=file_name
-
+	src_dir=os.path.dirname(src_archive)
+	dest_dir=os.path.dirname(dest_archive)
 	files=[ "sim.inp", "device.inp", "stark.inp" ,"shg.inp" ,"dos0.inp", "dos1.inp"  ,"jv.inp" ,"celiv.inp" , "optics.inp", "math.inp",  "dump.inp" , "light.inp", "tpv.inp", "otrace.inp", "server.inp", "pulse_voc.inp","pulse.inp","light_exp.inp" ]
 
-	for i in files:
-		copy_check_ver(sim_path,i,dest_dir,only_over_write,True)
+	for my_file in files:
+		print "Importing",my_file
+		copy_check_ver(dest_archive,src_archive,my_file,only_over_write,True)
 
 	files=[ "device_epitaxy.inp", "optics_epitaxy.inp", "fit.inp", "constraints.inp","duplicate.inp", "thermal.inp","lumo0.inp","homo0.inp","time_mesh_config.inp" ]
 
-	for i in files:
-		copy_check_ver(sim_path,i,dest_dir,only_over_write,False)
+	for my_file in files:
+		print "Importing",my_file
+		copy_check_ver(dest_archive,src_archive,my_file,only_over_write,False)
 
-	import_scan_dirs(dest_dir,sim_path)
+	import_scan_dirs(dest_dir,src_dir)
+	exit("")
 
 def import_scan_dirs(dest_dir,src_dir):
 	sim_dirs=[]
@@ -227,14 +135,6 @@ def import_scan_dirs(dest_dir,src_dir):
 			delete_second_level_link_tree(dest)
 
 		copy_scan_dir(dest,my_file)
-
-def delete_scan_dirs(path):
-	sim_dirs=[]
-	get_scan_dirs(sim_dirs,path)
-
-	for my_file in sim_dirs:
-		print "Deleteing ",my_file
-		shutil.rmtree(my_file)
 
 def clean_scan_dirs(path):
 	sim_dirs=[]

@@ -255,3 +255,21 @@ def scan_import_from_hpc(base_dir):
 	else:
 		print "HPC dir not found",hpc_path
 
+def get_scan_dirs(scan_dirs,sim_dir):
+	ls=os.listdir(sim_dir)
+
+	for i in range(0, len(ls)):
+		dir_name=os.path.join(sim_dir,ls[i])
+		full_name=os.path.join(sim_dir,ls[i],"opvdm_gui_config.inp")
+		if os.path.isfile(full_name):
+			scan_dirs.append(dir_name)
+
+
+def delete_scan_dirs(path):
+	sim_dirs=[]
+	get_scan_dirs(sim_dirs,path)
+
+	for my_file in sim_dirs:
+		print "Deleteing ",my_file
+		shutil.rmtree(my_file)
+

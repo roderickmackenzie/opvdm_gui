@@ -74,3 +74,33 @@ def get_light_dll_path():
 def get_exe_command():
 	global exe_command
 	return exe_command
+
+def get_exe_name():
+	if running_on_linux() == True:
+		if os.path.isfile("./go.o")==True:
+			exe_name="go.o"
+		elif os.path.isfile("./main.c")==True:
+			exe_name="go.o"
+		else:
+			exe_name="opvdm_core"
+		return exe_name
+	else:
+		if os.path.isfile("opvdm_core.exe")==True:
+			exe_name="opvdm_core.exe"
+		else:
+			exe_name="opvdm_core.exe"
+		return exe_name
+
+def get_inp_file_path():
+	if running_on_linux() == True:
+		if os.path.isfile("opvdm.py")==True:
+			path=os.getcwd()
+		else:
+			path="/usr/share/opvdm/"
+		return path
+	else:
+		if os.path.isfile("opvdm.py")==True:
+			path=os.path.join(os.getcwd(), "\\")
+		else:
+			path="c:\\opvdm\\"
+		return path

@@ -31,7 +31,6 @@ from util import opvdm_copy_src
 import fnmatch
 import logging
 import time
-from import_archive import delete_scan_dirs
 from import_archive import clean_scan_dirs
 from ver import ver
 from import_archive import import_scan_dirs
@@ -49,6 +48,7 @@ from plot_state import plot_state
 from plot_io import plot_load_info
 from scan_plot import scan_gen_plot_data
 from server import server_find_simulations_to_run
+from clean_sim import clean_sim_dir
 
 def command_args(argc,argv):
 	if argc>=2:
@@ -59,9 +59,8 @@ def command_args(argc,argv):
 			print "\t--version\tdisplays the current version"
 			print "\t--help\t\tdisplays the help"
 			print "\t--export\texport a simulation to a gz file"
-			print "\t--import\timport a simulation from a gz file or a directory"
-			print "\t\t\tusage --import abc.gz ./path/to/output/ "
-			print "\t--patch\t\tpatch a simulation with an archived simulation"
+			print "\t--import\timport a simulation from a .opvdm file"
+			print "\t\t\tusage --import abc.opvdm ./path/to/output/ "
 			print "\t--clone\t\tgenerate a clean simulation in the current directory"
 			print "\t--clean\t\tcleans the current simulation directory deleting .dat files and scan dirs"
 			print "\t--dump-tab (output file)\t\tdumps simulation parameters as jpg"
@@ -81,7 +80,7 @@ def command_args(argc,argv):
 			print ver()
 			sys.exit(0)
 		if argv[1]=="--import-scandirs":
-			import_scan_dirs("./",argv[2])
+			import_scan_dirs(os.getcwd(),argv[2])
 			exit(0)
 		if argv[1]=="--export":
 			export_as(argv[2])
@@ -90,11 +89,7 @@ def command_args(argc,argv):
 			export_as(argv[2])
 			sys.exit(0)
 		if argv[1]=="--import":
-			
-			import_archive(argv[2],os.getcwd(),False)
-			sys.exit(0)
-		if argv[1]=="--patch":
-			import_archive(argv[2],argv[3],True)
+			import_archive(argv[2],os.path.join(os.getcwd(),"sim.opvdm"),False)
 			sys.exit(0)
 		if argv[1]=="--clone":
 			opvdm_clone()
@@ -108,32 +103,7 @@ def command_args(argc,argv):
 			data.dump_file()
 			sys.exit(0)
 		if argv[1]=="--clean":
-			delete_scan_dirs("./")
-			if os.path.isdir("./pub"):
-				print "Deleteing pub"
-				shutil.rmtree("./pub")
-			files = os.listdir("./")
-			for file in files:
-				remove=False
-				if file.endswith(".txt"):
-					remove=True
-				if file.endswith("~"):
-					remove=True
-				if file.endswith(".dat"):
-					remove=True
-				if file.endswith(".o"):
-					remove=True
-				if file.endswith(".orig"):
-					remove=True
-				if file.endswith(".back"):
-					remove=True
-				if file.endswith(".bak"):
-					remove=True
-				if file.endswith("gmon.out"):
-					remove=True
-				if remove==True:
-					print file
-					os.remove(file)
+			clean_sim_dir()
 			sys.exit(0)
 		if argv[1]=="--clean-scandirs":
 			clean_scan_dirs(os.getcwd())

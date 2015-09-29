@@ -25,7 +25,6 @@ import os
 from os.path import expanduser
 
 def debug_mode():
-	return False
 	home = expanduser("~")
 	if os.path.isfile(os.path.join(home,".debugmode"))==True:
 		return True

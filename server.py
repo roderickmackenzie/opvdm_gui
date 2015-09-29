@@ -26,10 +26,7 @@ import sys
 import os
 import shutil
 from search import return_file_list
-from util import find_data_file
-from about import about_dialog_show
 from util import str2bool
-from used_files_menu import used_files_menu
 from inp import inp_get_token_value
 import threading
 import gobject

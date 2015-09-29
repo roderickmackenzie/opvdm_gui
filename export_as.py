@@ -22,12 +22,6 @@
 
 import sys
 import pygtk
-inp_dir='/usr/share/opvdm/'
-gui_dir='/usr/share/opvdm/gui/'
-lib_dir='/usr/lib64/opvdm/'
-sys.path.append('./gui/')
-sys.path.append(lib_dir)
-
 import os
 import shutil
 import signal
@@ -40,6 +34,7 @@ import stat
 from token_lib import tokens
 from util import pygtk_to_latex_subscript
 import glob
+
 def to_exp(data):
 	ret=data
 	if (ret.count('e')!=0):
