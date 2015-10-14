@@ -27,13 +27,14 @@ import os
 import shutil
 from scan_item import scan_item_add
 from token_lib import tokens
-from util import check_is_config_file
+from util_zip import check_is_config_file
 from inp import inp_update_token_value
 from inp import inp_get_token_value
 from undo import undo_list_class
 import zipfile
 import base64
 from tab_base import tab_base
+from util import str2bool
 
 class tab_class(gtk.VBox,tab_base):
 	
@@ -108,10 +109,22 @@ class tab_class(gtk.VBox,tab_base):
 				else:
 					edit_box=gtk.combo_box_new_text()
 					index=0
+					true_false=False
+					if len(result.opt)==2:
+						if result.opt[0]=="true" and result.opt[1]=="false":
+							true_false=True
+
 					for i in range(0,len(result.opt)):
 						edit_box.append_text(result.opt[i])
-						if self.lines[pos]==result.opt[i]:
-							index=i
+						if true_false==False:
+							if self.lines[pos]==result.opt[i]:
+								index=i
+						else:
+							if str2bool(self.lines[pos])==True:
+								index=0
+							else:
+								index=1
+
 					edit_box.set_active(index);
 					
 					edit_box.connect("changed", self.callback_edit, token)

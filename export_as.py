@@ -34,6 +34,7 @@ import stat
 from token_lib import tokens
 from util import pygtk_to_latex_subscript
 import glob
+from export_archive import export_archive
 
 def to_exp(data):
 	ret=data
@@ -189,9 +190,10 @@ def export_as(output):
 			os.system("mv doc.tex "+output)
 
 
-	elif (ext==".gz"):
-		cmd = 'tar -czvf '+output+' ./*.inp ./sim.opvdm ./*.dat '
-		os.system(cmd)
+	elif (ext==".opvdm"):
+		export_archive()
+		#cmd = 'tar -czvf '+output+' ./*.inp ./sim.opvdm ./*.dat '
+		#os.system(cmd)
 
 
 

@@ -417,16 +417,14 @@ class opvdm_main_window(gobject.GObject):
 		dialog.destroy()
 
 	def callback_export(self, widget, data=None):
-		dialog = gtk.FileChooserDialog("Save as..",
-                               None,
-                               gtk.FILE_CHOOSER_ACTION_SAVE,
-                               (gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL,
-                                gtk.STOCK_SAVE, gtk.RESPONSE_OK))
+		dialog = gtk.FileChooserDialog("Export the simulation as", None, gtk.FILE_CHOOSER_ACTION_SAVE,
+                               (gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL, gtk.STOCK_SAVE, gtk.RESPONSE_OK))
+
 		dialog.set_default_response(gtk.RESPONSE_OK)
 
 		filter = gtk.FileFilter()
-		filter.set_name(".tar.gz")
-		filter.add_pattern("*.tar.gz")
+		filter.set_name(".opvdm")
+		filter.add_pattern("*.opvdm")
 		dialog.add_filter(filter)
 
 		filter = gtk.FileFilter()

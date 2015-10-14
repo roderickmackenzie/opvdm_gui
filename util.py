@@ -33,7 +33,7 @@ import hashlib
 import glob
 from win_lin import running_on_linux
 from cal_path import get_inp_file_path
-
+from util_zip import zip_get_data_file
 
 def gui_print_path(text,path,length):
 	remove=len(text)+len(path)-length
@@ -227,26 +227,6 @@ def read_xyz_data(x,y,z,file_name):
 		return False
 
 
-def zip_get_data_file(file_name):
-	found=False
-	lines=[]
-	zip_file=os.path.dirname(file_name)+".zip"
-	name=os.path.basename(file_name)
-	if os.path.isfile(file_name)==True:
-		f = open(file_name)
-		lines = f.readlines()
-		f.close()
-		found=True
-
-	if os.path.isfile(zip_file) and found==False:
-		zf = zipfile.ZipFile(zip_file, 'r')
-		items=zf.namelist()
-		if items.count(name)>0:
-			lines = zf.read(name).split("\n")
-			found=True
-		zf.close()
-
-	return [found,lines]
 
 def time_with_units(time):
 	ret=str(time)
@@ -282,19 +262,6 @@ def fx_with_units(fx):
 
 	return ret
 
-def check_is_config_file(name):
-	found="none"
-	if os.path.isfile(name)==True:
-		found=True
-		return "file"
-	if os.path.isfile("sim.opvdm"):
-		zf = zipfile.ZipFile('sim.opvdm', 'r')
-		items=zf.namelist()
-		if items.count(name)>0:
-			found="archive"
-		zf.close()
-
-	return found
 
 def pango_to_gnuplot(data):
 	one=""
@@ -354,44 +321,4 @@ def opvdm_clone():
 		shutil.copytree(os.path.join(src,"exp"), os.path.join(pwd,"exp"))
 
 	shutil.copytree(os.path.join(src,"phys"), os.path.join(pwd,"phys"))
-
-def replace_file_in_zip_archive(zip_file_name,target,lines):
-	fh, abs_path = mkstemp()
-	source = zipfile.ZipFile(zip_file_name, 'r')
-	zf = zipfile.ZipFile(abs_path, 'w')
-
-	for file in source.filelist:
-	    if not file.filename.startswith(target):
-		zf.writestr(file.filename, source.read(file))
-
-	source.close()
-
-	build='\n'.join(lines)
-
-	#for i in range(0,len(lines)):
-	#	build=build+lines[i]+"\n"
-
-	zf.writestr(target, build)
-
-	zf.close()
-	os.close(fh)
-	shutil.move(abs_path, zip_file_name)
-
-def zip_remove_file(zip_file_name,target):
-	if os.path.isfile(zip_file_name):
-		source = zipfile.ZipFile(zip_file_name, 'r')
-		if source.filelist.count(target)>0:
-			fh, abs_path = mkstemp()
-			zf = zipfile.ZipFile(abs_path, 'w')
-
-			for file in source.filelist:
-			    if not file.filename.startswith(target):
-				zf.writestr(file.filename, source.read(file))
-			zf.close()
-			os.close(fh)
-		source.close()
-
-		if source.filelist.count(target)>0:
-			shutil.move(abs_path, zip_file_name)
-
 

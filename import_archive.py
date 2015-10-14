@@ -29,16 +29,15 @@ import signal
 import subprocess
 from scan_io import get_scan_dirs 
 from inp import inp_update_token_value
-from util import replace_file_in_zip_archive
 import os, fnmatch
 import stat 
 import zipfile
 from util import copy_scan_dir
 from util import delete_second_level_link_tree
-from inp import inp_load_file_giving_archiv
+from util_zip import read_lines_from_archive
 from inp import inp_search_token_value
 from inp import inp_merge
-from inp import inp_write_lines_to_file_giving_archive
+from util_zip import write_lines_to_archive
 import tempfile
 
 
@@ -55,7 +54,7 @@ def copy_check_ver(dest_archive,src_archive,file_name,only_over_write,clever):
 	src_lines=[]
 	dest_lines=[]
 
-	orig_exists=inp_load_file_giving_archiv(src_lines,src_archive,file_name)
+	orig_exists=read_lines_from_archive(src_lines,src_archive,file_name)
 
 	if orig_exists==True:
 		src_ver=inp_search_token_value(src_lines, "#ver")
@@ -64,7 +63,7 @@ def copy_check_ver(dest_archive,src_archive,file_name,only_over_write,clever):
 		return
 
 	#read in the dest file where ever it may be
-	dest_exists=inp_load_file_giving_archiv(dest_lines,dest_archive,file_name)
+	dest_exists=read_lines_from_archive(dest_lines,dest_archive,file_name)
 
 	if dest_exists==True:
 		dest_ver=inp_search_token_value(dest_lines, "#ver")
@@ -95,7 +94,7 @@ def copy_check_ver(dest_archive,src_archive,file_name,only_over_write,clever):
 		dest_lines=src_lines
 
 	if (do_copy==True):
-		inp_write_lines_to_file_giving_archive(dest_archive,file_name,dest_lines)
+		write_lines_to_archive(dest_archive,file_name,dest_lines)
 
 
 def import_archive(src_archive,dest_archive,only_over_write):

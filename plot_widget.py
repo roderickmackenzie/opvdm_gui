@@ -39,14 +39,12 @@ from numpy import arange, sin, pi, zeros
 from matplotlib.backends.backend_gtkagg import FigureCanvasGTKAgg as FigureCanvas
 from matplotlib.backends.backend_gtkagg import NavigationToolbar2GTKAgg
 from matplotlib.figure import Figure
-from util import zip_get_data_file
 from util import read_xyz_data
 import matplotlib.ticker as ticker
 from gui_util import dlg_get_text
 from inp import inp_load_file
 from inp import inp_write_lines_to_file
 from inp import inp_search_token_value
-from inp import inp_save_lines
 from util import numbers_to_latex
 from util import pygtk_to_latex_subscript
 from util import fx_with_units

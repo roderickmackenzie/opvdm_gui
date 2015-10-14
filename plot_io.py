@@ -28,7 +28,7 @@ import shutil
 from token_lib import tokens
 from inp import inp_load_file
 from inp import inp_search_token_value
-from util import zip_get_data_file
+from util_zip import zip_get_data_file
 from util import str2bool
 from inp import inp_save_lines
 

@@ -36,7 +36,7 @@ from util import find_data_file
 import glob
 from util import time_with_units
 from plot_widget import plot_widget
-from util import zip_get_data_file
+from util_zip import zip_get_data_file
 from window_list import windows
 from plot_state import plot_state
 from plot_io import plot_load_info

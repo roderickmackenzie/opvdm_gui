@@ -23,12 +23,15 @@ import sys
 import os
 import shutil
 import signal
-from util import replace_file_in_zip_archive
+from util_zip import replace_file_in_zip_archive
 import subprocess
 from tempfile import mkstemp
 import logging
 import zipfile
-from util import zip_remove_file
+from util_zip import zip_remove_file
+from util_zip import write_lines_to_archive
+from util_zip import read_lines_from_archive
+from util_zip import archive_isfile
 
 def inp_read_next_item(lines,pos):
 	token=lines[pos]
@@ -38,6 +41,7 @@ def inp_read_next_item(lines,pos):
 	return token,value,pos
 
 def inp_update_token_value(file_path, token, replace,line_number):
+	lines=[]
 	if token=="#Tll":
 		inp_update_token_value("thermal.inp", "#Tlr", replace,1)
 		inp_update_token_value("dos0.inp", "#Tstart", replace,1)
@@ -51,25 +55,7 @@ def inp_update_token_value(file_path, token, replace,line_number):
 
 	zip_file_name=os.path.join(path,"sim.opvdm")
 
-	if os.path.isfile(file_path):
-		f=open(file_path, mode='rb')
-    		lines = f.read()
-		f.close()
-	else:
-		if os.path.isfile(zip_file_name):
-			zf = zipfile.ZipFile(zip_file_name, 'r')
-			lines = zf.read(os.path.basename(file_path))
-			zf.close()
-		else:
-			return "0"
-
-	lines=lines.split("\n")
-
-	for i in range(0, len(lines)):
-		lines[i]=lines[i].rstrip()
-
-	if lines[len(lines)-1]=='\n':
-		del lines[len(lines)-1]
+	read_lines_from_archive(lines,zip_file_name,os.path.basename(file_path))
 
 	for i in range(0, len(lines)):
 		if lines[i]==token:
@@ -97,80 +83,20 @@ def inp_update_token_value(file_path, token, replace,line_number):
 
 def inp_isfile(file_path):
 
-	path=os.path.dirname(file_path)
-
-	zip_file_name=os.path.join(path,"sim.opvdm")
-
-	base_name=os.path.basename(file_path)
-
-	ret=False
-
-	if os.path.isfile(file_path):
-		ret=True
-	else:
-		if os.path.isfile(zip_file_name):
-			zf = zipfile.ZipFile(zip_file_name, 'r')
-			if base_name in zf.namelist():
-				ret=True
-			zf.close()
-		else:
-			ret=False
-	
-	return ret
+	zip_file_name=os.path.join(os.path.dirname(file_path),"sim.opvdm")
+	return archive_isfile(zip_file_name,os.path.basename(file_path))
 
 
 
 def inp_load_file(lines,file_path):
 	zip_file_path=os.path.join(os.path.dirname(file_path),"sim.opvdm")
 	file_name=os.path.basename(file_path)
-	return inp_load_file_giving_archiv(lines,zip_file_path,file_name)
-
-def inp_load_file_giving_archiv(lines,zip_file_path,file_name):
-
-	file_path=os.path.join(os.path.dirname(zip_file_path),file_name)
-
-	read_lines=[]
-
-	if os.path.isfile(file_path):
-		f=open(file_path, mode='rb')
-    		read_lines = f.read()
-		f.close()
-	else:
-		if os.path.isfile(zip_file_path):
-			zf = zipfile.ZipFile(zip_file_path, 'r')
-			if zf.namelist().count(os.path.basename(file_path))>0:
-				read_lines = zf.read(file_name)
-				zf.close()
-			else:
-				zf.close()
-				return False
-		else:
-			return False
-
-	read_lines=read_lines.split("\n")
-
-	del lines[:]
-
-	for i in range(0, len(read_lines)):
-		lines.append(read_lines[i].rstrip())
-
-	return True
+	return read_lines_from_archive(lines,zip_file_path,file_name)
 	
 def inp_write_lines_to_file(file_path,lines):
 	archive_path=os.path.join(os.path.dirname(file_path),"sim.opvdm")
 	file_name=os.path.basename(file_path)
-	inp_write_lines_to_file_giving_archive(archive_path,file_name,lines)
-
-def inp_write_lines_to_file_giving_archive(archive_path,file_name,lines):
-
-	file_path=os.path.join(os.path.dirname(archive_path),file_name)
-
-	if os.path.isfile(file_path)==True:  # or os.path.isfile(zip_file_name)==False
-		zip_remove_file(archive_path,file_name)
-		inp_save_lines(file_path,lines)
-	else:
-		replace_file_in_zip_archive(archive_path,file_name,lines)
-
+	write_lines_to_archive(archive_path,file_name,lines)
 
 def inp_save_lines(file_path,lines):
 	dump=""

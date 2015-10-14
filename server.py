@@ -377,7 +377,7 @@ class server:
 		if data_in.startswith("hex"):
 			data_in=data_in[3:]
 			data=data_in.decode("hex")
-			print "dbus:",data
+			#print "dbus:",data
 			if data.startswith("lock"):
 				if str(data)>4:
 					test=data[:4]
