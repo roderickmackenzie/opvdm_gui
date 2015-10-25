@@ -191,7 +191,7 @@ def export_as(output):
 
 
 	elif (ext==".opvdm"):
-		export_archive()
+		export_archive(output)
 		#cmd = 'tar -czvf '+output+' ./*.inp ./sim.opvdm ./*.dat '
 		#os.system(cmd)
 

@@ -31,10 +31,6 @@ from inp import inp_load_file
 from debug import debug_mode
 from scan_item import scan_item_add
 from mesh_dump_ctl import mesh_dump_ctl
-(
-  COLUMN_LAYER,
-  COLUMN_THICKNES
-) = range(2)
 
 (
   MESH_THICKNES,
@@ -113,13 +109,6 @@ class electrical_mesh_editor(gtk.VBox):
 
 	def save_model(self):
 		lines=[]
-		lines.append("#layers")
-		lines.append(str(len(self.layer_model)))
-
-
-		for item in self.layer_model:
-			lines.append(item[COLUMN_LAYER])
-			lines.append(item[COLUMN_THICKNES])
 		lines.append("#mesh_layers")
 		lines.append(str(len(self.mesh_model)))
 		i=0
@@ -130,9 +119,9 @@ class electrical_mesh_editor(gtk.VBox):
 			lines.append(item[MESH_POINTS])
 			i=i+1
 		lines.append("#ver")			
-		lines.append("1.1")			
+		lines.append("1.0")			
 		lines.append("#end")			
-		inp_write_lines_to_file(os.path.join(os.getcwd(),"device_epitaxy.inp"),lines)
+		inp_write_lines_to_file(os.path.join(os.getcwd(),"mesh.inp"),lines)
 
 	def on_remove_item_clicked(self, button, treeview):
 
@@ -196,44 +185,23 @@ class electrical_mesh_editor(gtk.VBox):
 		self.load()
 
 	def load(self):
-		self.layer_model.clear()
 		self.mesh_model.clear()
 		lines=[]
 		pos=0
-		if inp_load_file(lines,os.path.join(os.getcwd(),"device_epitaxy.inp"))==True:
+		if inp_load_file(lines,os.path.join(os.getcwd(),"mesh.inp"))==True:
 			pos=pos+1	#first comment
-			layers=int(lines[pos])
-
-			for i in range(0, layers):
-				pos=pos+1
-				token=lines[pos]	#read label
-
-				pos=pos+1
-				layer_ticknes=lines[pos] 	#read thicknes
-
-				iter = self.layer_model.append()
-
-				self.layer_model.set (iter,
-				  COLUMN_LAYER, token,
-				  COLUMN_THICKNES, str(layer_ticknes)
-				)
-
-				scan_item_add("device_epitaxy.inp",token,token,1)
-
-			pos=pos+1
-			pos=pos+1
 			mesh_layers=int(lines[pos])
 
 			for i in range(0, mesh_layers):
 				pos=pos+1					#token
 				token=lines[pos]
-				scan_item_add("device_epitaxy.inp",token,"Mesh width"+str(i),1)
+				scan_item_add("mesh.inp",token,"Mesh width"+str(i),1)
 				pos=pos+1
 				thicknes=lines[pos]	#read value
 
 				pos=pos+1					#token
 				token=lines[pos]
-				scan_item_add("device_epitaxy.inp",token,"Mesh points"+str(i),1)
+				scan_item_add("mesh.inp",token,"Mesh points"+str(i),1)
 
 				pos=pos+1
 				points=lines[pos] 		#read value
@@ -249,40 +217,9 @@ class electrical_mesh_editor(gtk.VBox):
 	def init(self):
 		self.__gobject_init__()
 
-		self.layer_model = gtk.ListStore(str,str)
 		self.mesh_model = gtk.ListStore(str,str)
 
 		self.load()
-
-		frame = gtk.Frame()
-		frame.set_label("Layers")
-		vbox_layers = gtk.VBox(False, 2)
-		treeview = gtk.TreeView(self.layer_model)
-		treeview.set_size_request(200, 100)
-		treeview.set_rules_hint(True)
-		treeview.get_selection().set_mode(gtk.SELECTION_SINGLE)
-		self.__add_columns(treeview)
-		vbox_layers.pack_start(treeview, False, False, 0)
-
-	
-
-		if debug_mode()==True:
-			add_button = gtk.Button("Add",gtk.STOCK_ADD)
-			add_button.connect("clicked", self.on_add_item_clicked, self.layer_model)
-
-			delete_button = gtk.Button("Delete",gtk.STOCK_DELETE)
-			delete_button.connect("clicked", self.on_remove_item_clicked, treeview)
-
-			hbox = gtk.HBox(False, 2)
-			hbox.pack_start(add_button, False, False, 0)
-			hbox.pack_start(delete_button, False, False, 0)
-			vbox_layers.pack_start(hbox, False, False, 0)
-
-		vbox_layers.show()
-
-		frame.add(vbox_layers)
-		frame.show()
-		self.pack_start(frame, True, True, 0)
 
 		#spacer
 		label=gtk.Label("\n\n    ")

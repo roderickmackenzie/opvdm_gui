@@ -40,6 +40,7 @@ from welcome import welcome_class
 from win_lin import running_on_linux
 if running_on_linux()==True:
 	from tab_terminal import tab_terminal
+from dos_main import dos_main
 
 class opvdm_notebook(gtk.Notebook):
 	progress=progress_class()
@@ -155,8 +156,15 @@ class opvdm_notebook(gtk.Notebook):
 					tab_number=tab_number+1
 					self.progress.set_text("Loading "+name)
 					process_events()
-
-					if file_name=="lumo0.inp":
+					if file_name=="epitaxy.inp":
+						tab=dos_main()
+						tab.init()
+						tab.update()
+						add_to_widget=True
+						tab.visible=visible
+						tab.label_name=name
+						tab.file_name=file_name
+					elif file_name=="lumo0.inp":
 						tab=tab_bands()
 						tab.update()
 						if tab.enabled==True:

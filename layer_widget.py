@@ -58,23 +58,16 @@ class layer_widget(gtk.VBox):
 		self.refresh(True)
 
 	def sync_to_electrical_mesh(self):
-		count=0
-		found_layer=0
+		tot=0
 		for i in range(0,len(self.model)):
-			if str2bool(self.model[i][COLUMN_DEVICE])==True:
-				count=count+1
-				found_layer=i
+			if self.model[i][COLUMN_DEVICE]=="yes":
+				tot=tot+float(self.model[i][COLUMN_THICKNES])
 
-		if count==1:
-			lines=[]
-			if inp_load_file(lines,os.path.join(os.getcwd(),"device_epitaxy.inp"))==True:
-				layers=int(inp_search_token_value(lines, "#layers"))
-				mesh_layers=int(inp_search_token_value(lines, "#mesh_layers"))
-				if layers==1 and mesh_layers==1:
-					thickness=self.model[found_layer][COLUMN_THICKNES]
-					inp_update_token_value(os.path.join(os.getcwd(),"device_epitaxy.inp"), "#layer0", thickness,1)
-					inp_update_token_value(os.path.join(os.getcwd(),"device_epitaxy.inp"), "#mesh_layer_length0", thickness,1)
-
+		lines=[]
+		if inp_load_file(lines,os.path.join(os.getcwd(),"mesh.inp"))==True:
+			mesh_layers=int(inp_search_token_value(lines, "#mesh_layers"))
+			if mesh_layers==1:
+				inp_update_token_value(os.path.join(os.getcwd(),"mesh.inp"), "#mesh_layer_length0", str(tot),1)
 
 	def active_layer_edit(self, widget, path, text, model):
 		#print model[path][1]
@@ -93,10 +86,20 @@ class layer_widget(gtk.VBox):
 
 		#print len(self.model[path])
 
-		for i in range(0,len(self.model)):
-			self.model[i][COLUMN_DEVICE]="False"
+		self.model[path][COLUMN_DEVICE]=text
 
-		self.model[path][COLUMN_DEVICE] = "True"
+		start=-1
+		found=False
+		for i in range(0,len(self.model)):
+			if self.model[i][COLUMN_DEVICE]=="yes":
+					found=True
+		
+			if self.model[i][COLUMN_DEVICE]=="no" and found==True:
+					for ii in range(i,len(self.model)):
+						self.model[ii][COLUMN_DEVICE]="no"
+		
+					break
+
 		self.save_model()
 		self.refresh(True)
 
@@ -110,8 +113,8 @@ class layer_widget(gtk.VBox):
 		for i in range(0,len(mat)):
 			self.material_files.append([mat[i]])
 
-		self.active_layer.append(["True"])
-		#self.active_layer.append(["False"])
+		self.active_layer.append(["yes"])
+		self.active_layer.append(["no"])
 		#for i in range(0,len(self.liststore_combobox)):
 		#	if self.liststore_combobox[i][0]!="Select parameter":
 		#		self.material_files.append([self.liststore_combobox[i][0]])
@@ -249,13 +252,13 @@ class layer_widget(gtk.VBox):
 	def __create_model(self):
 
 		# create list store
-		model = gtk.ListStore(str,str,str,bool)
+		model = gtk.ListStore(str,str,str,str)
 
 		# add items
 
 		self.rebuild_mat_list()
 		lines=[]
-		inp_load_file(lines,os.path.join(os.getcwd(),"optics_epitaxy.inp"))
+		inp_load_file(lines,os.path.join(os.getcwd(),"epitaxy.inp"))
 
 		pos=0
 		pos=pos+1
@@ -277,10 +280,15 @@ class layer_widget(gtk.VBox):
 			material=lines[pos]
 
 			pos=pos+1
-			device=lines[pos] 	#value
+			dos_file=lines[pos] 	#value
 
-			scan_item_add("optics_epitaxy.inp","#layer"+str(layer),"Material for "+str(material),2)
-			scan_item_add("optics_epitaxy.inp","#layer"+str(layer),"Layer width "+str(material),1)
+			if dos_file=="none":
+				dos_file="no"
+			else:
+				dos_file="yes"
+
+			scan_item_add("epitaxy.inp","#layer"+str(layer),"Material for "+str(material),2)
+			scan_item_add("epitaxy.inp","#layer"+str(layer),"Layer width "+str(material),1)
 			layer=layer+1
 
 			iter = model.append()
@@ -288,7 +296,7 @@ class layer_widget(gtk.VBox):
 			model.set (iter,
 			  COLUMN_THICKNES, str(thick),
 			  COLUMN_MATERIAL, str(material),
-			  COLUMN_DEVICE, str(bool(int(device)))
+			  COLUMN_DEVICE, str(dos_file)
 			)
 		return model
 
@@ -398,6 +406,8 @@ class layer_widget(gtk.VBox):
 			self.emit("refresh")
 
 	def save_model(self):
+		dos_file=0
+		dos_text=""
 		lines=[]
 		lines.append("#layers")
 		lines.append(str(len(self.model)))
@@ -407,14 +417,20 @@ class layer_widget(gtk.VBox):
 			lines.append("#layer"+str(layer))
 			lines.append(item[COLUMN_THICKNES])
 			lines.append(item[COLUMN_MATERIAL])
-			out=int(str2bool(item[COLUMN_DEVICE]))
-			lines.append(str(out))
+
+			if item[COLUMN_DEVICE]=="yes":
+				dos_text="dos"+str(dos_file)+".inp"
+				dos_file=dos_file+1
+			else:
+				dos_text="none"
+
+			lines.append(dos_text)
 			layer=layer+1
 		lines.append("#ver")			
-		lines.append("1.11")			
+		lines.append("1.0")			
 		lines.append("#end")
 		
-		inp_write_lines_to_file(os.path.join(os.getcwd(),"optics_epitaxy.inp"),lines)
+		inp_write_lines_to_file(os.path.join(os.getcwd(),"epitaxy.inp"),lines)
 		self.sync_to_electrical_mesh()
 
 	def callback_optics_sim(self, widget, data=None):

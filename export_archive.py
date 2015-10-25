@@ -22,29 +22,53 @@
 import sys
 import os
 import glob
+import zipfile
+from util_zip import archive_add_file
+from progress import progress_class
+from gui_util import process_events
 
 def export_archive(target):
-	for path, dirs, files in os.walk(directory):
-		
+	file_list=[]
+
+	progress_window=progress_class()
+	progress_window.init()
+	progress_window.show()
+	progress_window.start()
+	process_events()
+
+	for path, dirs, files in os.walk(os.getcwd()):	
 		for file_name in files:
-			whole_file_name=os.path.join(path,file_name)
-			#print whole_file_name,"rod",self.ip_address[node]
-			sendfile = open(whole_file_name, 'rb')
-			data = sendfile.read()
-			data_zip=data.encode("zlib")
-			sendfile.close()
-			sock.sendall(encode_for_tcp(whole_file_name)+encode_for_tcp(len(data_zip)))
-			sock.sendall(data_zip)
+			if file_name.endswith(".inp") or file_name.endswith(".dat") or file_name.endswith(".mat"):  
+				file_list.append(os.path.join(path,file_name))
 
-	zf = zipfile.ZipFile(abs_path, 'w')
 
-	for file_name in os.listdir(os.getcwd()):
-		if file_name.endswith(".inp"):
-			
-			build='\n'.join(lines)
-			zf.writestr(target, build)
+	zf = zipfile.ZipFile(target, 'a')
+
+	for i in range(0,len(file_list)):
+		cur_file=file_list[i]
+		#print "exporting",file_list[i]
+
+		lines=[]
+		if os.path.isfile(cur_file):
+			f=open(cur_file, mode='rb')
+			lines = f.read()
+			f.close()
+
+
+			zf.writestr(cur_file[len(os.getcwd()):], lines)
+			progress_window.set_fraction(float(i)/float(len(file_list)))
+			progress_window.set_text("Adding"+cur_file[len(os.getcwd()):])
+			process_events()
+
+	src_zf = zipfile.ZipFile(os.path.join(os.getcwd(),"sim.opvdm"), 'r')
+
+	for file_name in src_zf.namelist():
+		if file_name not in zf.namelist():
+			#print "adding from archive",file_name
+			lines=src_zf.read(file_name)
+			zf.writestr(file_name, lines)
 
 	zf.close()
-
-
+	src_zf.close()
+	progress_window.stop()
 

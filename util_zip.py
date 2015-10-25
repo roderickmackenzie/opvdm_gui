@@ -131,6 +131,20 @@ def write_lines_to_archive(archive_path,file_name,lines):
 	else:
 		replace_file_in_zip_archive(archive_path,file_name,lines)
 
+def archive_add_file(archive_path,file_name,base_dir):
+		lines=[]
+		if os.path.isfile(file_name):
+			f=open(file_name, mode='rb')
+			lines = f.read()
+			f.close()
+		else:
+			return False
+
+		zf = zipfile.ZipFile(archive_path, 'a')
+
+		zf.writestr(file_name[len(base_dir):], lines)
+		zf.close()
+		return True
 
 def read_lines_from_archive(lines,zip_file_path,file_name):
 

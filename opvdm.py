@@ -82,6 +82,7 @@ import glib
 from server import server
 from opvdm_notebook import opvdm_notebook
 from gui_util import process_events
+from epitaxy import epitaxy_load
 calculate_paths()
 
 if running_on_linux()==True:
@@ -334,6 +335,7 @@ class opvdm_main_window(gobject.GObject):
  		scan_items_clear()
 		os.chdir(new_dir)
 		calculate_paths()
+		epitaxy_load()
 		self.config.load(os.getcwd())
 		self.status_bar.push(self.context_id, os.getcwd())
 		self.plot_open.set_sensitive(False)
@@ -446,16 +448,17 @@ class opvdm_main_window(gobject.GObject):
 		if response == gtk.RESPONSE_OK:
 			file_name=dialog.get_filename()
 			mode=self.sim_mode.get_active_text()
+			filter=dialog.get_filter()
+			dialog.destroy()
 
 			if os.path.splitext(file_name)[1]:
 				export_as(file_name)
 			else:
-				filter=dialog.get_filter()
 				export_as(file_name+filter.get_name())
 			
 		elif response == gtk.RESPONSE_CANCEL:
-		    print 'Closed, no files selected'
-		dialog.destroy()
+			print 'Closed, no files selected'
+			dialog.destroy()
 
 	def callback_about_dialog(self, widget, data=None):
 		about_dialog_show()

@@ -458,7 +458,7 @@ class class_optical(gtk.Window):
 		start=0.0
 
 		for i in range(0,len(self.material)):
-			if self.device[i]=="0":
+			if self.device[i]!="none":
 				start=start-self.thick[i]
 			else:
 				break
@@ -560,7 +560,7 @@ class class_optical(gtk.Window):
 
 	def load(self):
 		lines=[]
-		if inp_load_file(lines,"optics_epitaxy.inp")==True:
+		if inp_load_file(lines,"epitaxy.inp")==True:
 			print lines
 			pos=0
 			pos=pos+1
