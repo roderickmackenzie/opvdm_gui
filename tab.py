@@ -35,6 +35,7 @@ import zipfile
 import base64
 from tab_base import tab_base
 from util import str2bool
+from scan_item import scan_remove_file
 
 class tab_class(gtk.VBox,tab_base):
 	
@@ -53,6 +54,7 @@ class tab_class(gtk.VBox,tab_base):
 			inp_update_token_value(self.file_name, data, widget.get_active_text(),1)
 
 	def init(self,filename,fullname):
+		scan_remove_file(filename)
 		self.widget_type=[]
 		self.file_name=filename
 		self.edit_list=[]

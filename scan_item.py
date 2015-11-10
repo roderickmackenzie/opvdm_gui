@@ -59,6 +59,15 @@ def scan_item_save(file_name):
 		f.write(str(check_list[i].line)+"\n")
 	f.close()
 
+def scan_remove_file(file_name):
+	global check_list
+	new_list=[]
+	for i in range(0,len(check_list)):
+		if 	check_list[i].filename!=file_name:
+			new_list.append(check_list[i])
+
+	check_list=new_list
+
 def scan_item_load(file_name):
 	global check_list
 	check_list=[]

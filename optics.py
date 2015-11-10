@@ -51,6 +51,10 @@ from cal_path import get_phys_path
 from cal_path import get_light_dll_path
 from cal_path import get_exe_command
 from inp import inp_load_file
+from epitaxy import epitaxy_get_layers
+from epitaxy import epitaxy_get_mat_file
+from epitaxy import epitaxy_get_electrical_layer
+from epitaxy import epitaxy_get_width
 
 def find_modes(path):
 	result = []
@@ -138,7 +142,6 @@ class class_optical(gtk.Window):
 		self.progress_window=progress_class()
 		self.progress_window.init()
 
-		self.load()
 		self.articles=[]
 		self.dump_dir=os.path.join(os.getcwd(),"light_dump")
 		find_models()
@@ -457,20 +460,19 @@ class class_optical(gtk.Window):
 		color =['r','g','b','y','o','r','g','b','y','o']
 		start=0.0
 
-		for i in range(0,len(self.material)):
-			if self.device[i]!="none":
-				start=start-self.thick[i]
+		for i in range(0,epitaxy_get_layers()):
+			if epitaxy_get_electrical_layer(i)!="none":
+				start=start-epitaxy_get_width(i)
 			else:
 				break
 		start=start*1e9
 
 		x_pos=start
-		for i in range(0,len(self.material)):
+		for i in range(0,epitaxy_get_layers()):
 
-			label=self.material[i]
-			layer_ticknes=self.thick[i]
-			layer_material=self.material[i]
-			device=self.device[i]
+			label=epitaxy_get_mat_file(i)
+			layer_ticknes=epitaxy_get_width(i)
+			layer_material=epitaxy_get_mat_file(i)
 
 			delta=float(layer_ticknes)*1e9
 			mat_file='./phys/'+layer_material+'/mat.inp'
@@ -557,38 +559,4 @@ class class_optical(gtk.Window):
 
 	def callback_help(self, widget, data=None):
 		webbrowser.open('http://www.opvdm.com/man/index.html')
-
-	def load(self):
-		lines=[]
-		if inp_load_file(lines,"epitaxy.inp")==True:
-			print lines
-			pos=0
-			pos=pos+1
-			items=int(lines[pos])
-
-			self.edit_list=[]
-			self.line_number=[]
-
-			layer=0
-			self.thick=[]
-			self.material=[]
-			self.device=[]
-
-			for i in range(0, items):
-				pos=pos+1
-				label=lines[pos]	#read label
-
-				pos=pos+1
-				self.thick.append(float(lines[pos]))
-
-				pos=pos+1
-				self.material.append(lines[pos])
-
-				pos=pos+1
-				self.device.append(lines[pos]) 	#value
-			
-				layer=layer+1
-			return True
-		else:
-			return False
 

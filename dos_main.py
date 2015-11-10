@@ -37,7 +37,7 @@ from tab import tab_class
 from epitaxy import epitaxy_get_layers
 from epitaxy import epitaxy_get_electrical_layer
 from epitaxy import epitaxy_get_mat_file
-
+from global_objects import global_object_register
 
 class dos_main(gtk.HBox,tab_base):
 	
@@ -56,12 +56,19 @@ class dos_main(gtk.HBox,tab_base):
 		self.pack_start(self.notebook, True, True, 0)
 		self.notebook.set_tab_pos(gtk.POS_LEFT)
 		self.notebook.show()
+		global_object_register("dos-update",self.update)
 
 	def update(self):
+		print "DoS update"
+
+
+		for child in self.notebook.get_children():
+				self.notebook.remove(child)
+
 		files=epitaxy_get_dos_files()
 		for i in range(0,epitaxy_get_layers()):
 			dos_layer=epitaxy_get_electrical_layer(i)
-			if dos_layer>=0:
+			if dos_layer!="none":
 				add_to_widget=True
 				tab=tab_class()
 				tab.show()
@@ -69,10 +76,11 @@ class dos_main(gtk.HBox,tab_base):
 				name="DoS of "+epitaxy_get_mat_file(i)
 				print dos_layer,files
 
-				tab.init(files[dos_layer]+".inp",name)
+				tab.init(dos_layer,name)
 				tab.label_name=name
-				tab.file_name=files[dos_layer]
+				tab.file_name=dos_layer
 				self.notebook.append_page(tab, gtk.Label(name))
-#gobject.type_register(web_thread)
-#gobject.signal_new("got-data", web_thread, gobject.SIGNAL_RUN_FIRST,gobject.TYPE_NONE, ())
+
+#gobject.type_register(dos_main)
+#gobject.signal_new("update", dos_main, gobject.SIGNAL_RUN_FIRST,gobject.TYPE_NONE, ())
 

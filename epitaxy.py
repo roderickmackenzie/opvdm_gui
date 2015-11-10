@@ -47,7 +47,6 @@ layers=0
 electrical_layers=0
 width=[]
 mat_file=[]
-dos_file=[]
 electrical_layer=[]
 
 def epitaxy_load():
@@ -56,14 +55,12 @@ def epitaxy_load():
 	global electrical_layers
 	global width
 	global mat_file
-	global dos_file
 	global electrical_layer
 
 	layers=0
 	electrical_layers=0
 	width=[]
 	mat_file=[]
-	dos_file=[]
 	electrical_layer=[]
 
 	if inp_load_file(lines,"epitaxy.inp")==True:
@@ -81,25 +78,92 @@ def epitaxy_load():
 			mat_file.append(lines[pos])
 
 			pos=pos+1
-			temp_dos_file=lines[pos]		#value
+			electrical_layer.append(lines[pos])		#value
 
-			if temp_dos_file=="none":
-				electrical_layer.append(-1)
-			else:
-				electrical_layer.append(electrical_layers)
-				dos_file.append(temp_dos_file)
+			if lines[pos]!="none":
 				electrical_layers=electrical_layers+1
 
 			layers=layers+1
 
+def epitay_get_next_dos():
+	global electrical_layer
+	for i in range(0,20):
+		name="dos"+str(i)+".inp"
+		if electrical_layer.count(name)==0:
+			return name
+
+def epitaxy_load_from_arrays(in_width,in_material,in_dos_layer):
+	lines=[]
+	global layers
+	global electrical_layers
+	global width
+	global mat_file
+	global electrical_layer
+
+	layers=0
+	electrical_layers=0
+	width=[]
+	mat_file=[]
+	electrical_layer=[]
+
+	for i in range(0, len(in_width)):
+
+		width.append(float(in_width[i]))
+
+		mat_file.append(in_material[i])
+
+		electrical_layer.append(in_dos_layer[i])		#value
+
+		if in_dos_layer[i]!="none":
+			electrical_layers=electrical_layers+1
+
+
+		layers=layers+1
+
+def epitaxy_save():
+	global layers
+	global electrical_layers
+	global width
+	global mat_file
+	global electrical_layer
+
+	dos_text=""
+	lines=[]
+	lines.append("#layers")
+	lines.append(str(layers))
+
+	layer=0
+	for i in range(0,layers):
+		lines.append("#layer"+str(layer))
+		lines.append(str(width[i]))
+		lines.append(mat_file[i])
+
+		lines.append(electrical_layer[i])
+		layer=layer+1
+
+	lines.append("#ver")			
+	lines.append("1.0")			
+	lines.append("#end")
+
+	print lines
+	inp_write_lines_to_file(os.path.join(os.getcwd(),"epitaxy.inp"),lines)
 
 def epitaxy_get_dos_files():
-	global dos_file
+	global electrical_layer
+	dos_file=[]
+	for i in range(0,len(electrical_layer)):
+		if electrical_layer[i]!="none":
+			dos_file.append(electrical_layer[i])
+
 	return dos_file
 
 def epitaxy_get_layers():
 	global layers
 	return layers
+
+def epitaxy_get_width(i):
+	global width
+	return width[i]
 
 def epitaxy_get_electrical_layer(i):
 	global electrical_layer

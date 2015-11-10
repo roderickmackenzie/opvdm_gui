@@ -40,12 +40,21 @@ from plot_gen import plot_gen
 from opvdm_open import opvdm_open
 from cal_path import get_phys_path
 from optics import class_optical
+from global_objects import global_object_get
+from epitaxy import epitaxy_get_width
+from epitaxy import epitaxy_get_mat_file
+from epitaxy import epitaxy_get_electrical_layer
+from epitaxy import epitaxy_get_layers
+from epitaxy import epitaxy_save
+from epitaxy import epitaxy_load_from_arrays
+from epitaxy import epitay_get_next_dos
 
 (
   COLUMN_THICKNES,
   COLUMN_MATERIAL,
-  COLUMN_DEVICE
-) = range(3)
+  COLUMN_DEVICE,
+  COLUMN_DOS_LAYER
+) = range(4)
 
 class layer_widget(gtk.VBox):
 
@@ -70,35 +79,13 @@ class layer_widget(gtk.VBox):
 				inp_update_token_value(os.path.join(os.getcwd(),"mesh.inp"), "#mesh_layer_length0", str(tot),1)
 
 	def active_layer_edit(self, widget, path, text, model):
-		#print model[path][1]
-		#count=0
-		#for i in range(0,len(self.model)):
-		#	if str2bool(self.model[i][COLUMN_DEVICE])==True:
-		#		count=count+1
-
-		#If we only have one true in the list and the user wants to set it to false don't let them
-		#if count==1 and str2bool(self.model[path][COLUMN_DEVICE])==True and str2bool(text)==False:
-		#	md = gtk.MessageDialog(None, gtk.DIALOG_DESTROY_WITH_PARENT, gtk.MESSAGE_INFO, 
-		#			gtk.BUTTONS_CLOSE, "You must assign at least one layer to be the active layer")
-		#	md.run()
-		#	md.destroy()
-		#	return
-
-		#print len(self.model[path])
-
+		old_text=self.model[path][COLUMN_DEVICE]
 		self.model[path][COLUMN_DEVICE]=text
+		if old_text=="no" and text=="yes":
+			self.model[path][COLUMN_DOS_LAYER]=epitay_get_next_dos()
 
-		start=-1
-		found=False
-		for i in range(0,len(self.model)):
-			if self.model[i][COLUMN_DEVICE]=="yes":
-					found=True
-		
-			if self.model[i][COLUMN_DEVICE]=="no" and found==True:
-					for ii in range(i,len(self.model)):
-						self.model[ii][COLUMN_DEVICE]="no"
-		
-					break
+		if text=="no":
+			self.model[path][COLUMN_DOS_LAYER]="none"
 
 		self.save_model()
 		self.refresh(True)
@@ -115,9 +102,6 @@ class layer_widget(gtk.VBox):
 
 		self.active_layer.append(["yes"])
 		self.active_layer.append(["no"])
-		#for i in range(0,len(self.liststore_combobox)):
-		#	if self.liststore_combobox[i][0]!="Select parameter":
-		#		self.material_files.append([self.liststore_combobox[i][0]])
 
 	def callback_view_materials(self, widget, data=None):
 		dialog=opvdm_open()
@@ -252,51 +236,34 @@ class layer_widget(gtk.VBox):
 	def __create_model(self):
 
 		# create list store
-		model = gtk.ListStore(str,str,str,str)
+		model = gtk.ListStore(str,str,str,str,str)
 
 		# add items
 
 		self.rebuild_mat_list()
-		lines=[]
-		inp_load_file(lines,os.path.join(os.getcwd(),"epitaxy.inp"))
 
-		pos=0
-		pos=pos+1
-		items=int(lines[pos])
+		for i in range(0,epitaxy_get_layers()):
+			thick=epitaxy_get_width(i)
+			material=epitaxy_get_mat_file(i)
+			dos_layer=epitaxy_get_electrical_layer(i)
 
-		self.edit_list=[]
-		self.line_number=[]
+			dos_file=""
 
-		layer=0
-
-		for i in range(0, items):
-			pos=pos+1
-			#label=lines[pos]	#read label
-
-			pos=pos+1
-			thick=float(lines[pos])
-
-			pos=pos+1
-			material=lines[pos]
-
-			pos=pos+1
-			dos_file=lines[pos] 	#value
-
-			if dos_file=="none":
+			if dos_layer=="none":
 				dos_file="no"
 			else:
 				dos_file="yes"
 
-			scan_item_add("epitaxy.inp","#layer"+str(layer),"Material for "+str(material),2)
-			scan_item_add("epitaxy.inp","#layer"+str(layer),"Layer width "+str(material),1)
-			layer=layer+1
+			scan_item_add("epitaxy.inp","#layer"+str(i),"Material for "+str(material),2)
+			scan_item_add("epitaxy.inp","#layer"+str(i),"Layer width "+str(material),1)
 
 			iter = model.append()
 
 			model.set (iter,
 			  COLUMN_THICKNES, str(thick),
 			  COLUMN_MATERIAL, str(material),
-			  COLUMN_DEVICE, str(dos_file)
+			  COLUMN_DEVICE, str(dos_file),
+			  COLUMN_DOS_LAYER, str(dos_layer)
 			)
 		return model
 
@@ -355,8 +322,35 @@ class layer_widget(gtk.VBox):
 		column.add_attribute(render, "text", COLUMN_DEVICE)
 		treeview.append_column(column)
 
+		#column = gtk.TreeViewColumn("DoS Layer")
+		#render = gtk.CellRendererCombo()
+		#render.set_property("editable", True)
+		#render.set_property("text-column", 0)
+		#renderer.connect("edited", self.on_dos_layer_edited, model)
+		#column.pack_start(render, False)
+		#column.add_attribute(render, "text", COLUMN_DOS_LAYER)
+		#treeview.append_column(column)
+
+
+		renderer = gtk.CellRendererText()
+		renderer.connect("edited", self.on_dos_layer_edited, model)
+		renderer.set_data("column", COLUMN_DOS_LAYER)
+		renderer.set_property("editable", True)
+		column = gtk.TreeViewColumn("DoS Layer", renderer, text=COLUMN_DOS_LAYER,editable=True)
+		treeview.append_column(column)
 
 	def on_cell_edited(self, cell, path_string, new_text, model):
+
+		iter = model.get_iter_from_string(path_string)
+		path = model.get_path(iter)[0]
+		column = cell.get_data("column")
+
+		model.set(iter, column, new_text)
+
+		self.save_model()
+		self.refresh(True)
+
+	def on_dos_layer_edited(self, cell, path_string, new_text, model):
 
 		iter = model.get_iter_from_string(path_string)
 		path = model.get_path(iter)[0]
@@ -384,7 +378,7 @@ class layer_widget(gtk.VBox):
 					return
 
 	def on_add_item_clicked(self, button):
-		new_item = ["100e-9", "pcbm","0","1",False]
+		new_item = ["100e-9", "pcbm","no","none",False]
 
 		selection = self.treeview.get_selection()
 		model, iter = selection.get_selected()
@@ -395,42 +389,33 @@ class layer_widget(gtk.VBox):
 		model.set (iter,
 		    COLUMN_THICKNES, new_item[COLUMN_THICKNES],
 		    COLUMN_MATERIAL, new_item[COLUMN_MATERIAL],
-		    COLUMN_DEVICE, new_item[COLUMN_DEVICE]
+		    COLUMN_DEVICE, new_item[COLUMN_DEVICE],
+		    COLUMN_DOS_LAYER, new_item[COLUMN_DOS_LAYER],
+
 		)
 		self.save_model()
 		self.refresh(True)
+
 
 	def refresh(self,emit):
 		self.electrical_mesh.refresh()
 		if emit==True:
 			self.emit("refresh")
 
+		global_object_get("dos-update")()
+
 	def save_model(self):
-		dos_file=0
-		dos_text=""
-		lines=[]
-		lines.append("#layers")
-		lines.append(str(len(self.model)))
 
-		layer=0
+		thick=[]
+		material=[]
+		dos_layer=[]
 		for item in self.model:
-			lines.append("#layer"+str(layer))
-			lines.append(item[COLUMN_THICKNES])
-			lines.append(item[COLUMN_MATERIAL])
+			thick.append(item[COLUMN_THICKNES])
+			material.append(item[COLUMN_MATERIAL])
+			dos_layer.append(item[COLUMN_DOS_LAYER])
+		epitaxy_load_from_arrays(thick,material,dos_layer)
 
-			if item[COLUMN_DEVICE]=="yes":
-				dos_text="dos"+str(dos_file)+".inp"
-				dos_file=dos_file+1
-			else:
-				dos_text="none"
-
-			lines.append(dos_text)
-			layer=layer+1
-		lines.append("#ver")			
-		lines.append("1.0")			
-		lines.append("#end")
-		
-		inp_write_lines_to_file(os.path.join(os.getcwd(),"epitaxy.inp"),lines)
+		epitaxy_save()
 		self.sync_to_electrical_mesh()
 
 	def callback_optics_sim(self, widget, data=None):
