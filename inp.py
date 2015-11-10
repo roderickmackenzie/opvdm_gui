@@ -86,7 +86,13 @@ def inp_isfile(file_path):
 	zip_file_name=os.path.join(os.path.dirname(file_path),"sim.opvdm")
 	return archive_isfile(zip_file_name,os.path.basename(file_path))
 
-
+def inp_copy_file(dest,src):
+	lines=[]
+	if inp_load_file(lines,src)==True:
+		inp_write_lines_to_file(dest,lines)
+		True
+	else:
+		return False
 
 def inp_load_file(lines,file_path):
 	zip_file_path=os.path.join(os.path.dirname(file_path),"sim.opvdm")

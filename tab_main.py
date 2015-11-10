@@ -33,6 +33,10 @@ from inp import inp_load_file
 from inp import inp_search_token_value
 from util import str2bool
 from tab_base import tab_base
+from epitaxy import epitaxy_get_layers
+from epitaxy import epitaxy_get_width
+from epitaxy import epitaxy_get_mat_file
+from epitaxy import epitaxy_get_electrical_layer
 
 class tab_main(gtk.VBox,tab_base):
 
@@ -78,9 +82,8 @@ class tab_main(gtk.VBox,tab_base):
 
 		#self.cr.restore()
 
-	def draw_box(self,x,y,z,r,g,b,model):
-		text=model[1]
-		active_layer=str2bool(model[2])
+	def draw_box(self,x,y,z,r,g,b,layer):
+		text=""
 		self.cr.set_source_rgb(r,g,b)
 
 		points=[(x,y), (x+200,y), (x+200,y+z), (x,y+z)]
@@ -89,7 +92,10 @@ class tab_main(gtk.VBox,tab_base):
 			self.cr.line_to(px, py)
 		self.cr.fill()
 
-		if active_layer==True:
+		if epitaxy_get_electrical_layer(layer)=="none":
+			text=epitaxy_get_mat_file(layer)+"  (Layer"+str(layer)+")"
+		else:
+			text=epitaxy_get_mat_file(layer)+"  (Layer"+str(layer)+" active)"
 			points=[(x+285,y-60), (x+295,y-60), (x+295,y+z-60), (x+285,y+z-60)]
 			self.cr.set_source_rgb(0.0,0.0,0.7)
 			self.cr.move_to(points[0][0], points[0][1])
@@ -143,19 +149,19 @@ class tab_main(gtk.VBox,tab_base):
 	def set_sun(self,sun):
 		self.sun=sun
 
-	def draw(self,model):
+	def draw(self):
 		tot=0
-		for i in range(0,len(model)):
-			tot=tot+float(model[i][0])
+		for i in range(0,epitaxy_get_layers()):
+			tot=tot+epitaxy_get_width(i)
 
 		pos=0.0
-		l=len(model)-1
+		l=epitaxy_get_layers()-1
 		lines=[]
 
-		for i in range(0,len(model)):
-			thick=200.0*float(model[l-i][0])/tot
+		for i in range(0,epitaxy_get_layers()):
+			thick=200.0*epitaxy_get_width(l-i)/tot
 			pos=pos+thick
-			path=os.path.join(get_phys_path(),model[l-i][1],"mat.inp")
+			path=os.path.join(get_phys_path(),epitaxy_get_mat_file(l-i),"mat.inp")
 
 			if inp_load_file(lines,path)==True:
 				red=float(inp_search_token_value(lines, "#Red"))
@@ -167,7 +173,7 @@ class tab_main(gtk.VBox,tab_base):
 				green=0.0
 				blue=0.0
 
-			self.draw_box(200,450.0-pos,thick*0.9,red,green,blue,model[l-i])
+			self.draw_box(200,450.0-pos,thick*0.9,red,green,blue,l-i)
 		step=50.0
 
 		lines=[]
@@ -202,6 +208,6 @@ class tab_main(gtk.VBox,tab_base):
 
 		#self.cr.translate(w/2, h/2)
 
-		self.draw(self.frame.model)
+		self.draw()
 
 

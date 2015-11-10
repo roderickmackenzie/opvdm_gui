@@ -76,7 +76,7 @@ class dos_main(gtk.HBox,tab_base):
 				name="DoS of "+epitaxy_get_mat_file(i)
 				print dos_layer,files
 
-				tab.init(dos_layer,name)
+				tab.init(dos_layer+".inp",name)
 				tab.label_name=name
 				tab.file_name=dos_layer
 				self.notebook.append_page(tab, gtk.Label(name))

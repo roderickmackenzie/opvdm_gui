@@ -88,7 +88,7 @@ def epitaxy_load():
 def epitay_get_next_dos():
 	global electrical_layer
 	for i in range(0,20):
-		name="dos"+str(i)+".inp"
+		name="dos"+str(i)
 		if electrical_layer.count(name)==0:
 			return name
 

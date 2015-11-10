@@ -48,6 +48,8 @@ from epitaxy import epitaxy_get_layers
 from epitaxy import epitaxy_save
 from epitaxy import epitaxy_load_from_arrays
 from epitaxy import epitay_get_next_dos
+from inp import inp_isfile
+from inp import inp_copy_file
 
 (
   COLUMN_THICKNES,
@@ -83,6 +85,9 @@ class layer_widget(gtk.VBox):
 		self.model[path][COLUMN_DEVICE]=text
 		if old_text=="no" and text=="yes":
 			self.model[path][COLUMN_DOS_LAYER]=epitay_get_next_dos()
+			new_file=self.model[path][COLUMN_DOS_LAYER]+".inp"
+			if inp_isfile(new_file)==False:
+				inp_copy_file(new_file,"dos0.inp")
 
 		if text=="no":
 			self.model[path][COLUMN_DOS_LAYER]="none"
@@ -337,6 +342,7 @@ class layer_widget(gtk.VBox):
 		renderer.set_data("column", COLUMN_DOS_LAYER)
 		renderer.set_property("editable", True)
 		column = gtk.TreeViewColumn("DoS Layer", renderer, text=COLUMN_DOS_LAYER,editable=True)
+		column.set_visible(False)
 		treeview.append_column(column)
 
 	def on_cell_edited(self, cell, path_string, new_text, model):
