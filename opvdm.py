@@ -83,6 +83,9 @@ from server import server
 from opvdm_notebook import opvdm_notebook
 from gui_util import process_events
 from epitaxy import epitaxy_load
+from help import help_class
+from global_objects import global_object_get
+
 calculate_paths()
 
 if running_on_linux()==True:
@@ -251,6 +254,8 @@ class opvdm_main_window(gobject.GObject):
 
 
 	def callback_plot_select(self, widget, data=None):
+		global_object_get("help_set_text")("<big>Select a file to plot</big>\nSingle clicking shows you the content of the file")
+		global_object_get("help_set_icon")(os.path.join("gui","dat_file.png"))
 
 		dialog=opvdm_open()
 		dialog.show_inp_files=False
@@ -936,7 +941,8 @@ class opvdm_main_window(gobject.GObject):
 		if main_vbox==None:
 			self.window2.show()
 
-
+		self.help_class=help_class()
+		self.help_class.init()
 
 if __name__ == "__main__":
 	main=opvdm_main_window()

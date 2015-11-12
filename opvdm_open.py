@@ -25,6 +25,9 @@
 import gtk
 import os
 from util import find_data_file
+from global_objects import global_object_get
+from plot_io import get_plot_file_info
+from plot_state import plot_state
 
 COL_PATH = 0
 COL_PIXBUF = 1
@@ -87,21 +90,24 @@ class opvdm_open(gtk.Dialog):
 		self.store = self.create_store()
 		self.fill_store()
 
-		icon_view = gtk.IconView(self.store)
-		icon_view.set_selection_mode(gtk.SELECTION_MULTIPLE)
+		self.icon_view = gtk.IconView(self.store)
+		self.icon_view.set_selection_mode(gtk.SELECTION_MULTIPLE)
 
 		self.up_button.connect("clicked", self.on_up_clicked)
 		home_button.connect("clicked", self.on_home_clicked)
 
-		icon_view.set_text_column(COL_PATH)
-		icon_view.set_pixbuf_column(COL_PIXBUF)
+		self.icon_view.set_text_column(COL_PATH)
+		self.icon_view.set_pixbuf_column(COL_PIXBUF)
 
-		icon_view.connect("item-activated", self.on_item_activated)
-		sw.add(icon_view)
-		icon_view.grab_focus()
-		icon_view.set_spacing(0)
-		icon_view.set_row_spacing(0)
-		icon_view.set_column_spacing(0)
+		self.icon_view.connect("item-activated", self.on_item_activated)
+		self.icon_view.connect("selection-changed", self.on_selection_changed)
+
+
+		sw.add(self.icon_view)
+		self.icon_view.grab_focus()
+		self.icon_view.set_spacing(0)
+		self.icon_view.set_row_spacing(0)
+		self.icon_view.set_column_spacing(0)
 
 		self.vbox.pack_start( vbox)
 		self.show_all()
@@ -165,6 +171,17 @@ class opvdm_open(gtk.Dialog):
 		    
 		self.dir = os.path.join(self.dir, path)
 		self.change_path()
+
+	def on_selection_changed(self, widget):
+		selected=self.icon_view.get_selected_items()
+		if len(selected)!=0:
+			path=selected[0]
+			state=plot_state()
+			get_plot_file_info(state,self.store[path[0]][0])
+			summary="<big><b>"+self.store[path[0]][0]+"</b></big>\n"+"\ntitle: "+state.title+"\nx axis: "+state.x_label+" ("+state.x_units+")\ny axis: "+state.y_label+" ("+state.y_units+")\n\n<big><b>Double click to open</b></big>"
+			global_object_get("help_set_text")(summary)
+			global_object_get("help_set_icon")(os.path.join("gui","dat_file.png"))
+
 
 	def change_path(self):
 		self.text.set_text(self.dir)

@@ -41,6 +41,7 @@ from util import gui_print_path
 from progress import progress_class
 from copying import copying
 from cal_path import get_exe_command
+from global_objects import global_object_get
 
 def server_find_simulations_to_run(commands,search_path):
 	for root, dirs, files in os.walk(search_path):
@@ -109,7 +110,8 @@ class server:
 		self.progress_window.stop()
 		self.statusicon.set_from_stock(gtk.STOCK_YES)
 		self.extern_gui_sim_stop("Finished simulation")
-
+		global_object_get("help_set_text")("<big><b>Simulation finished!</b></big>\nClick on the plot icon to plot the results")
+		global_object_get("help_set_icon")(os.path.join("gui","plot.png"))
 		if len(self.error_messages)!=0:
 			text='\n'.join(self.error_messages)
 			if (text.count('License')==0):
