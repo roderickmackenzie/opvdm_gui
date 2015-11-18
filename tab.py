@@ -36,6 +36,7 @@ import base64
 from tab_base import tab_base
 from util import str2bool
 from scan_item import scan_remove_file
+from inp import inp_load_file
 
 class tab_class(gtk.VBox,tab_base):
 	
@@ -59,20 +60,7 @@ class tab_class(gtk.VBox,tab_base):
 		self.file_name=filename
 		self.edit_list=[]
 		self.line_number=[]
-		if check_is_config_file(filename)=="file":
-			f = open(filename)
-			self.lines = f.readlines()
-			f.close()
-		elif check_is_config_file(filename)=="archive":
-			zf = zipfile.ZipFile('sim.opvdm', 'r')
-			self.lines = zf.read(filename).split("\n")
-			zf.close()
-		else:
-			print "File not found"
-
-		pos=0
-		for i in range(0, len(self.lines)):
-			self.lines[i]=self.lines[i].rstrip()
+		inp_load_file(self.lines,filename)
 
 		n=0
 		pos=0

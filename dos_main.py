@@ -78,7 +78,6 @@ class dos_main(gtk.HBox,tab_base):
 
 				tab.init(dos_layer+".inp",name)
 				tab.label_name=name
-				tab.file_name=dos_layer
 				self.notebook.append_page(tab, gtk.Label(name))
 
 #gobject.type_register(dos_main)

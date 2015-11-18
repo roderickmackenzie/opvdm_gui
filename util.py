@@ -200,6 +200,13 @@ def pygtk_to_latex_subscript(in_string):
 	out_string=out_string.replace("</sup>","}")
 	return out_string
 
+def latex_to_pygtk_subscript(in_string):
+	out_string=in_string.replace("_{","<sub>")
+	out_string=out_string.replace("}","</sub>")
+	out_string=in_string.replace("^{","<sup>")
+	out_string=out_string.replace("}","</sup>")
+	return out_string
+
 def lines_to_xyz(x,y,z,lines):
 	for i in range(0, len(lines)):
 		lines[i]=re.sub(' +',' ',lines[i])

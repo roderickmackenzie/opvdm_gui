@@ -28,6 +28,7 @@ from util import find_data_file
 from global_objects import global_object_get
 from plot_io import get_plot_file_info
 from plot_state import plot_state
+from util import latex_to_pygtk_subscript
 
 COL_PATH = 0
 COL_PIXBUF = 1
@@ -178,7 +179,7 @@ class opvdm_open(gtk.Dialog):
 			path=selected[0]
 			state=plot_state()
 			get_plot_file_info(state,self.store[path[0]][0])
-			summary="<big><b>"+self.store[path[0]][0]+"</b></big>\n"+"\ntitle: "+state.title+"\nx axis: "+state.x_label+" ("+state.x_units+")\ny axis: "+state.y_label+" ("+state.y_units+")\n\n<big><b>Double click to open</b></big>"
+			summary="<big><b>"+self.store[path[0]][0]+"</b></big>\n"+"\ntitle: "+state.title+"\nx axis: "+state.x_label+" ("+latex_to_pygtk_subscript(state.x_units)+")\ny axis: "+state.y_label+" ("+latex_to_pygtk_subscript(state.y_units)+")\n\n<big><b>Double click to open</b></big>"
 			global_object_get("help_set_text")(summary)
 			global_object_get("help_set_icon")(os.path.join("gui","dat_file.png"))
 

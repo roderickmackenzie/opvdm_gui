@@ -23,10 +23,12 @@
 
 import sys
 import zipfile
-
+from util_zip import zip_remove_file
 archive=sys.argv[1]
 infile=sys.argv[2]
 new_name=sys.argv[3]
+
+zip_remove_file(archive,new_name)
 
 zf = zipfile.ZipFile(archive, mode='a')
 try:

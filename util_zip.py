@@ -96,18 +96,27 @@ def replace_file_in_zip_archive(zip_file_name,target,lines):
 def zip_remove_file(zip_file_name,target):
 	if os.path.isfile(zip_file_name):
 		source = zipfile.ZipFile(zip_file_name, 'r')
-		if source.filelist.count(target)>0:
+
+		found=False
+		for file in source.filelist:
+			if file.filename==target:
+				found=True
+				break
+
+		if found==True:
 			fh, abs_path = mkstemp()
 			zf = zipfile.ZipFile(abs_path, 'w')
 
 			for file in source.filelist:
-			    if not file.filename.startswith(target):
-				zf.writestr(file.filename, source.read(file))
+				if not file.filename.startswith(target):
+					zf.writestr(file.filename, source.read(file))
+
 			zf.close()
 			os.close(fh)
+
 		source.close()
 
-		if source.filelist.count(target)>0:
+		if found==True:
 			shutil.move(abs_path, zip_file_name)
 
 
