@@ -110,8 +110,7 @@ class server:
 		self.progress_window.stop()
 		self.statusicon.set_from_stock(gtk.STOCK_YES)
 		self.extern_gui_sim_stop("Finished simulation")
-		global_object_get("help_set_text")("<big><b>Simulation finished!</b></big>\nClick on the plot icon to plot the results")
-		global_object_get("help_set_icon")(os.path.join("gui","plot.png"))
+		global_object_get("help_set_help")(os.path.join("gui","plot.png"),"<big><b>Simulation finished!</b></big>\nClick on the plot icon to plot the results")
 		if len(self.error_messages)!=0:
 			text='\n'.join(self.error_messages)
 			if (text.count('License')==0):

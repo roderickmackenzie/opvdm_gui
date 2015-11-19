@@ -254,8 +254,7 @@ class opvdm_main_window(gobject.GObject):
 
 
 	def callback_plot_select(self, widget, data=None):
-		global_object_get("help_set_text")("<big>Select a file to plot</big>\nSingle clicking shows you the content of the file")
-		global_object_get("help_set_icon")(os.path.join("gui","dat_file.png"))
+		global_object_get("help_set_help")(os.path.join("gui","dat_file.png"),"<big>Select a file to plot</big>\nSingle clicking shows you the content of the file")
 
 		dialog=opvdm_open()
 		dialog.show_inp_files=False

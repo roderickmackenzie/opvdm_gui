@@ -33,6 +33,7 @@ import multiprocessing
 import time
 import glob
 from global_objects import global_object_get
+from global_objects import global_isobject
 
 class progress_class(gtk.Window):
 
@@ -89,8 +90,7 @@ class progress_class(gtk.Window):
 		self.progress.pulse()
 
 	def start(self):
-		help_win=global_object_get("help_window")
-		if help_win!=False:
+		if global_isobject("help_window")==True:
 			global_object_get("help_window").hide()
 
 		s=gtk.gdk.screen_get_default()

@@ -19,6 +19,8 @@
 #    with this program; if not, write to the Free Software Foundation, Inc.,
 #    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
+import sys
+
 global_objects=[]
 
 class objects:
@@ -44,5 +46,14 @@ def global_object_get(name):
 	for i in range(0,len(global_objects)):
 		if global_objects[i].name==name:
 			return global_objects[i].object_pointer
+
+	print "name",name,"not found"
+	sys.exit()
+
+def global_isobject(name):
+	global global_objects
+	for i in range(0,len(global_objects)):
+		if global_objects[i].name==name:
+			return True
 
 	return False

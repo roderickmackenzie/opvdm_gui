@@ -49,7 +49,6 @@ class help_data():
 		self.text=text
 
 class help_class(gtk.Window):
-
 	def move_window(self):
 		s=gtk.gdk.screen_get_default()
 		w,h=self.get_size()
@@ -64,6 +63,9 @@ class help_class(gtk.Window):
 		self.move_window()
 
 	def init(self):
+		self.last_icons=[]
+		self.last_text=[]
+		self.pos=-1
 		self.help_lib=[]
 		self.help_lib.append(help_data("#Dos","none","This tab contains the electrical model parameters, such as mobility, tail slope energy, and band gap."))
 		self.help_lib.append(help_data("#device","none","This tab contains information about the device, such as width breadth, carrier density on the contacts, shunt and contact resistance."))
@@ -78,21 +80,19 @@ class help_class(gtk.Window):
 
 
 		self.move_window()
-		global_object_register("help_set_text",self.help_set_text)
-		global_object_register("help_set_icon",self.help_set_icon)
+		global_object_register("help_set_help",self.help_set_help)
 		global_object_register("help_window",self)
 		self.vbox=gtk.VBox()
 		self.vbox.show()
 		self.box=gtk.HBox()
 		self.add(self.vbox)
 		self.image = gtk.Image()
-		self.image.set_from_file(find_data_file("gui/play.png"))
+		#self.image.set_from_file(find_data_file("gui/play.png"))
 		self.image.show()
 
 		self.label = gtk.Label()
-		self.text="<big>Hi!</big>\n I'm the on-line help system :) .\n Click on the play icon to start a simulation."
-
-		self.label.set_markup(self.text)
+		#self.text="<big>Hi!</big>\n I'm the on-line help system :) .\n Click on the play icon to start a simulation."
+		#self.label.set_markup(self.text)
 		self.label.show()
 
 		self.box.pack_start(self.image, True, True, 0)
@@ -109,16 +109,18 @@ class help_class(gtk.Window):
 		image = gtk.Image()
    		image.set_from_file(find_data_file(os.path.join("gui","qe.png")))
 
-		back = gtk.ToolButton(gtk.STOCK_GO_BACK)
-		toolbar.insert(back, pos)
-		back.show_all()
-		back.set_sensitive(False)
+		self.back = gtk.ToolButton(gtk.STOCK_GO_BACK)
+		toolbar.insert(self.back, pos)
+		self.back.show_all()
+		self.back.set_sensitive(False)
+		self.back.connect("clicked", self.callback_back)
 		pos=pos+1
 
-		forward = gtk.ToolButton(gtk.STOCK_GO_FORWARD)
-		toolbar.insert(forward, pos)
-		forward.set_sensitive(False)
-		forward.show_all()
+		self.forward = gtk.ToolButton(gtk.STOCK_GO_FORWARD)
+		toolbar.insert(self.forward, pos)
+		self.forward.set_sensitive(False)
+		self.forward.show_all()
+		self.forward.connect("clicked", self.callback_forward)
 		pos=pos+1
 
 		sep = gtk.SeparatorToolItem()
@@ -140,21 +142,57 @@ class help_class(gtk.Window):
 		self.vbox.pack_start(self.box, False, False, 0)
 
 		self.box.show()
+
+
 		self.set_border_width(10)
 		self.set_title("Help")
 		self.resize(300,100)
 		self.set_decorated(False)
 		self.set_border_width(0)
+
+		self.help_set_help(find_data_file("gui/play.png"),"<big>Hi!</big>\n I'm the on-line help system :) .\n Click on the play icon to start a simulation.")
+
 		self.show()
+
 
 	def callback_close(self,widget):
 		self.hide()
 
-	def help_set_icon(self,file_name):
-		self.image.set_from_file(find_data_file(file_name))
+	def callback_forward(self,widget):
+		self.pos=self.pos+1
+		if self.pos>=len(self.last_text):
+			self.pos=len(self.last_text)-1
 
-	def help_set_text(self,input_text):
-		self.label.set_markup(input_text)
+		self.update()
+
+	def callback_back(self,widget):
+		self.pos=self.pos-1
+		if self.pos<0:
+			self.pos=0
+		print self.pos,self.last_icons
+		self.update()
+
+	def update(self):
+		self.image.set_from_file(self.last_icons[self.pos])
+		self.label.set_markup(self.last_text[self.pos])
+		print "rod",self.pos,len(self.last_text)-1
+
+		self.forward.set_sensitive(True)
+		self.back.set_sensitive(True)
+
+		if self.pos==0:
+			self.back.set_sensitive(False)
+
+		if self.pos==len(self.last_text)-1:
+			self.forward.set_sensitive(False)
+
+	def help_set_help(self,file_name,input_text):
+		self.pos=self.pos+1
+		self.last_icons.append(file_name)
+		self.last_text.append(input_text)
+		self.update()
 		self.move_window()
+
+
 
 		
