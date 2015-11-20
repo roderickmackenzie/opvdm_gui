@@ -39,6 +39,7 @@ import gtk
 pygtk.require('2.0')
 import os
 import shutil
+from help import my_help_class
 from scan_item import scan_items_clear
 from scan import scan_class 
 from search import find_fit_error
@@ -83,8 +84,8 @@ from server import server
 from opvdm_notebook import opvdm_notebook
 from gui_util import process_events
 from epitaxy import epitaxy_load
-from help import help_class
 from global_objects import global_object_get
+
 
 calculate_paths()
 
@@ -239,6 +240,7 @@ class opvdm_main_window(gobject.GObject):
 
 
 	def callback_scan(self, widget, data=None):
+		my_help_class.help_set_help([os.path.join("gui","forward.png"),"<big><b>The scan window</b></big>\n Very often it is useful to be able to systematically very a device parameter such as mobility or density of trap states and study the result.  This window allows you to do just that. Use the plus icon to add a new line to the list.  Now select the device parameter to change and the values you would like it to be scanned over by entering them in the 'Values column'.  The 'Operation' column shows how the scan will be performed, 'scan' option will follow the values set out in column 'Values', while selecting other options will allow the parameter to follow other parameters.  Once you have defined how the program should perform the scan click the double arrow to run the simulations."])
 		self.tb_run_scan.set_sensitive(True)
 
 		if self.scan_window==None:
@@ -254,7 +256,7 @@ class opvdm_main_window(gobject.GObject):
 
 
 	def callback_plot_select(self, widget, data=None):
-		global_object_get("help_set_help")(os.path.join("gui","dat_file.png"),"<big>Select a file to plot</big>\nSingle clicking shows you the content of the file")
+		my_help_class.help_set_help([os.path.join("gui","dat_file.png"),"<big>Select a file to plot</big>\nSingle clicking shows you the content of the file"])
 
 		dialog=opvdm_open()
 		dialog.show_inp_files=False
@@ -265,7 +267,7 @@ class opvdm_main_window(gobject.GObject):
 
 		if response == True:
 			full_file_name=dialog.get_filename()
-			self.plot_open.set_sensitive(True)
+			#self.plot_open.set_sensitive(True)
 
 			plot_gen([dialog.get_filename()],[],"auto")
 
@@ -279,7 +281,7 @@ class opvdm_main_window(gobject.GObject):
 		plot_gen([self.plot_after_run_file],[],"")
 
 	def callback_last_menu_click(self, widget, data):
-		self.plot_open.set_sensitive(True)
+		#self.plot_open.set_sensitive(True)
 		file_to_load=os.path.join(os.getcwd(),data.file0)
 		plot_gen([file_to_load],[],"auto")
 		self.plot_after_run_file=file_to_load
@@ -342,7 +344,7 @@ class opvdm_main_window(gobject.GObject):
 		epitaxy_load()
 		self.config.load(os.getcwd())
 		self.status_bar.push(self.context_id, os.getcwd())
-		self.plot_open.set_sensitive(False)
+		#self.plot_open.set_sensitive(False)
 
 		self.notebook.set_item_factory(self.item_factory)
 		if self.notebook.load()==True:
@@ -353,8 +355,9 @@ class opvdm_main_window(gobject.GObject):
 			self.param_scan.set_sensitive(True)
 			self.plot_select.set_sensitive(True)
 			self.undo.set_sensitive(True)
-			self.save_sim.set_sensitive(True)
+			#self.save_sim.set_sensitive(True)
 			self.time_mesh_button.set_sensitive(True)
+			my_help_class.help_set_help([find_data_file("gui/play.png"),"<big><b>Now run the simulation</b></big>\n Click on the play icon to start a simulation."])
 
 		else:
 			self.play.set_sensitive(False)
@@ -363,8 +366,9 @@ class opvdm_main_window(gobject.GObject):
 			self.param_scan.set_sensitive(False)
 			self.plot_select.set_sensitive(False)
 			self.undo.set_sensitive(False)
-			self.save_sim.set_sensitive(False)
+			#self.save_sim.set_sensitive(False)
 			self.time_mesh_button.set_sensitive(False)
+			my_help_class.help_set_help([find_data_file("gui/new.png"),"<big><b>Hi!</b></big>\n I'm the on-line help system :) .\n Click on the new icon to make a new simulation directory."])
 
 		if self.notebook.terminal!=None:
 			self.my_server.set_terminal(self.notebook.terminal)
@@ -468,7 +472,7 @@ class opvdm_main_window(gobject.GObject):
 		about_dialog_show()
 
 	def callback_help(self, widget, data=None):
-		webbrowser.open('http://www.opvdm.com/man/index.html')
+		my_help_class.toggle_visible()
 
 	def callback_on_line_help(self, widget, data=None):
 		webbrowser.open('www.opvdm.com')
@@ -490,6 +494,7 @@ class opvdm_main_window(gobject.GObject):
 
 
 	def callback_examine(self, widget, data=None):
+		my_help_class.help_set_help([os.path.join("gui","plot_time.png"),"<big><b>Examine the results in time domain</b></big>\n After you have run a simulation in time domain, if is often nice to be able to step through the simulation and look at the results.  This is what this window does.  Use the slider bar to move through the simulation.  When you are simulating a JV curve, the slider sill step through voltage points rather than time points."])
 		mycmp=cmp_class()
 		ret=mycmp.init()
 		if ret==False:
@@ -499,6 +504,8 @@ class opvdm_main_window(gobject.GObject):
 			return
 
 	def callback_edit_time_mesh(self, widget, data=None):
+
+		my_help_class.help_set_help([os.path.join("gui","time.png"),"<big><b>The time mesh editor</b></big>\n To do time domain simulations one must define how voltage the light vary as a function of time.  This can be done in this window.  Also use this window to define the simulation length and time step."])
 		if self.time_mesh.get_property("visible")==True:
 			self.time_mesh.hide_all()
 		else:
@@ -712,10 +719,10 @@ class opvdm_main_window(gobject.GObject):
 		toolbar.insert(open_sim, pos)
 		pos=pos+1
 
-		self.save_sim = gtk.ToolButton(gtk.STOCK_SAVE)
-		self.tooltips.set_tip(self.save_sim, "Save a simulation")
-		toolbar.insert(self.save_sim, pos)
-		pos=pos+1
+		#self.save_sim = gtk.ToolButton(gtk.STOCK_SAVE)
+		#self.tooltips.set_tip(self.save_sim, "Save a simulation")
+		#toolbar.insert(self.save_sim, pos)
+		#pos=pos+1
 
 		new_sim = gtk.ToolButton(gtk.STOCK_NEW)
 		self.tooltips.set_tip(new_sim, "Make a new simulation")
@@ -806,13 +813,13 @@ class opvdm_main_window(gobject.GObject):
 		self.plot_select.set_sensitive(False)
 		pos=pos+1
 
-	        image = gtk.Image()
-   		image.set_from_file(find_data_file(os.path.join("gui","refresh.png")))
-		self.plot_open = gtk.ToolButton(image)
-		self.tooltips.set_tip(self.plot_open, "Replot the graph")
-		toolbar.insert(self.plot_open, pos)
-		self.plot_open.set_sensitive(False)
-		pos=pos+1
+		#image = gtk.Image()
+   		#image.set_from_file(find_data_file(os.path.join("gui","refresh.png")))
+		#self.plot_open = gtk.ToolButton(image)
+		#self.tooltips.set_tip(self.plot_open, "Replot the graph")
+		#toolbar.insert(self.plot_open, pos)
+		#self.plot_open.set_sensitive(False)
+		#os=pos+1
 
 		image = gtk.Image()
    		image.set_from_file(find_data_file(os.path.join("gui","plot_time.png")))
@@ -862,9 +869,9 @@ class opvdm_main_window(gobject.GObject):
 
 		new_sim.connect("clicked", self.callback_new)
 		open_sim.connect("clicked", self.callback_open)
-		self.save_sim.connect("clicked", self.callback_export)
+		#self.save_sim.connect("clicked", self.callback_export)
 
-		self.plot_open.connect("clicked", self.callback_plot_open)
+		#self.plot_open.connect("clicked", self.callback_plot_open)
 
 		toolbar1=self.make_tool_box1()
 
@@ -939,9 +946,7 @@ class opvdm_main_window(gobject.GObject):
 		self.change_dir_and_refresh_interface(os.getcwd())
 		if main_vbox==None:
 			self.window2.show()
-
-		self.help_class=help_class()
-		self.help_class.init()
+		my_help_class.show()
 
 if __name__ == "__main__":
 	main=opvdm_main_window()

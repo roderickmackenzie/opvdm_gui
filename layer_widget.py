@@ -50,6 +50,8 @@ from epitaxy import epitaxy_load_from_arrays
 from epitaxy import epitay_get_next_dos
 from inp import inp_isfile
 from inp import inp_copy_file
+from help import my_help_class
+
 
 (
   COLUMN_THICKNES,
@@ -425,6 +427,7 @@ class layer_widget(gtk.VBox):
 		self.sync_to_electrical_mesh()
 
 	def callback_optics_sim(self, widget, data=None):
+		my_help_class.help_set_help([find_data_file("gui/optics.png"),"<big><b>The optical simulation window</b></big>\nUse this window to perform optical simulations.  Click on the play button to run a simulation."])
 		if self.optics_window==False:
 			self.optics_window=class_optical()
 			self.optics_window.init()

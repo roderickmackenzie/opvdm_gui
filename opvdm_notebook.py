@@ -65,6 +65,13 @@ class opvdm_notebook(gtk.Notebook):
 	def callback_close_button(self, widget, data):
 		self.toggle_tab_visible(data)
 
+	def callback_switch_page(self, notebook, page, page_num):
+		if self.last_page!=page_num:
+			self.last_page=page_num
+			self.get_children()[page_num].help()
+			print "Rod", page_num
+		#self.toggle_tab_visible(data)
+
 	def clean_menu(self):
 		for menu in self.menu_items:
 			self.item_factory.delete_item(menu)
@@ -114,6 +121,7 @@ class opvdm_notebook(gtk.Notebook):
 
 	def load(self):
 		self.clean_menu()
+		self.last_page=0
 		if (os.path.exists("sim.opvdm")==True) and (os.getcwd()!="C:\\opvdm"):
 			self.finished_loading=False
 			self.progress.init()
@@ -193,6 +201,7 @@ class opvdm_notebook(gtk.Notebook):
 
 						label=gtk.Label(mytext)
 						label.set_justify(gtk.JUSTIFY_LEFT)
+						self.connect("switch-page", self.callback_switch_page)
 						hbox.pack_start(label, False, True, 0)
 
 						button = gtk.Button()

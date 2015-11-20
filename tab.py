@@ -37,6 +37,8 @@ from tab_base import tab_base
 from util import str2bool
 from scan_item import scan_remove_file
 from inp import inp_load_file
+from help import my_help_class
+from util import find_data_file
 
 class tab_class(gtk.VBox,tab_base):
 	
@@ -53,6 +55,11 @@ class tab_class(gtk.VBox,tab_base):
 			inp_update_token_value(self.file_name, data, widget.get_text(),1)
 		else:
 			inp_update_token_value(self.file_name, data, widget.get_active_text(),1)
+
+		my_help_class.help_set_help([find_data_file("gui/save.png"),"<big><b>Saved to disk</b></big>\n"])
+
+	def help(self):
+		my_help_class.get_help(self.file_name)
 
 	def init(self,filename,fullname):
 		scan_remove_file(filename)

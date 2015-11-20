@@ -40,6 +40,7 @@ from ver import ver_gui
 import gobject
 from util import find_data_file
 from global_objects import global_object_register
+import webbrowser
 
 
 class help_data():
@@ -53,8 +54,8 @@ class help_class(gtk.Window):
 		s=gtk.gdk.screen_get_default()
 		w,h=self.get_size()
 
-		x=s.get_width()-w
-		y=0#s.get_height()-h
+		x=s.get_width()-w-50
+		y=0
 
 		self.move(x,y)
 
@@ -62,26 +63,32 @@ class help_class(gtk.Window):
 		self.show_all()
 		self.move_window()
 
+	def toggle_visible(self):
+		if self.get_visible()==True:
+			self.hide()
+		else:
+			self.show()
+
+	def get_help(self,token):
+		for i in range(0,len(self.help_lib)):
+			if self.help_lib[i].token==token:
+				self.help_set_help([self.help_lib[i].icon,self.help_lib[i].text])
+		return False 
+
 	def init(self):
 		self.last_icons=[]
 		self.last_text=[]
 		self.pos=-1
 		self.help_lib=[]
-		self.help_lib.append(help_data("#Dos","none","This tab contains the electrical model parameters, such as mobility, tail slope energy, and band gap."))
-		self.help_lib.append(help_data("#device","none","This tab contains information about the device, such as width breadth, carrier density on the contacts, shunt and contact resistance."))
-		self.help_lib.append(help_data("#jv","none","This tab controls the JV curve simulation."))
-		self.help_lib.append(help_data("#jv_simple","none","The 'jv simple' model does not use opvdm's full device model instead it uses the diode equation to simulate a solar cell.  Sometimes for papers it is useful to do this."))
-		self.help_lib.append(help_data("#dump","none","The dump tab controls what the simulation writes disk, generally writing to disk is a slow process so by default the model dumps relitavly little data."))
-		self.help_lib.append(help_data("#celiv","none","The CELIV tab controls the the parameters for a CELIV simulation."))
-		self.help_lib.append(help_data("#thermal","none","Use this tab to set the simulation temperature."))
-		self.help_lib.append(help_data("#terminal","none","The simulations are run in this tab."))
-		self.help_lib.append(help_data("#welcome","none","The welcome screen."))
-		self.help_lib.append(help_data("#devcie_structure","none","the device structure tab"))
-
+		self.help_lib.append(help_data("device.inp",find_data_file("gui/tab.png"),"<big><b>Device tab</b></big>\nThis tab contains information about the device, such as width breadth, carrier density on the contacts, shunt and contact resistance."))
+		self.help_lib.append(help_data("jv.inp",find_data_file("gui/tab.png"),"<big><b>JV tab</b></big>\nThis tab controls the JV curve simulation."))
+		self.help_lib.append(help_data("jv_simple.inp",find_data_file("gui/tab.png"),"<big><b>JV simple tab</b></big>\nThe 'jv simple' model does not use opvdm's full device model instead it uses the diode equation to simulate a solar cell.  Sometimes for papers it is useful to do this."))
+		self.help_lib.append(help_data("dump.inp",find_data_file("gui/tab.png"),"<big><b>Dump tab</b></big>\nThe dump tab controls what the simulation writes disk, generally writing to disk is a slow process so by default the model dumps relitavly little data."))
+		self.help_lib.append(help_data("celiv.inp",find_data_file("gui/tab.png"),"<big><b>CELIV tab</b></big>\nThe CELIV tab controls the the parameters for a CELIV simulation."))
+		self.help_lib.append(help_data("thermal.inp",find_data_file("gui/tab.png"),"<big><b>Thermal tab</b></big>\nUse this tab to set the simulation temperature."))
+		self.help_lib.append(help_data("tof.inp",find_data_file("gui/tab.png"),"<big><b>ToF tab</b></big>\nUse this to configure the time of flight simulation."))
 
 		self.move_window()
-		global_object_register("help_set_help",self.help_set_help)
-		global_object_register("help_window",self)
 		self.vbox=gtk.VBox()
 		self.vbox.show()
 		self.box=gtk.HBox()
@@ -91,11 +98,13 @@ class help_class(gtk.Window):
 		self.image.show()
 
 		self.label = gtk.Label()
+		self.label.set_line_wrap(True)
 		#self.text="<big>Hi!</big>\n I'm the on-line help system :) .\n Click on the play icon to start a simulation."
 		#self.label.set_markup(self.text)
+		self.label.set_justify(gtk.JUSTIFY_LEFT)
 		self.label.show()
 
-		self.box.pack_start(self.image, True, True, 0)
+		self.box.pack_start(self.image, False, False, 0)
 		self.box.pack_start(self.label, True, True, 0)
 
 
@@ -130,16 +139,31 @@ class help_class(gtk.Window):
 		toolbar.insert(sep, pos)
 		pos=pos+1
 
+		image = gtk.Image()
+   		image.set_from_file(find_data_file(os.path.join("gui","www.png")))
+		self.play = gtk.ToolButton(image)
+
+		help_book = gtk.ToolButton(image)
+		toolbar.insert(help_book, pos)
+		help_book.connect("clicked", self.on_line_help)
+		help_book.show_all()
+		pos=pos+1
+
 		close = gtk.ToolButton(gtk.STOCK_CLOSE)
 		toolbar.insert(close, pos)
 		close.connect("clicked", self.callback_close)
 		close.show_all()
 		pos=pos+1
 
+		self.status_bar = gtk.Statusbar()      
+		self.context_id = self.status_bar.get_context_id("Statusbar example")
+		self.status_bar.show()
 		#self.tooltips.set_tip(self.qe_button, "Quantum efficiency")
 
 		self.vbox.pack_start(toolbar, False, False, 0)
-		self.vbox.pack_start(self.box, False, False, 0)
+		self.vbox.pack_start(self.box, True, True, 0)
+		self.vbox.pack_start(self.status_bar, False, False, 0)
+
 
 		self.box.show()
 
@@ -150,13 +174,11 @@ class help_class(gtk.Window):
 		self.set_decorated(False)
 		self.set_border_width(0)
 
-		self.help_set_help(find_data_file("gui/play.png"),"<big>Hi!</big>\n I'm the on-line help system :) .\n Click on the play icon to start a simulation.")
-
 		self.show()
 
 
 	def callback_close(self,widget):
-		self.hide()
+		self.toggle_visible()
 
 	def callback_forward(self,widget):
 		self.pos=self.pos+1
@@ -172,6 +194,9 @@ class help_class(gtk.Window):
 		print self.pos,self.last_icons
 		self.update()
 
+	def on_line_help(self,widget):
+		webbrowser.open('http://www.opvdm.com/man/index.html')
+
 	def update(self):
 		self.image.set_from_file(self.last_icons[self.pos])
 		self.label.set_markup(self.last_text[self.pos])
@@ -186,13 +211,25 @@ class help_class(gtk.Window):
 		if self.pos==len(self.last_text)-1:
 			self.forward.set_sensitive(False)
 
-	def help_set_help(self,file_name,input_text):
-		self.pos=self.pos+1
-		self.last_icons.append(file_name)
-		self.last_text.append(input_text)
+		self.status_bar.push(self.context_id, str(self.pos)+"/"+str(len(self.last_text)))
+
+	def help_set_help(self,array):
+		add=True
+		file_name=array[0]
+		input_text=array[1]
+		if len(self.last_text)!=0:
+			if self.last_text[self.pos]==array[1]:
+				add=False
+
+		if add==True:
+			self.pos=self.pos+1
+			self.last_icons.append(file_name)
+			self.last_text.append(input_text)
 		self.update()
 		self.move_window()
 
 
+my_help_class=help_class()
+my_help_class.init()
 
 		
