@@ -34,7 +34,7 @@ from matplotlib.backends.backend_gtkagg import FigureCanvasGTKAgg as FigureCanva
 import gobject
 import os, fnmatch
 from plot_gen import plot_gen
-from util import find_data_file
+from cal_path import find_data_file
 import zipfile
 import glob
 from scan_item import scan_item_add
@@ -461,10 +461,12 @@ class class_optical(gtk.Window):
 		start=0.0
 
 		for i in range(0,epitaxy_get_layers()):
-			if epitaxy_get_electrical_layer(i)!="none":
+			#print "LAYER!!!!!!!!!!",epitaxy_get_electrical_layer(i),epitaxy_get_layers()
+			if epitaxy_get_electrical_layer(i)=="none":
 				start=start-epitaxy_get_width(i)
 			else:
 				break
+		print "START=",start
 		start=start*1e9
 
 		x_pos=start
@@ -521,6 +523,7 @@ class class_optical(gtk.Window):
 			loaded=True
 		elif os.path.isfile(os.path.join(pwd,"light_dump",self.optical_mode_file)):
 			f = open(os.path.join(pwd,"light_dump",self.optical_mode_file))
+			#print "I want to load",os.path.join(pwd,"light_dump",self.optical_mode_file)
 			lines = f.readlines()
 			f.close()
 			loaded=True

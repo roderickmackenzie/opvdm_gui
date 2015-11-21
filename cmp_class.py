@@ -32,7 +32,7 @@ from inp import inp_load_file
 from inp import inp_search_token_value
 from scan_item import scan_item
 from scan_item import scan_item_add
-from util import find_data_file
+from cal_path import find_data_file
 import glob
 from util import time_with_units
 from plot_widget import plot_widget
@@ -99,7 +99,7 @@ class cmp_class(gtk.Window):
 		path0=self.entry0.get_active_text()
 		my_max=-1e40
 		my_min=1e40
-		print "Rod",self.file_names
+		#print "Rod",self.file_names
 		for ii in range(0,len(self.file_names)):
 			for i in range(0,len(self.lines)):
 				self.update(i)

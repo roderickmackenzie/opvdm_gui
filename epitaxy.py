@@ -32,7 +32,7 @@ from inp import inp_load_file
 from inp import inp_search_token_value
 from scan_item import scan_item
 from scan_item import scan_item_add
-from util import find_data_file
+from cal_path import find_data_file
 import glob
 from util import time_with_units
 from plot_widget import plot_widget
@@ -145,7 +145,7 @@ def epitaxy_save():
 	lines.append("1.0")			
 	lines.append("#end")
 
-	print lines
+	#print lines
 	inp_write_lines_to_file(os.path.join(os.getcwd(),"epitaxy.inp"),lines)
 
 def epitaxy_get_dos_files():
@@ -167,7 +167,7 @@ def epitaxy_get_width(i):
 
 def epitaxy_get_electrical_layer(i):
 	global electrical_layer
-	print electrical_layer,i
+	#print electrical_layer,i
 	return electrical_layer[i]
 
 def epitaxy_get_mat_file(i):

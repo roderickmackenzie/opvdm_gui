@@ -20,7 +20,7 @@
 #    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 import sys
-from util import find_data_file
+from cal_path import find_data_file
 from inp import inp_load_file
 
 def ver_core():

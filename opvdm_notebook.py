@@ -32,7 +32,7 @@ from inp import inp_load_file
 from inp import inp_get_next_token_array
 from inp import inp_isfile
 from inp import inp_update_token_value
-from util import find_data_file
+from cal_path import find_data_file
 from tab_main import tab_main
 from tab import tab_class
 from tab_homo import tab_bands
@@ -69,7 +69,7 @@ class opvdm_notebook(gtk.Notebook):
 		if self.last_page!=page_num:
 			self.last_page=page_num
 			self.get_children()[page_num].help()
-			print "Rod", page_num
+			#print "Rod", page_num
 		#self.toggle_tab_visible(data)
 
 	def clean_menu(self):
@@ -246,7 +246,7 @@ class opvdm_notebook(gtk.Notebook):
 			self.add_welcome_page()
 
 			self.finished_loading=True
-			self.progress.hide()
+			self.progress.stop()
 			self.progress.set_fraction(0.0)
 			self.goto_page("tab_main")
 

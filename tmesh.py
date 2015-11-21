@@ -31,7 +31,7 @@ from numpy import arange, sin, pi
 from matplotlib.backends.backend_gtkagg import FigureCanvasGTKAgg as FigureCanvas
 from matplotlib.backends.backend_gtkagg import NavigationToolbar2GTKAgg as NavigationToolbar
 import gobject
-from util import find_data_file
+from cal_path import find_data_file
 from scan_item import scan_item_add
 from inp import inp_load_file
 from inp import inp_read_next_item
@@ -172,7 +172,7 @@ class tab_time_mesh(gtk.Window):
 		self.save_data()
 
 	def on_cell_edited_dt(self, cell, path, new_text, model):
-		print "Rod",path
+		#print "Rod",path
 		model[path][SEG_DT] = new_text
 		self.update_mesh()
 		self.draw_graph()

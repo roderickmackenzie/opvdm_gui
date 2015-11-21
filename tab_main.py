@@ -38,7 +38,7 @@ from epitaxy import epitaxy_get_width
 from epitaxy import epitaxy_get_mat_file
 from epitaxy import epitaxy_get_electrical_layer
 from help import my_help_class
-from util import find_data_file
+from cal_path import find_data_file
 
 class tab_main(gtk.VBox,tab_base):
 
@@ -213,4 +213,4 @@ class tab_main(gtk.VBox,tab_base):
 		self.draw()
 
 	def help(self):
-		my_help_class.help_set_help([find_data_file("gui/device.png"),"<big><b>The device structure tab</b></big>\n Use this tab to change the structure of the device, the layer thicknesses and to perform optical simulations.  You can also browse the materials data base and  edit the electrical mesh."])
+		my_help_class.help_set_help(["device.png","<big><b>The device structure tab</b></big>\n Use this tab to change the structure of the device, the layer thicknesses and to perform optical simulations.  You can also browse the materials data base and  edit the electrical mesh."])

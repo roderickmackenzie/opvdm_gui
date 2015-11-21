@@ -104,3 +104,27 @@ def get_inp_file_path():
 		else:
 			path="c:\\opvdm\\"
 		return path
+
+def get_icon_file_path():
+	if running_on_linux() == True:
+		if os.path.isfile("main.c")==True:
+			path=os.path.join(os.getcwd(),"gui")
+		else:
+			path="/usr/share/opvdm/gui/"
+		return path
+	else:
+		if os.path.isfile("opvdm.py")==True:
+			path=os.path.join(os.getcwd(), "\\")
+		else:
+			path="c:\\opvdm\\gui\\"
+		return path
+
+def find_data_file(name):
+
+	local_file=os.path.join(os.getcwd(),name)
+	if os.path.isfile("main.c")==True:
+		ret=local_file
+	else:
+		ret=os.path.join(get_inp_file_path(),name)
+	return ret
+

@@ -31,7 +31,7 @@ from inp import inp_update_token_value
 from inp import inp_get_token_value
 from search import return_file_list
 from plot import check_info_file
-from util import find_data_file
+from cal_path import find_data_file
 from about import about_dialog_show
 from used_files_menu import used_files_menu
 from server import server
@@ -70,6 +70,7 @@ from opvdm_open import opvdm_open
 from scan_tree import tree_load_flat_list
 from scan_tree import tree_save_flat_list
 from cal_path import get_exe_command
+from help import my_help_class
 
 class scan_vbox(gtk.VBox):
 
@@ -115,6 +116,7 @@ class scan_vbox(gtk.VBox):
 
 
 	def add_line(self,data):
+		my_help_class.help_set_help(["forward.png","<big><b>The scan window</b></big>\n Now using the drop down menu in the prameter to change 'column', select the device parameter you wish to vary, an example may be dos0/Electron Mobility. Now enter the values you would like it to scan oveer in the  'Values', an example could be '1e-3 1e-4 1e-5 1e-6'.  And hit the double arrorw to run the simulation."])
 		selection = self.treeview.get_selection()
 		model, pathlist = selection.get_selected_rows()
 
@@ -617,7 +619,8 @@ class scan_vbox(gtk.VBox):
 		toolbar.insert(sep, pos)
 		pos=pos+1
 
-		add = gtk.ToolButton(gtk.STOCK_ADD)
+   		image.set_from_file(find_data_file("gui/add.png"))
+		add = gtk.ToolButton(image)
 		add.connect("clicked", self.callback_add_item)
 		self.tooltips.set_tip(add, "Add parameter to scan")
 		toolbar.insert(add, pos)

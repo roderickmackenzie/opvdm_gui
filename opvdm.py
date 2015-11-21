@@ -56,7 +56,7 @@ from plot_gen import plot_gen
 from plot_gen import set_plot_auto_close
 from import_archive import import_archive
 from about import about_dialog_show
-from util import find_data_file
+from cal_path import find_data_file
 from notice import notice
 import os
 import gobject
@@ -240,7 +240,7 @@ class opvdm_main_window(gobject.GObject):
 
 
 	def callback_scan(self, widget, data=None):
-		my_help_class.help_set_help([os.path.join("gui","forward.png"),"<big><b>The scan window</b></big>\n Very often it is useful to be able to systematically very a device parameter such as mobility or density of trap states and study the result.  This window allows you to do just that. Use the plus icon to add a new line to the list.  Now select the device parameter to change and the values you would like it to be scanned over by entering them in the 'Values column'.  The 'Operation' column shows how the scan will be performed, 'scan' option will follow the values set out in column 'Values', while selecting other options will allow the parameter to follow other parameters.  Once you have defined how the program should perform the scan click the double arrow to run the simulations."])
+		my_help_class.help_set_help(["scan.png","<big><b>The scan window</b></big>\n Very often it is useful to be able to systematically very a device parameter such as mobility or density of trap states.  This window allows you to do just that.","add.png","Use the plus icon to add a new scan line to the list."])
 		self.tb_run_scan.set_sensitive(True)
 
 		if self.scan_window==None:
@@ -256,7 +256,7 @@ class opvdm_main_window(gobject.GObject):
 
 
 	def callback_plot_select(self, widget, data=None):
-		my_help_class.help_set_help([os.path.join("gui","dat_file.png"),"<big>Select a file to plot</big>\nSingle clicking shows you the content of the file"])
+		my_help_class.help_set_help(["dat_file.png","<big>Select a file to plot</big>\nSingle clicking shows you the content of the file"])
 
 		dialog=opvdm_open()
 		dialog.show_inp_files=False
@@ -357,7 +357,7 @@ class opvdm_main_window(gobject.GObject):
 			self.undo.set_sensitive(True)
 			#self.save_sim.set_sensitive(True)
 			self.time_mesh_button.set_sensitive(True)
-			my_help_class.help_set_help([find_data_file("gui/play.png"),"<big><b>Now run the simulation</b></big>\n Click on the play icon to start a simulation."])
+			my_help_class.help_set_help(["play.png","<big><b>Now run the simulation</b></big>\n Click on the play icon to start a simulation."])
 
 		else:
 			self.play.set_sensitive(False)
@@ -368,7 +368,7 @@ class opvdm_main_window(gobject.GObject):
 			self.undo.set_sensitive(False)
 			#self.save_sim.set_sensitive(False)
 			self.time_mesh_button.set_sensitive(False)
-			my_help_class.help_set_help([find_data_file("gui/new.png"),"<big><b>Hi!</b></big>\n I'm the on-line help system :) .\n Click on the new icon to make a new simulation directory."])
+			my_help_class.help_set_help(["icon.png","<big><b>Hi!</b></big>\n I'm the on-line help system :).  If you find any bugs please report them to roderick.mackenzie@nottingham.ac.uk.","new.png","Click on the new icon to make a new simulation directory."])
 
 		if self.notebook.terminal!=None:
 			self.my_server.set_terminal(self.notebook.terminal)
@@ -494,7 +494,7 @@ class opvdm_main_window(gobject.GObject):
 
 
 	def callback_examine(self, widget, data=None):
-		my_help_class.help_set_help([os.path.join("gui","plot_time.png"),"<big><b>Examine the results in time domain</b></big>\n After you have run a simulation in time domain, if is often nice to be able to step through the simulation and look at the results.  This is what this window does.  Use the slider bar to move through the simulation.  When you are simulating a JV curve, the slider sill step through voltage points rather than time points."])
+		my_help_class.help_set_help(["plot_time.png","<big><b>Examine the results in time domain</b></big>\n After you have run a simulation in time domain, if is often nice to be able to step through the simulation and look at the results.  This is what this window does.  Use the slider bar to move through the simulation.  When you are simulating a JV curve, the slider sill step through voltage points rather than time points."])
 		mycmp=cmp_class()
 		ret=mycmp.init()
 		if ret==False:
@@ -505,7 +505,7 @@ class opvdm_main_window(gobject.GObject):
 
 	def callback_edit_time_mesh(self, widget, data=None):
 
-		my_help_class.help_set_help([os.path.join("gui","time.png"),"<big><b>The time mesh editor</b></big>\n To do time domain simulations one must define how voltage the light vary as a function of time.  This can be done in this window.  Also use this window to define the simulation length and time step."])
+		my_help_class.help_set_help(["time.png","<big><b>The time mesh editor</b></big>\n To do time domain simulations one must define how voltage the light vary as a function of time.  This can be done in this window.  Also use this window to define the simulation length and time step."])
 		if self.time_mesh.get_property("visible")==True:
 			self.time_mesh.hide_all()
 		else:

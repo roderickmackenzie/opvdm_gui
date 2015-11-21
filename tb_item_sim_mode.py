@@ -26,7 +26,7 @@ import gtk
 import sys
 import math
 import gobject
-from util import find_data_file
+from cal_path import find_data_file
 from inp import inp_update_token_value
 from inp import inp_get_token_value
 from inp import inp_load_file

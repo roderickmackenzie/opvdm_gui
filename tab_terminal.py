@@ -29,7 +29,7 @@ from scan_item import scan_item
 import vte
 from tab_base import tab_base
 from help import my_help_class
-from util import find_data_file
+from cal_path import find_data_file
 
 class tab_terminal(gtk.VBox,tab_base):
 
@@ -49,5 +49,5 @@ class tab_terminal(gtk.VBox,tab_base):
 		self.main_box.show()
 
 	def help(self):
-		my_help_class.help_set_help([find_data_file("gui/command.png"),"<big><b>The terminal window</b></big>\nThe model will run in this window.  You can also use it to enter bash commands."])
+		my_help_class.help_set_help(["command.png","<big><b>The terminal window</b></big>\nThe model will run in this window.  You can also use it to enter bash commands."])
 

@@ -24,7 +24,7 @@
 
 import gtk
 import os
-from util import find_data_file
+from cal_path import find_data_file
 from global_objects import global_object_get
 from plot_io import get_plot_file_info
 from plot_state import plot_state
@@ -179,9 +179,9 @@ class opvdm_open(gtk.Dialog):
 		if len(selected)!=0:
 			path=selected[0]
 			state=plot_state()
-			get_plot_file_info(state,self.store[path[0]][0])
+			get_plot_file_info(state,os.path.join(self.dir,self.store[path[0]][0]))
 			summary="<big><b>"+self.store[path[0]][0]+"</b></big>\n"+"\ntitle: "+state.title+"\nx axis: "+state.x_label+" ("+latex_to_pygtk_subscript(state.x_units)+")\ny axis: "+state.y_label+" ("+latex_to_pygtk_subscript(state.y_units)+")\n\n<big><b>Double click to open</b></big>"
-			my_help_class.help_set_help([os.path.join("gui","dat_file.png"),summary])
+			my_help_class.help_set_help(["dat_file.png",summary])
 
 
 	def change_path(self):

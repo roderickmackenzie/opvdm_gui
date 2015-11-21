@@ -275,15 +275,6 @@ def pango_to_gnuplot(data):
 	data.replace("<sub>", "_{")
 	data.replace("</sub>", "}")
 
-def find_data_file(name):
-
-	local_file=os.path.join(os.getcwd(),name)
-	if os.path.isfile("main.c")==True:
-		ret=local_file
-	else:
-		ret=os.path.join(get_orig_inp_file_path(),name)
-	return ret
-
 def opvdm_copy_src(new_dir):
 	pwd=os.getcwd()
 	file_list=glob.glob(os.path.join(pwd,"*"))

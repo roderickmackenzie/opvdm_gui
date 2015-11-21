@@ -29,7 +29,7 @@ import glib
 from token_lib import tokens
 from numpy import *
 from util import pango_to_gnuplot
-from util import find_data_file
+from cal_path import find_data_file
 from ver import ver
 from notice import notice
 

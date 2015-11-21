@@ -25,7 +25,7 @@ import gtk
 import sys
 import os
 import shutil
-from util import find_data_file
+from cal_path import find_data_file
 from ver import ver
 from notice import notice
 def about_dialog_show():

@@ -26,7 +26,7 @@ import gtk
 import sys
 import os
 import shutil
-from util import find_data_file
+from cal_path import find_data_file
 from about import about_dialog_show
 from used_files_menu import used_files_menu
 from server import server
@@ -387,7 +387,7 @@ class scan_class(gtk.Window):
 		self.tab_menu.append(menu_item)
 		menu_item.show()
 		menu_item.set_active(self.rod[len(self.rod)-1].visible)
-		print "Rod",name,self.rod[len(self.rod)-1].visible
+		#print "Rod",name,self.rod[len(self.rod)-1].visible
 		menu_item.connect("activate", self.callback_view_toggle,menu_item)
 
 		self.number_of_tabs=self.number_of_tabs+1

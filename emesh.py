@@ -32,7 +32,7 @@ from numpy import arange, sin, pi
 from matplotlib.backends.backend_gtkagg import FigureCanvasGTKAgg as FigureCanvas
 from matplotlib.backends.backend_gtkagg import NavigationToolbar2GTKAgg as NavigationToolbar
 import gobject
-from util import find_data_file
+from cal_path import find_data_file
 from scan_item import scan_item_add
 import webbrowser
 from electrical_mesh_editor import electrical_mesh_editor

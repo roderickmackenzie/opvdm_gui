@@ -34,7 +34,7 @@ from util import str2bool
 from inp import inp_search_token_value
 from inp import inp_update_token_value
 from scan_item import scan_item_add
-from util import find_data_file
+from cal_path import find_data_file
 from emesh import tab_electrical_mesh
 from plot_gen import plot_gen
 from opvdm_open import opvdm_open
@@ -427,7 +427,8 @@ class layer_widget(gtk.VBox):
 		self.sync_to_electrical_mesh()
 
 	def callback_optics_sim(self, widget, data=None):
-		my_help_class.help_set_help([find_data_file("gui/optics.png"),"<big><b>The optical simulation window</b></big>\nUse this window to perform optical simulations.  Click on the play button to run a simulation."])
+		my_help_class.help_set_help(["optics.png","<big><b>The optical simulation window</b></big>\nUse this window to perform optical simulations.  Click on the play button to run a simulation.","play.png","Click on the play button to run an optical simulation.  The results will be displayed in the tabs to the right."])
+
 		if self.optics_window==False:
 			self.optics_window=class_optical()
 			self.optics_window.init()

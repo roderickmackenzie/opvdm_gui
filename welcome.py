@@ -52,7 +52,7 @@ import platform
 import getpass
 from tab_base import tab_base
 from help import my_help_class
-from util import find_data_file
+from cal_path import find_data_file
 
 socket.setdefaulttimeout = 1.0
 os.environ['no_proxy'] = '127.0.0.1,localhost'
@@ -149,7 +149,7 @@ class welcome_class(gtk.HBox,tab_base):
 		#self.hide_all()
 
 	def help(self):
-		my_help_class.help_set_help([find_data_file("gui/icon.png"),"<big><b>Welcome to opvdm</b></big>\n The window will provide you with information about new versions and bugs in opvdm."])
+		my_help_class.help_set_help(["icon.png","<big><b>Welcome to opvdm</b></big>\n The window will provide you with information about new versions and bugs in opvdm."])
 
 gobject.type_register(web_thread)
 gobject.signal_new("got-data", web_thread, gobject.SIGNAL_RUN_FIRST,gobject.TYPE_NONE, ())

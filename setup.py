@@ -6,6 +6,7 @@ import matplotlib
 import shutil
 import glob
 
+#run with python setup.py py2exe
 dest_path=os.path.join(os.getcwd(),"dist")
 
 #if os.path.isdir(dest_path):

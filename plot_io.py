@@ -164,12 +164,15 @@ def plot_save_oplot_file(config_file,plot_token):
 
 def get_plot_file_info(output,file_name):
 	found,lines=zip_get_data_file(file_name)
+
 	if found==False:
 		print "can't file file"
 		return False
 
 	for i in range(0, len(lines)):
 		lines[i]=lines[i].rstrip()
+
+
 	if len(lines)>1:
 		if lines[0]=="#opvdm":
 			for i in range(0, len(lines)):

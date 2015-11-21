@@ -39,7 +39,7 @@ from epitaxy import epitaxy_get_electrical_layer
 from epitaxy import epitaxy_get_mat_file
 from global_objects import global_object_register
 from help import my_help_class
-from util import find_data_file
+from cal_path import find_data_file
 
 class dos_main(gtk.HBox,tab_base):
 	
@@ -83,7 +83,7 @@ class dos_main(gtk.HBox,tab_base):
 				self.notebook.append_page(tab, gtk.Label(name))
 
 	def help(self):
-		my_help_class.help_set_help([find_data_file("gui/tab.png"),"<big><b>Density of States</b></big>\nThis tab contains the electrical model parameters, such as mobility, tail slope energy, and band gap."])
+		my_help_class.help_set_help(["tab.png","<big><b>Density of States</b></big>\nThis tab contains the electrical model parameters, such as mobility, tail slope energy, and band gap."])
 
 #gobject.type_register(dos_main)
 #gobject.signal_new("update", dos_main, gobject.SIGNAL_RUN_FIRST,gobject.TYPE_NONE, ())
