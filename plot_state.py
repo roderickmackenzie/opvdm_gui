@@ -50,7 +50,8 @@ class plot_state():
 		self.example_file0=""
 		self.example_file1=""
 		self.example_file2=""
-
+		self.time=0.0
+		self.Vexternal=0.0
 		self.file_name=""
 		self.other_file=""
 		self.title=""

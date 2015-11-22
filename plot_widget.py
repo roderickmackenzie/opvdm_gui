@@ -53,6 +53,7 @@ from plot import plot_populate_plot_token
 from plot_io import plot_save_oplot_file
 from plot_state import plot_state
 from gui_util import dlg_get_multi_text
+from util import time_with_units
 
 class NavigationToolbar(NavigationToolbar2GTKAgg):
     # only display the buttons we need
@@ -198,10 +199,18 @@ class plot_widget(gtk.VBox):
 			self.fig.subplots_adjust(bottom=0.2)
 			self.fig.subplots_adjust(left=0.1)
 			self.fig.subplots_adjust(hspace = .001)
+
+			title=""
 			if self.plot_title=="":
-				self.fig.suptitle(self.plot_token.title)
+				title=self.plot_token.title
 			else:
-				self.fig.suptitle(self.plot_title)
+				title=self.plot_title
+
+			if self.plot_token.time!=-1.0 and self.plot_token.Vexternal!=-1.0:
+				mul,unit=time_with_units(self.plot_token.time)
+				title=title+" V="+str(self.plot_token.Vexternal)+" time="+str(self.plot_token.time*mul)+" "+unit
+
+			self.fig.suptitle(title)
 
 			self.ax=[]
 			number_of_plots=max(self.plot_id)+1

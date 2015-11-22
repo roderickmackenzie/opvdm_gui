@@ -131,8 +131,17 @@ class opvdm_open(gtk.Dialog):
 
 		for fl in os.listdir(self.dir):
 			file_name=os.path.join(self.dir, fl)
-			if os.path.isdir(file_name) and self.show_directories==True:
-			    self.store.append([fl, self.dir_icon, "dir"])
+			if os.path.isdir(file_name):
+				show_dir=True
+
+				if fl=="phys":
+					show_dir=False
+				
+				if os.path.isfile(os.path.join(file_name,"opvdm_gui_config.inp"))==True:
+					show_dir=False
+
+				if show_dir==True:
+					self.store.append([fl, self.dir_icon, "dir"])
 			else:
 				append=False
 				if (file_name.endswith(".dat")==True):

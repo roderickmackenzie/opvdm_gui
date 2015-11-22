@@ -81,7 +81,8 @@ def plot_load_oplot_file(plot_token,file_name):
 		plot_token.y_start=float(inp_search_token_value(lines, "#y_start"))
 		plot_token.y_stop=float(inp_search_token_value(lines, "#y_stop"))
 		plot_token.y_points=float(inp_search_token_value(lines, "#y_points"))
-
+		plot_token.time=float(inp_search_token_value(lines, "#time"))
+		plot_token.Vexternal=float(inp_search_token_value(lines, "#Vexternal"))
 
 		return True
 	return False
@@ -155,7 +156,10 @@ def plot_save_oplot_file(config_file,plot_token):
 		lines.append(str(plot_token.y_stop))
 		lines.append("#y_points")
 		lines.append(str(plot_token.y_points))
-
+		lines.append("#time")
+		lines.append(str(plot_token.time))
+		lines.append("#Vexternal")
+		lines.append(str(plot_token.Vexternal))
 		lines.append("#ver")
 		lines.append("1.0")
 		lines.append("#end")
@@ -206,6 +210,10 @@ def get_plot_file_info(output,file_name):
 						output.section_one=command[1]
 					if (command[0]=="#section_two"):
 						output.section_two=command[1]
+					if (command[0]=="#time"):
+						output.time=float(command[1])
+					if (command[0]=="#Vexternal"):
+						output.Vexternal=float(command[1])
 
 			return True
 

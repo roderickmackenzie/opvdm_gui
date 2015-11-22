@@ -64,21 +64,16 @@ class cmp_class(gtk.Window):
 		self.win_list.update(self,"cmp_class")
 		return False
 
-	def load_data_file(self):
-		found, self.lines = zip_get_data_file(os.path.join(self.entry0.get_active_text(),"dump_slice_info.dat"))
-		if found==False:
-			found, self.lines = zip_get_data_file(os.path.join(self.entry1.get_active_text(),"dump_slice_info.dat"))
+	def count_dumps(self):
+		dirs=0
+		path=self.entry0.get_active_text()
+		for name in os.listdir(path):
+			if name!="." and name!= "..":
+				if os.path.isdir(os.path.join(path, name)):
+					dirs=dirs+1
 
-		if found==False:
-			self.lines=["none"]
-			print "Can not open","dump_slice_info.dat"
-			return False
-
-		for i in range(0, len(self.lines)):
-			self.lines[i]=self.lines[i].rstrip()
-
-		self.adj1.set_upper(len(self.lines))
-		return True
+		self.adj1.set_upper(dirs)
+		self.dumps=dirs
 
 	def do_clip(self):
 
@@ -101,7 +96,7 @@ class cmp_class(gtk.Window):
 		my_min=1e40
 		#print "Rod",self.file_names
 		for ii in range(0,len(self.file_names)):
-			for i in range(0,len(self.lines)):
+			for i in range(0,self.dumps):
 				self.update(i)
 				t=[]
 				s=[]
@@ -125,7 +120,7 @@ class cmp_class(gtk.Window):
 		value=int(value)
 		print "hello"
 
-		if value>len(self.lines) or self.lines[0]=="none":
+		if value>self.dumps:
 			return
 
 
@@ -135,17 +130,17 @@ class cmp_class(gtk.Window):
 		labels=[]
 		zero_frame=[]
 
-		title=self.lines[value].split()
-		mul,unit=time_with_units(float(title[1]))
-		self.plot.plot_title="Voltage="+title[0]+" time="+str(float(title[1])*mul)+" "+unit
+		#title=self.lines[value].split()
+		#mul,unit=time_with_units(float(title[1]))
+		#self.plot.plot_title="Voltage="+title[0]+" time="+str(float(title[1])*mul)+" "+unit
 
 		for i in range(0,len(files)):
-			self.file_names.append(os.path.join(path0,files[i]+"_"+str(int(value))+".dat"))
-			zero_frame.append(os.path.join(path0,files[i]+"_0.dat"))
+			self.file_names.append(os.path.join(path0,str(int(value)),files[i]+".dat"))
+			zero_frame.append(os.path.join(path0,"0",files[i]+".dat"))
 			labels.append(files[i])
 
-			self.file_names.append(os.path.join(path1,files[i]+"_"+str(int(value))+".dat"))
-			zero_frame.append(os.path.join(path1,files[i]+"_0.dat"))
+			self.file_names.append(os.path.join(path1,str(int(value)),files[i]+".dat"))
+			zero_frame.append(os.path.join(path1,"0",files[i]+".dat"))
 			labels.append("")
 
 		plot_id=[]
@@ -193,7 +188,7 @@ class cmp_class(gtk.Window):
 		lines.append(self.entry3.get_text())
 		inp_write_lines_to_file("gui_cmp_config.inp",lines)
 		self.plot.gen_colors(2)
-		self.load_data_file()
+		self.count_dumps()
 
 	def config_load(self):
 		lines=[]
@@ -303,6 +298,7 @@ class cmp_class(gtk.Window):
 		return matches
 
 	def init(self):
+		self.dumps=0
 		self.plot_token=plot_state()
 		self.win_list=windows()
 		self.win_list.load()
@@ -444,10 +440,8 @@ class cmp_class(gtk.Window):
 		vbox.add(self.update_button)
 
 		self.config_load()
-		slice_info_file=os.path.join(self.entry0.get_active_text(),"dump_slice_info.dat")
-		print "Rod==",slice_info_file
-		found, lines = zip_get_data_file(slice_info_file)
-		if found==False:
+		self.count_dumps()
+		if self.dumps==0:
 			md = gtk.MessageDialog(None, 0, gtk.MESSAGE_QUESTION,  gtk.BUTTONS_YES_NO, "No slice data has been written to disk.  You need to re-run the simulation with the dump_slices set to 1.  Would you like to do this now?  Note: This generates lots of files and will slow down the simulation.")
 
 			response = md.run()
@@ -458,8 +452,7 @@ class cmp_class(gtk.Window):
 
 			md.destroy()
 
-
-		self.load_data_file()
+			self.count_dumps()
 
 		self.entry0.connect("changed", self.callback_edit)
 		self.entry1.connect("changed", self.callback_edit)
@@ -470,11 +463,9 @@ class cmp_class(gtk.Window):
 
 		vbox.show_all()
 		self.add(vbox)
-
-		ret=self.load_data_file()
 		
 		self.update(0)
-		if ret==True:
+		if self.dumps!=0:
 			self.plot.do_plot()
 			print "CONVERT!!!!!!!!!!!",type(self.plot.plot_token.key_units)
 		self.set_border_width(10)
