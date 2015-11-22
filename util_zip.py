@@ -93,15 +93,17 @@ def replace_file_in_zip_archive(zip_file_name,target,lines):
 	os.close(fh)
 	shutil.move(abs_path, zip_file_name)
 
+def zip_search_file(source,target):
+	for file in source.filelist:
+		if file.filename==target:
+			return True
+	return False
+	
 def zip_remove_file(zip_file_name,target):
 	if os.path.isfile(zip_file_name):
 		source = zipfile.ZipFile(zip_file_name, 'r')
 
-		found=False
-		for file in source.filelist:
-			if file.filename==target:
-				found=True
-				break
+		found=zip_search_file(source,target)
 
 		if found==True:
 			fh, abs_path = mkstemp()
@@ -168,7 +170,7 @@ def read_lines_from_archive(lines,zip_file_path,file_name):
 	else:
 		if os.path.isfile(zip_file_path):
 			zf = zipfile.ZipFile(zip_file_path, 'r')
-			if zf.namelist().count(os.path.basename(file_path))>0:
+			if zip_search_file(zf,os.path.basename(file_path))==True:
 				read_lines = zf.read(file_name)
 				zf.close()
 			else:

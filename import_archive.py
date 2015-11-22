@@ -111,10 +111,10 @@ def import_archive(src_archive,dest_archive,only_over_write):
 	files=[ "sim.inp", "device.inp", "stark.inp" ,"shg.inp" ,"dos0.inp", "dos1.inp"  ,"jv.inp" ,"celiv.inp" , "optics.inp", "math.inp",  "dump.inp" , "light.inp", "tpv.inp", "otrace.inp", "server.inp", "pulse_voc.inp","pulse.inp","light_exp.inp" ]
 
 	for my_file in files:
-		print "Importing",my_file
+		print "Importing",my_file,"to",dest_archive
 		copy_check_ver(dest_archive,src_archive,my_file,only_over_write,True)
 
-	files=[ "device_epitaxy.inp", "optics_epitaxy.inp", "fit.inp", "constraints.inp","duplicate.inp", "thermal.inp","lumo0.inp","homo0.inp","time_mesh_config.inp" ]
+	files=[ "epitaxy.inp", "fit.inp", "constraints.inp","duplicate.inp", "thermal.inp","lumo0.inp","homo0.inp","time_mesh_config.inp","mesh.inp" ]
 
 	for my_file in files:
 		print "Importing",my_file

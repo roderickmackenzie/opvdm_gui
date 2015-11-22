@@ -41,13 +41,13 @@ from inp import inp_sum_items
 from inp import inp_load_file
 from inp import inp_search_token_value
 from matplotlib.patches import Ellipse, PathPatch
+from epitaxy import epitaxy_get_dos_files
 
 class tab_electrical_mesh(gtk.Window):
 	lines=[]
 	edit_list=[]
 
 	line_number=[]
-	save_file_name=""
 
 	file_name=""
 	name=""
@@ -75,13 +75,14 @@ class tab_electrical_mesh(gtk.Window):
 
 		#circle1=plt.Circle((10,10),4,color='r')
 
-		if inp_load_file(lines,"device_epitaxy.inp")==True:
-			total=inp_sum_items(lines, "#mesh_layer_points")
+		if inp_load_file(lines,"mesh.inp")==True:
+			total=inp_sum_items(lines, "#mesh_layer_points0")
 
 		if inp_load_file(lines,"dump.inp")==True:
 			pos=int(inp_search_token_value(lines, "#dump_energy_slice_pos"))
 
-		if inp_load_file(lines,"dos0.inp")==True:
+		files=epitaxy_get_dos_files()
+		if inp_load_file(lines,files[0])==True:
 			bands=int(inp_search_token_value(lines, "#srh_bands"))
 
 		n=0
@@ -101,11 +102,11 @@ class tab_electrical_mesh(gtk.Window):
 		self.ax1.set_xlabel('Position (nm)')
 		try:
 
-			t,Ec_data = loadtxt("Ec.dat", unpack=True)
+			t,Ec_data = loadtxt(os.path.join("equilibrium","Ec.dat"), unpack=True)
 			t=t*1e9
 			Ec, = self.ax1.plot(t,Ec_data, 'ro-', linewidth=3 ,alpha=0.5)
 
-			t,Ev_data = loadtxt("Ev.dat", unpack=True)
+			t,Ev_data = loadtxt(os.path.join("equilibrium","Ev.dat"), unpack=True)
 			t=t*1e9
 			Ev,=self.ax1.plot(t,Ev_data, 'go-', linewidth=3 ,alpha=0.5)
 
@@ -129,7 +130,7 @@ class tab_electrical_mesh(gtk.Window):
 					y_pos=y_pos+dy
 
 
-			t,s = loadtxt("Fi.dat", unpack=True)
+			t,s = loadtxt(os.path.join("equilibrium","Fi.dat"), unpack=True)
 			t=t*1e9
 			Fi,=self.ax1.plot(t,s, 'bo-', linewidth=3 ,alpha=0.5)
 
@@ -194,14 +195,6 @@ class tab_electrical_mesh(gtk.Window):
 
 		self.emesh_editor=electrical_mesh_editor()
 		self.emesh_editor.init()
-
-		#if self.electrical_mesh!=None:
-		#	logging.info('Del scan_window')
-		#	del self.electrical_mesh
-		#	self.electrical_mesh=tab_electrical_mesh()
-		#	self.electrical_mesh.init()
-
-		self.save_file_name="device_epitaxy.inp"
 
 		self.fig = Figure(figsize=(5,4), dpi=100)
 		self.ax1=None
@@ -281,8 +274,6 @@ class tab_electrical_mesh(gtk.Window):
 		tool_bar_pos=tool_bar_pos+1
 
 
-
-
 		self.hbox.pack_start(canvas, True, True, 0)
 	
 		self.emesh_editor.show()
@@ -292,7 +283,7 @@ class tab_electrical_mesh(gtk.Window):
 
 		self.add(window_main_vbox)
 		self.set_title("Electrical Mesh Editor - (www.opvdm.com)")
-		self.set_icon_from_file(find_data_file("gui/mesh.png"))
+		self.set_icon_from_file(find_data_file(os.path.join("gui","mesh.png")))
 		self.connect("delete-event", self.callback_close)
 		self.set_position(gtk.WIN_POS_CENTER)
 

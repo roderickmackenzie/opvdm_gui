@@ -60,6 +60,7 @@ def command_args(argc,argv):
 			print "\t--help\t\tdisplays the help"
 			print "\t--export\texport a simulation to a gz file"
 			print "\t--import\timport a simulation from a .opvdm file"
+			print "\t--patch\tpatch an .opvdm file with an older .opvdm file"
 			print "\t\t\tusage --import abc.opvdm ./path/to/output/ "
 			print "\t--clone\t\tgenerate a clean simulation in the current directory"
 			print "\t--clean\t\tcleans the current simulation directory deleting .dat files and scan dirs"
@@ -90,6 +91,9 @@ def command_args(argc,argv):
 			sys.exit(0)
 		if argv[1]=="--import":
 			import_archive(argv[2],os.path.join(os.getcwd(),"sim.opvdm"),False)
+			sys.exit(0)
+		if argv[1]=="--patch":
+			import_archive(argv[2],argv[3],True)
 			sys.exit(0)
 		if argv[1]=="--clone":
 			opvdm_clone()

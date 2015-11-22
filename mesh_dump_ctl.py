@@ -47,8 +47,8 @@ class mesh_dump_ctl(gtk.VBox):
 		total=0
 		self.pos=0
 		lines=[]
-		if inp_load_file(lines,"device_epitaxy.inp")==True:
-			total=inp_sum_items(lines, "#mesh_layer_points")
+		if inp_load_file(lines,"mesh.inp")==True:
+			total=inp_sum_items(lines, "#mesh_layer_points0")
 
 		if inp_load_file(lines,"dump.inp")==True:
 			self.pos=str2bool(inp_search_token_value(lines, "#dump_energy_slice_pos"))
@@ -61,6 +61,7 @@ class mesh_dump_ctl(gtk.VBox):
 		check = gtk.CheckButton("Enable")
 		self.pack_start(check, True, True, 0)
 
+		print "total=",total
 		adj=gtk.Adjustment(self.pos, 0, total, 1.0, 1.0, 1.0)
 		adj.connect("value_changed", self.scroll)
 		self.vscale = gtk.HScale(adj)
