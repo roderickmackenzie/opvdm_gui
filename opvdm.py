@@ -29,6 +29,16 @@ sys.path.append('./gui/')
 sys.path.append(lib_dir)
 
 from win_lin import running_on_linux
+from cal_path import get_exe_command
+from cal_path import get_exe_name
+from cal_path import find_data_file
+from cal_path import calculate_paths
+calculate_paths()
+
+from ver import ver_load_info
+from ver import ver_error
+ver_load_info()
+
 from command_args import command_args
 command_args(len(sys.argv),sys.argv)
 
@@ -39,15 +49,13 @@ import gtk
 pygtk.require('2.0')
 import os
 import shutil
-from help import my_help_class
-from scan_item import scan_items_clear
-from scan import scan_class 
-from search import find_fit_error
 import signal
 import subprocess
 from inp import inp_get_token_value
-from cal_path import get_exe_command
-from cal_path import get_exe_name
+
+from scan_item import scan_items_clear
+from scan import scan_class 
+from search import find_fit_error
 from util import opvdm_clone
 from export_as import export_as
 from tmesh import tab_time_mesh
@@ -56,7 +64,7 @@ from plot_gen import plot_gen
 from plot_gen import set_plot_auto_close
 from import_archive import import_archive
 from about import about_dialog_show
-from cal_path import find_data_file
+from help import my_help_class
 from notice import notice
 import os
 import gobject
@@ -78,7 +86,7 @@ from opvdm_open import opvdm_open
 from tb_item_sun import tb_item_sun
 from tb_item_sim_mode import tb_item_sim_mode
 from opvdm_open import opvdm_open
-from cal_path import calculate_paths
+
 import glib
 from server import server
 from opvdm_notebook import opvdm_notebook
@@ -87,7 +95,7 @@ from epitaxy import epitaxy_load
 from global_objects import global_object_get
 
 
-calculate_paths()
+
 
 if running_on_linux()==True:
 	import dbus
@@ -635,9 +643,20 @@ class opvdm_main_window(gobject.GObject):
 			self.win_pipe.connect('new-data', self.win_dbus)
 			self.win_pipe.start()
 
+		self.window = gtk.Window(gtk.WINDOW_TOPLEVEL)
+		self.window.set_border_width(10)
+		self.window.set_title("Organic Photovoltaic Device Model (www.opvdm.com)")
 
 		splash=splash_window()
 		splash.init()
+
+		temp_error=ver_error()
+		print temp_error
+		if len(temp_error)>0:
+				md = gtk.MessageDialog(self.window,gtk.DIALOG_DESTROY_WITH_PARENT, gtk.MESSAGE_ERROR, gtk.BUTTONS_CLOSE, temp_error)
+				md.run()
+				md.destroy()
+
 		self.undo_list=undo_list_class()
 		self.undo_list.init()
 
@@ -648,9 +667,6 @@ class opvdm_main_window(gobject.GObject):
 		self.qe=qe_window()
 		self.qe.init()
 
-		self.window = gtk.Window(gtk.WINDOW_TOPLEVEL)
-		self.window.set_border_width(10)
-		self.window.set_title("Organic Photovoltaic Device Model (www.opvdm.com)")
 
 		self.win_list=windows()
 		self.win_list.load()

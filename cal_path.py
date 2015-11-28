@@ -23,21 +23,42 @@ import sys
 import os
 import shutil
 from win_lin import running_on_linux
+if running_on_linux()==False:
+	import _winreg
 
 phys_path=None
 light_dll_path=None
 exe_command=None
+win_install_path=None
+install_path=None
+
+def cal_install_path():
+	global install_path
+	if running_on_linux()==True:
+		install_path="/usr/share/opvdm/"
+	else:
+		try:
+			registry_key = _winreg.OpenKey(_winreg.HKEY_CURRENT_USER, "Software\\opvdm", 0, _winreg.KEY_READ)
+			value, regtype = _winreg.QueryValueEx(registry_key, "installpath")
+			_winreg.CloseKey(registry_key)
+			print "Install path at", value
+			install_path=value
+		except WindowsError:
+			print "No registry key found using default"
+			install_path="c:\\opvdm"
 
 def calculate_paths():
+	global install_path
 	global phys_path
+	global exe_command
+
+
+	cal_install_path()
+
 	phys_path=os.path.join(os.getcwd(),"phys")
 	if os.path.isdir(phys_path)==False:
-		if running_on_linux()==True:
-			phys_path="/usr/share/opvdm/phys/"
-		else:
-			phys_path="c:\\opvdm\\phys\\"
+		phys_path=os.path.join(install_path,"phys")
 
-	global exe_command
 	if running_on_linux() == True:
 		if os.path.isfile("./go.o")==True:
 			exe_command=os.path.join(os.getcwd(), "go.o")
@@ -50,7 +71,7 @@ def calculate_paths():
 		if os.path.isfile("opvdm_core.exe")==True:
 			exe_command=os.path.join(os.getcwd(), "opvdm_core.exe")
 		else:
-			exe_command="c:\\opvdm\\opvdm_core.exe"
+			exe_command=os.path.join(install_path,"opvdm_core.exe")
 
 	global light_dll_path
 	local=os.path.join(os.getcwd(),"light")
@@ -60,8 +81,12 @@ def calculate_paths():
 		if running_on_linux()==True:
 			light_dll_path="/usr/lib64/opvdm/"
 		else:
-			light_dll_path="c:\\opvdm\\light\\"
+			light_dll_path=os.path.join(install_path,"light")
 
+
+def get_install_path():
+	global install_path
+	return install_path
 
 def get_phys_path():
 	global phys_path
@@ -92,6 +117,7 @@ def get_exe_name():
 		return exe_name
 
 def get_inp_file_path():
+	global install_path
 	if running_on_linux() == True:
 		if os.path.isfile("opvdm.py")==True:
 			path=os.getcwd()
@@ -102,10 +128,11 @@ def get_inp_file_path():
 		if os.path.isfile("opvdm.py")==True:
 			path=os.path.join(os.getcwd(), "\\")
 		else:
-			path="c:\\opvdm\\"
+			path=install_path
 		return path
 
 def get_icon_file_path():
+	global install_path
 	if running_on_linux() == True:
 		if os.path.isfile("main.c")==True:
 			path=os.path.join(os.getcwd(),"gui")
@@ -116,7 +143,7 @@ def get_icon_file_path():
 		if os.path.isfile("opvdm.py")==True:
 			path=os.path.join(os.getcwd(), "\\")
 		else:
-			path="c:\\opvdm\\gui\\"
+			path=os.path.join(install_path,"gui")
 		return path
 
 def find_data_file(name):

@@ -19,29 +19,62 @@
 #    with this program; if not, write to the Free Software Foundation, Inc.,
 #    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
+import gtk
 import sys
+import os
 from cal_path import find_data_file
+from cal_path import get_install_path
+
 from inp import inp_load_file
 
+global core
+global gui
+global mat
+global ver_error
+
+def ver_error():
+	global ver_error
+	return ver_error
+
 def ver_core():
-	lines=[]
-	inp_load_file(lines,find_data_file("ver.inp"))
-	return lines[1]
+	global core
+	return core
 
 def ver_gui():
-	lines=[]
-	inp_load_file(lines,find_data_file("ver.inp"))
-	return lines[3]
+	global gui
+	return gui
 
 def ver_mat():
-	lines=[]
-	inp_load_file(lines,find_data_file("ver.inp"))
-	return lines[5]
+	global mat
+	return mat
 
 def ver():
-	lines=[]
-	inp_load_file(lines,find_data_file("ver.inp"))
-	ver_string="core: Version "+lines[1]+", gui: Version "+lines[3]+", materials: Version "+lines[5]
-
-	string=ver_string
+	global core
+	global gui
+	global mat
+	string="core: Version "+core+", gui: Version "+gui+", materials: Version "+mat
 	return string
+
+def ver_load_info():
+	lines=[]
+	global core
+	global gui
+	global mat
+	global ver_error
+
+	core=""
+	gui=""
+	mat=""
+	ver_error=""
+
+	if inp_load_file(lines,find_data_file("ver.inp"))==True:
+		core=lines[1]
+		gui=lines[3]
+		mat=lines[5]
+		return True
+	else:
+		ver_error="I can not find the file sim.opvdm/ver.inp.\n\nI have tried looking in "+find_data_file("ver.inp")+"\n\nThe install path is"+get_install_path()+"\n\nThe current working dir is "+os.getcwd()+"\n\nTry reinstalling a new version of opvdm and/or report the bug to me at  roderick.mackenzie@nottingham.ac.uk."
+		return False
+
+
+

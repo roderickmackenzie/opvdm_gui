@@ -41,6 +41,7 @@ from win_lin import running_on_linux
 if running_on_linux()==True:
 	from tab_terminal import tab_terminal
 from dos_main import dos_main
+from cal_path import get_install_path
 
 class opvdm_notebook(gtk.Notebook):
 	progress=progress_class()
@@ -122,7 +123,8 @@ class opvdm_notebook(gtk.Notebook):
 	def load(self):
 		self.clean_menu()
 		self.last_page=0
-		if (os.path.exists("sim.opvdm")==True) and (os.getcwd()!="C:\\opvdm"):
+		print "paths",os.getcwd(),get_install_path(),(os.path.normcase(os.getcwd())!=os.path.normcase(get_install_path()))
+		if (os.path.exists("sim.opvdm")==True) and (os.path.normcase(os.getcwd())!=os.path.normcase(get_install_path())):
 			self.finished_loading=False
 			self.progress.init()
 			self.progress.show()
