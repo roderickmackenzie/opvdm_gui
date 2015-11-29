@@ -39,6 +39,7 @@ from epitaxy import epitaxy_get_mat_file
 from epitaxy import epitaxy_get_electrical_layer
 from help import my_help_class
 from cal_path import find_data_file
+from epitaxy import epitaxy_get_pl_file
 
 class tab_main(gtk.VBox,tab_base):
 
@@ -79,10 +80,23 @@ class tab_main(gtk.VBox,tab_base):
 		self.cr.line_to(x, y+20)
 		self.cr.line_to(x-10, y)
 		self.cr.fill()
-		#optical_mode_file
-		
 
-		#self.cr.restore()
+	def draw_photon_up(self,x_start,y_start):
+		x=x_start
+		y=y_start
+		self.cr.set_source_rgb(0.0,0.0,1.0)
+		self.cr.move_to(x, y)
+		self.cr.set_line_width(2)
+		while (y>y_start-101):
+			self.cr.line_to(x+math.sin((y_start-y)/4)*10, y)
+			y=y-0.1
+		self.cr.stroke()
+
+		self.cr.line_to(x+10, y)
+		self.cr.line_to(x, y-20)
+		self.cr.line_to(x-10, y)
+		self.cr.fill()
+
 
 	def draw_box(self,x,y,z,r,g,b,layer):
 		text=""
@@ -152,6 +166,14 @@ class tab_main(gtk.VBox,tab_base):
 		self.sun=sun
 
 	def draw(self):
+		emission=False
+		lines=[]
+		for i in range(0,epitaxy_get_layers()):
+			if epitaxy_get_pl_file(i)!="none":
+				if inp_load_file(lines,epitaxy_get_pl_file(i)+".inp")==True:
+					if str2bool(lines[1])==True:
+						emission=True				
+
 		tot=0
 		for i in range(0,epitaxy_get_layers()):
 			tot=tot+epitaxy_get_width(i)
@@ -195,6 +217,10 @@ class tab_main(gtk.VBox,tab_base):
 		if self.sun!=0:
 			for x in range(0,200,step):
 				self.draw_photon(270+x,50)
+
+		if emission==True:
+			for x in range(0,200,50):
+				self.draw_photon_up(240+x,180)
 
 		self.draw_mode(200,250,200)
 

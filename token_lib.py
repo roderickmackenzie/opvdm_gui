@@ -24,6 +24,7 @@ import os
 import shutil
 import signal
 import subprocess
+from util import latex_to_pygtk_subscript
 
 class my_data():
 	token=""
@@ -39,21 +40,21 @@ class my_data():
 
 class tokens:
 	lib=[]
-	lib.append(my_data("#mueffe","m<sup>2</sup>V<sup>-1</sup>s<sup>-1</sup>","Electron mobility",["text"],"e",1.0))
-	lib.append(my_data("#mueffh","m<sup>2</sup>V<sup>-1</sup>s<sup>-1</sup>","Hole mobility",["text"],"e",1.0))
-	lib.append(my_data("#Ntrape","m<sup>-3</sup> eV<sup>-1</sup>","Electron trap density",["text"],"e",1.0))
-	lib.append(my_data("#Ntraph","m<sup>-3</sup> eV<sup>-1</sup>","Hole trap density",["text"],"e",1.0))
+	lib.append(my_data("#mueffe","m^{2}V^{-1}s^{-1}","Electron mobility",["text"],"e",1.0))
+	lib.append(my_data("#mueffh","m^{2}V^{-1}s^{-1}","Hole mobility",["text"],"e",1.0))
+	lib.append(my_data("#Ntrape","m^{-3} eV^{-1}","Electron trap density",["text"],"e",1.0))
+	lib.append(my_data("#Ntraph","m^{-3} eV^{-1}","Hole trap density",["text"],"e",1.0))
 	lib.append(my_data("#Etrape","eV","Electron tail slope",["text"],"e",1.0))
 	lib.append(my_data("#Etraph","eV","Hole tail slope",["text"],"e",1.0))
 	lib.append(my_data("#epsilonr","au","Relative permittivity",["text"],"e",1.0))
-	lib.append(my_data("#srhsigman_e","m<sup>-2</sup>","Free electron to Trapped electron",["text"],"e",1.0))
-	lib.append(my_data("#srhsigmap_e","m<sup>-2</sup>","Trapped electron to Free hole",["text"],"e",1.0))
-	lib.append(my_data("#srhsigman_h","m<sup>-2</sup>","Trapped hole to Free electron",["text"],"e",1.0))
-	lib.append(my_data("#srhsigmap_h","m<sup>-2</sup>","Free hole to Trapped hole",["text"],"e",1.0))
+	lib.append(my_data("#srhsigman_e","m^{-2}","Free electron to Trapped electron",["text"],"e",1.0))
+	lib.append(my_data("#srhsigmap_e","m^{-2}","Trapped electron to Free hole",["text"],"e",1.0))
+	lib.append(my_data("#srhsigman_h","m^{-2}","Trapped hole to Free electron",["text"],"e",1.0))
+	lib.append(my_data("#srhsigmap_h","m^{-2}","Free hole to Trapped hole",["text"],"e",1.0))
 	lib.append(my_data("#Rshunt","Ohms","Shunt resistance",["text"],"e",1.0))
 	lib.append(my_data("#Rcontact","Ohms","Series resistance",["text"],"e",1.0))
-	lib.append(my_data("#lcharge","m<sup>-3</sup>","Charge on left contact",["text"],"e",1.0))
-	lib.append(my_data("#rcharge","m<sup>-3</sup>","Charge on right contact",["text"],"e",1.0))
+	lib.append(my_data("#lcharge","m^{-3}","Charge on left contact",["text"],"e",1.0))
+	lib.append(my_data("#rcharge","m^{-3}","Charge on right contact",["text"],"e",1.0))
 	lib.append(my_data("#Vstart","V","Start voltage",["text"],"e",1.0))
 	lib.append(my_data("#Vstop","V","Stop voltage",["text"],"e",1.0))
 	lib.append(my_data("#Vstep","V","Voltage step",["text"],"e",1.0))
@@ -66,18 +67,18 @@ class tokens:
 	lib.append(my_data("#imps_saturate","#imps_saturate","#imps_saturate",["text"],"e",1.0))
 
 
-	lib.append(my_data("#simplephotondensity","m<sup>-2</sup>s<sup>-1</sup>","Photon density",["text"],"e",1.0))
-	lib.append(my_data("#simple_alpha","m<sup>-1</sup>","Absorption of material",["text"],"e",1.0))
+	lib.append(my_data("#simplephotondensity","m^{-2}s^{-1}","Photon density",["text"],"e",1.0))
+	lib.append(my_data("#simple_alpha","m^{-1}","Absorption of material",["text"],"e",1.0))
 	lib.append(my_data("#celiv_laser_eff","1/0","#celiv_laser_eff",["text"],"e",1.0))
-	lib.append(my_data("#doping","m<sup>-3</sup>","Doping",["text"],"e",1.0))
+	lib.append(my_data("#doping","m^{-3}","Doping",["text"],"e",1.0))
 	lib.append(my_data("#simmode","au","#simmode",["text"],"e",1.0))
-	lib.append(my_data("#Nc","m<sup>-3</sup>","Effective density of free electron states",["text"],"e",1.0))
-	lib.append(my_data("#Nv","m<sup>-3</sup>","Effective density of free hole states",["text"],"e",1.0))
+	lib.append(my_data("#Nc","m^{-3}","Effective density of free electron states",["text"],"e",1.0))
+	lib.append(my_data("#Nv","m^{-3}","Effective density of free hole states",["text"],"e",1.0))
 	lib.append(my_data("#maxelectricalitt","au","Max electrical itterations",["text"],"e",1.0))
 	lib.append(my_data("#electricalclamp","au","Electrical clamp",["text"],"e",1.0))
 	lib.append(my_data("#posclamp","au","Poisson clamping",["text"],"e",1.0))
 	lib.append(my_data("#electricalerror","au","Minimum electrical error",["text"],"e",1.0))
-	lib.append(my_data("#free_to_free_recombination","m<sup>3</sup>s<sup>-1</sup>","Free to free recombination",["text"],"e",1.0))
+	lib.append(my_data("#free_to_free_recombination","m^{3}s^{-1}","Free to free recombination",["text"],"e",1.0))
 	lib.append(my_data("#sun","filename","Sun's spectra",["text"],"e",1.0))
 	lib.append(my_data("#meshpoints","au","Mesh points (x)",["text"],"e",1.0))
 	lib.append(my_data("#lpoints","au","Mesh points (lambda)",["text"],"e",1.0))
@@ -107,7 +108,7 @@ class tokens:
 	lib.append(my_data("#otherlayers","m","Other layers",["text"],"e",1.0))
 
 	lib.append(my_data("#tofstop","s","ToF stop time",["text"],"e",1.0))
-	lib.append(my_data("#tof_cap_escape_fx","s<sup>-1</sup>","Capture to escape frequency",["text"],"e",1.0))
+	lib.append(my_data("#tof_cap_escape_fx","s^{-1}","Capture to escape frequency",["text"],"e",1.0))
 	lib.append(my_data("#toflaseroff","s","ToF laser off time",["text"],"e",1.0))
 	lib.append(my_data("#dt","s","ToF time step",["text"],"e",1.0))
 	lib.append(my_data("#tofdtmull","au","ToF dt multiplier",["text"],"e",1.0))
@@ -130,14 +131,14 @@ class tokens:
 	lib.append(my_data("#stark_probe_wavelength","nm","wavelength",["text"],"e",1e9))
 	lib.append(my_data("#stark_sim_contacts","1/0","sim_contacts",["text"],"e",1.0))
 	lib.append(my_data("#pulse_dt","s","dt",["text"],"e",1.0))
-	lib.append(my_data("#pulse_t0","s","time<sub>0</sub>",["text"],"e",1.0))
-	lib.append(my_data("#pulse_t1","s","time<sub>1</sub>",["text"],"e",1.0))
-	lib.append(my_data("#pulse_t2","s","time<sub>2</sub>",["text"],"e",1.0))
-	lib.append(my_data("#Rshort_pulse","Ohms","R<sub>short</sub>",["text"],"e",1.0))
+	lib.append(my_data("#pulse_t0","s","time_{0}",["text"],"e",1.0))
+	lib.append(my_data("#pulse_t1","s","time_{1}",["text"],"e",1.0))
+	lib.append(my_data("#pulse_t2","s","time_{2}",["text"],"e",1.0))
+	lib.append(my_data("#Rshort_pulse","Ohms","R_{short}",["text"],"e",1.0))
 	lib.append(my_data("#imps_points","s","points",["text"],"e",1.0))
 	lib.append(my_data("#imps_n","s","Wavelengths to simulate",["text"],"e",1.0))
 	lib.append(my_data("#imps_Vexternal","Volts","External voltage",["text"],"e",1.0))
-	lib.append(my_data("#Rshort_imps","Ohms","R<sub>short</sub>",["text"],"e",1.0))
+	lib.append(my_data("#Rshort_imps","Ohms","R_{short}",["text"],"e",1.0))
 	lib.append(my_data("#imps_sun","1=1 Sun","Backgroud light bias",["text"],"e",1.0))
 	lib.append(my_data("#imps_modulation_max","1=1 Sun","Modulation depth",["text"],"e",1.0))
 	lib.append(my_data("#imps_modulation_fx","Hz","Modulation frequency",["text"],"e",1.0))
@@ -148,7 +149,7 @@ class tokens:
 	lib.append(my_data("#jv_step_mul","0-2.0","JV voltage step multiplyer",["text"],"e",1.0))
 	lib.append(my_data("#jv_max_j","A m^{-2}","Maximum current density",["text"],"e",1.0))
 
-	lib.append(my_data("#voc","V","V<sub>oc</sub>",["text"],"e",1.0))
+	lib.append(my_data("#voc","V","V_{oc}",["text"],"e",1.0))
 
 	lib.append(my_data("#imps_r","Amps","Re(i)",["text"],"e",1.0))
 	lib.append(my_data("#imps_i","Amps","Im(i)",["text"],"e",1.0))
@@ -174,8 +175,8 @@ class tokens:
 	lib.append(my_data("#sun_voc_Psun_mul","au","step multiplier",["text"],"e",1.0))
 
 
-	lib.append(my_data("#simplephotondensity","m<sup>-2</sup>s<sup>-1</sup>","Photon Flux",["text"],"e",1.0))
-	lib.append(my_data("#simple_alpha","m<sup>-1</sup>","Absorption",["text"],"e",1.0))
+	lib.append(my_data("#simplephotondensity","m^{-2}s^{-1}","Photon Flux",["text"],"e",1.0))
+	lib.append(my_data("#simple_alpha","m^{-1}","Absorption",["text"],"e",1.0))
 	lib.append(my_data("#xlen","m","device width",["text"],"e",1.0))
 	lib.append(my_data("#zlen","m","device breadth",["text"],"e",1.0))
 	lib.append(my_data("#ver","","",["text"],"e",1.0))
@@ -211,7 +212,7 @@ class tokens:
 	lib.append(my_data("#pulse_voc_time_start","s","Start time",["text"],"e",1.0))
 	lib.append(my_data("#pulse_voc_stop","s","Stop time",["text"],"e",1.0))
 	lib.append(my_data("#pulse_voc_laser_pulse_width","s","Laser pulse width",["text"],"e",1.0))
-	lib.append(my_data("#pulse_voc_Vexternal","V","V<sub>external</sub>",["text"],"e",1.0))
+	lib.append(my_data("#pulse_voc_Vexternal","V","V_{external}",["text"],"e",1.0))
 	lib.append(my_data("#pulse_voc_repeat","","",["text"],"e",1.0))
 	lib.append(my_data("#pulse_voc_shift","","",["text"],"e",1.0))
 	lib.append(my_data("#pulse_voc_use_big_mesh","1/0","Use a big mesh",["1","0"],"e",1.0))
@@ -266,17 +267,17 @@ class tokens:
 	lib.append(my_data("#alignmesh","","",["text"],"e",1.0))
 	lib.append(my_data("#stark_start_time","","",["text"],"e",1.0))
 
-	lib.append(my_data("#jv_pmax_n","m<sup>-3</sup>","Average carrier density at P<sub>max</sub>",["text"],"e",1.0))
-	lib.append(my_data("#jv_pmax_tau","m<sup>-1</sup>","Recombination time constant",["text"],"e",1.0))
+	lib.append(my_data("#jv_pmax_n","m^{-3}","Average carrier density at P_{max}",["text"],"e",1.0))
+	lib.append(my_data("#jv_pmax_tau","m^{-1}","Recombination time constant",["text"],"e",1.0))
 
-	lib.append(my_data("#voc_nt","m<sup>-3</sup>","Trapped electrons at Voc",["text"],"e",1.0))
-	lib.append(my_data("#voc_pt","m<sup>-3</sup>","Trapped holes at Voc",["text"],"e",1.0))
-	lib.append(my_data("#voc_nf","m<sup>-3</sup>","Free electrons at Voc",["text"],"e",1.0))
-	lib.append(my_data("#voc_pf","m<sup>-3</sup>","Free holes at Voc",["text"],"e",1.0))
-	lib.append(my_data("#voc_np_tot","m<sup>-3</sup>","Total carriers (n+p)/2 at Voc",["text"],"e",1.0))
-	lib.append(my_data("#voc_tau","s</sup>","Recombination time constant at Voc",["text"],"e",1.0))
-	lib.append(my_data("#voc_R","m<sup>-3</sup>s<sup>-1</sup>","Recombination rate at Voc",["text"],"e",1.0))
-	lib.append(my_data("#voc_J","A m<sup>-2</sup>","Current density at Voc",["text"],"e",1.0))
+	lib.append(my_data("#voc_nt","m^{-3}","Trapped electrons at Voc",["text"],"e",1.0))
+	lib.append(my_data("#voc_pt","m^{-3}","Trapped holes at Voc",["text"],"e",1.0))
+	lib.append(my_data("#voc_nf","m^{-3}","Free electrons at Voc",["text"],"e",1.0))
+	lib.append(my_data("#voc_pf","m^{-3}","Free holes at Voc",["text"],"e",1.0))
+	lib.append(my_data("#voc_np_tot","m^{-3}","Total carriers (n+p)/2 at Voc",["text"],"e",1.0))
+	lib.append(my_data("#voc_tau","s}","Recombination time constant at Voc",["text"],"e",1.0))
+	lib.append(my_data("#voc_R","m^{-3}s^{-1}","Recombination rate at Voc",["text"],"e",1.0))
+	lib.append(my_data("#voc_J","A m^{-2}","Current density at Voc",["text"],"e",1.0))
 	lib.append(my_data("#voc_J_to_Jr","au","Ratio of conduction current to recombination current",["text"],"e",1.0))
 
 	lib.append(my_data("#voc_i","au","Current",["text"],"e",1.0))
@@ -395,6 +396,12 @@ class tokens:
 
 
 
+	lib.append(my_data("#pl_enabled","True/False","Turn on luminescence",["true","false"],"e",1.0))
+	lib.append(my_data("#pl_fe_fh","0.0-1.0","n_{frae} to n_{frae} photon generation efficiency",["text"],"e",1.0))
+	lib.append(my_data("#pl_fe_te","0.0-1.0","n_{frae} to n_{trap} photon generation efficiency",["text"],"e",1.0))
+	lib.append(my_data("#pl_te_fh","0.0-1.0","n_{trap} to p_{free} photon generation efficiency",["text"],"e",1.0))
+	lib.append(my_data("#pl_th_fe","0.0-1.0","n_{trap} to p_{free} photon generation efficiency",["text"],"e",1.0))
+	lib.append(my_data("#pl_fh_th","0.0-1.0","p_{free} to p_{free} photon generation efficiency",["text"],"e",1.0))
 
 	def find(self,token):
 		for i in range(0, len(self.lib)):

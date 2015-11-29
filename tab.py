@@ -39,6 +39,7 @@ from scan_item import scan_remove_file
 from inp import inp_load_file
 from help import my_help_class
 from cal_path import find_data_file
+from util import latex_to_pygtk_subscript
 
 class tab_class(gtk.VBox,tab_base):
 	
@@ -90,7 +91,7 @@ class tab_class(gtk.VBox,tab_base):
 				hbox.show()
 				label = gtk.Label()
 				label.set_size_request(400,height)
-				label.set_markup(text_info)
+				label.set_markup(latex_to_pygtk_subscript(text_info))
 				label.set_use_markup(True)
 				hbox.pack_start(label, False, False, padding=1)
 				label.show()
@@ -132,7 +133,7 @@ class tab_class(gtk.VBox,tab_base):
 				hbox.pack_start(edit_box, False, False, padding=1)
 
 				label = gtk.Label()
-				label.set_markup(units)
+				label.set_markup(latex_to_pygtk_subscript(units))
 				label.set_use_markup(True)
 				label.set_size_request(200,height)
 				label.show()

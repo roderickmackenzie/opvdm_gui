@@ -41,6 +41,8 @@ from win_lin import running_on_linux
 if running_on_linux()==True:
 	from tab_terminal import tab_terminal
 from dos_main import dos_main
+from pl_main import pl_main
+
 from cal_path import get_install_path
 
 class opvdm_notebook(gtk.Notebook):
@@ -166,7 +168,15 @@ class opvdm_notebook(gtk.Notebook):
 					tab_number=tab_number+1
 					self.progress.set_text("Loading "+name)
 					process_events()
-					if file_name=="epitaxy.inp":
+					if file_name=="pl0.inp":
+						tab=pl_main()
+						tab.init()
+						tab.update()
+						add_to_widget=True
+						tab.visible=visible
+						tab.label_name=name
+						tab.file_name=file_name
+					elif file_name=="epitaxy.inp":
 						tab=dos_main()
 						tab.init()
 						tab.update()

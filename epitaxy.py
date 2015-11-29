@@ -48,6 +48,7 @@ electrical_layers=0
 width=[]
 mat_file=[]
 electrical_layer=[]
+pl_file=[]
 
 def epitaxy_load():
 	lines=[]
@@ -56,12 +57,15 @@ def epitaxy_load():
 	global width
 	global mat_file
 	global electrical_layer
+	global pl_file
 
 	layers=0
 	electrical_layers=0
 	width=[]
 	mat_file=[]
 	electrical_layer=[]
+	pl_file=[]
+
 
 	if inp_load_file(lines,"epitaxy.inp")==True:
 		pos=0
@@ -83,6 +87,9 @@ def epitaxy_load():
 			if lines[pos]!="none":
 				electrical_layers=electrical_layers+1
 
+			pos=pos+1
+			pl_file.append(lines[pos])		#value
+
 			layers=layers+1
 
 def epitay_get_next_dos():
@@ -92,19 +99,28 @@ def epitay_get_next_dos():
 		if electrical_layer.count(name)==0:
 			return name
 
-def epitaxy_load_from_arrays(in_width,in_material,in_dos_layer):
+def epitay_get_next_pl():
+	global pl_file
+	for i in range(0,20):
+		name="pl"+str(i)
+		if pl_file.count(name)==0:
+			return name
+
+def epitaxy_load_from_arrays(in_width,in_material,in_dos_layer,in_pl_file):
 	lines=[]
 	global layers
 	global electrical_layers
 	global width
 	global mat_file
 	global electrical_layer
+	global pl_file
 
 	layers=0
 	electrical_layers=0
 	width=[]
 	mat_file=[]
 	electrical_layer=[]
+	pl_file=[]
 
 	for i in range(0, len(in_width)):
 
@@ -113,6 +129,8 @@ def epitaxy_load_from_arrays(in_width,in_material,in_dos_layer):
 		mat_file.append(in_material[i])
 
 		electrical_layer.append(in_dos_layer[i])		#value
+
+		pl_file.append(in_pl_file[i])			#value
 
 		if in_dos_layer[i]!="none":
 			electrical_layers=electrical_layers+1
@@ -126,6 +144,7 @@ def epitaxy_save():
 	global width
 	global mat_file
 	global electrical_layer
+	global pl_file
 
 	dos_text=""
 	lines=[]
@@ -137,12 +156,12 @@ def epitaxy_save():
 		lines.append("#layer"+str(layer))
 		lines.append(str(width[i]))
 		lines.append(mat_file[i])
-
 		lines.append(electrical_layer[i])
+		lines.append(pl_file[i])
 		layer=layer+1
 
 	lines.append("#ver")			
-	lines.append("1.0")			
+	lines.append("1.1")			
 	lines.append("#end")
 
 	#print lines
@@ -173,3 +192,8 @@ def epitaxy_get_electrical_layer(i):
 def epitaxy_get_mat_file(i):
 	global mat_file
 	return mat_file[i]
+
+def epitaxy_get_pl_file(i):
+	global pl_file
+	return pl_file[i]
+

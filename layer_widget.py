@@ -51,14 +51,16 @@ from epitaxy import epitay_get_next_dos
 from inp import inp_isfile
 from inp import inp_copy_file
 from help import my_help_class
-
+from epitaxy import epitaxy_get_pl_file
+from epitaxy import epitay_get_next_pl
 
 (
   COLUMN_THICKNES,
   COLUMN_MATERIAL,
   COLUMN_DEVICE,
-  COLUMN_DOS_LAYER
-) = range(4)
+  COLUMN_DOS_LAYER,
+  COLUMN_PL_FILE
+) = range(5)
 
 class layer_widget(gtk.VBox):
 
@@ -87,12 +89,18 @@ class layer_widget(gtk.VBox):
 		self.model[path][COLUMN_DEVICE]=text
 		if old_text=="no" and text=="yes":
 			self.model[path][COLUMN_DOS_LAYER]=epitay_get_next_dos()
+			self.model[path][COLUMN_PL_FILE]=epitay_get_next_pl()
 			new_file=self.model[path][COLUMN_DOS_LAYER]+".inp"
 			if inp_isfile(new_file)==False:
 				inp_copy_file(new_file,"dos0.inp")
 
+			new_file=self.model[path][COLUMN_PL_FILE]+".inp"
+			if inp_isfile(new_file)==False:
+				inp_copy_file(new_file,"pl0.inp")
+
 		if text=="no":
 			self.model[path][COLUMN_DOS_LAYER]="none"
+			self.model[path][COLUMN_PL_FILE]="none"
 
 		self.save_model()
 		self.refresh(True)
@@ -243,7 +251,7 @@ class layer_widget(gtk.VBox):
 	def __create_model(self):
 
 		# create list store
-		model = gtk.ListStore(str,str,str,str,str)
+		model = gtk.ListStore(str,str,str,str,str,str)
 
 		# add items
 
@@ -253,6 +261,7 @@ class layer_widget(gtk.VBox):
 			thick=epitaxy_get_width(i)
 			material=epitaxy_get_mat_file(i)
 			dos_layer=epitaxy_get_electrical_layer(i)
+			pl_file=epitaxy_get_pl_file(i)
 
 			dos_file=""
 
@@ -270,7 +279,8 @@ class layer_widget(gtk.VBox):
 			  COLUMN_THICKNES, str(thick),
 			  COLUMN_MATERIAL, str(material),
 			  COLUMN_DEVICE, str(dos_file),
-			  COLUMN_DOS_LAYER, str(dos_layer)
+			  COLUMN_DOS_LAYER, str(dos_layer),
+			  COLUMN_PL_FILE, str(pl_file)
 			)
 		return model
 
@@ -347,6 +357,14 @@ class layer_widget(gtk.VBox):
 		column.set_visible(False)
 		treeview.append_column(column)
 
+		renderer = gtk.CellRendererText()
+		renderer.connect("edited", self.on_dos_layer_edited, model)
+		renderer.set_data("column", COLUMN_PL_FILE)
+		renderer.set_property("editable", True)
+		column = gtk.TreeViewColumn("DoS Layer", renderer, text=COLUMN_PL_FILE,editable=True)
+		column.set_visible(False)
+		treeview.append_column(column)
+
 	def on_cell_edited(self, cell, path_string, new_text, model):
 
 		iter = model.get_iter_from_string(path_string)
@@ -399,6 +417,7 @@ class layer_widget(gtk.VBox):
 		    COLUMN_MATERIAL, new_item[COLUMN_MATERIAL],
 		    COLUMN_DEVICE, new_item[COLUMN_DEVICE],
 		    COLUMN_DOS_LAYER, new_item[COLUMN_DOS_LAYER],
+		    COLUMN_PL_FILE, new_item[COLUMN_PL_FILE],
 
 		)
 		self.save_model()
@@ -411,17 +430,21 @@ class layer_widget(gtk.VBox):
 			self.emit("refresh")
 
 		global_object_get("dos-update")()
+		global_object_get("pl-update")()
+
 
 	def save_model(self):
 
 		thick=[]
-		material=[]
-		dos_layer=[]
+		mat_file=[]
+		dos_file=[]
+		pl_file=[]
 		for item in self.model:
 			thick.append(item[COLUMN_THICKNES])
-			material.append(item[COLUMN_MATERIAL])
-			dos_layer.append(item[COLUMN_DOS_LAYER])
-		epitaxy_load_from_arrays(thick,material,dos_layer)
+			mat_file.append(item[COLUMN_MATERIAL])
+			dos_file.append(item[COLUMN_DOS_LAYER])
+			pl_file.append(item[COLUMN_PL_FILE])
+		epitaxy_load_from_arrays(thick,mat_file,dos_file,pl_file)
 
 		epitaxy_save()
 		self.sync_to_electrical_mesh()

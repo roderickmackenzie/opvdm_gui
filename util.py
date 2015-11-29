@@ -196,16 +196,14 @@ def str2bool(v):
 def pygtk_to_latex_subscript(in_string):
 	out_string=in_string.replace("<sub>","_{")
 	out_string=out_string.replace("</sub>","}")
-	out_string=in_string.replace("<sup>","^{")
+	out_string=out_string.replace("<sup>","^{")
 	out_string=out_string.replace("</sup>","}")
 	return out_string
 
 def latex_to_pygtk_subscript(in_string):
-	out_string=in_string.replace("_{","<sub>")
-	out_string=out_string.replace("}","</sub>")
-	out_string=in_string.replace("^{","<sup>")
-	out_string=out_string.replace("}","</sup>")
-	return out_string
+	out=re.compile(r"_\{([^\]]*?)\}").sub("<sub>\\1</sub>", in_string)
+	out=re.compile(r"\^\{([^\]]*?)\}").sub("<sup>\\1</sup>", out)
+	return out
 
 def lines_to_xyz(x,y,z,lines):
 	for i in range(0, len(lines)):

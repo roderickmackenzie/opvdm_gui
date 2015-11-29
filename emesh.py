@@ -67,7 +67,6 @@ class tab_electrical_mesh(gtk.Window):
 		self.fig.canvas.draw()
 
 	def draw_graph(self):
-
 		lines=[]
 		total=10
 		pos=0
@@ -82,8 +81,9 @@ class tab_electrical_mesh(gtk.Window):
 			pos=int(inp_search_token_value(lines, "#dump_energy_slice_pos"))
 
 		files=epitaxy_get_dos_files()
-		if inp_load_file(lines,files[0])==True:
-			bands=int(inp_search_token_value(lines, "#srh_bands"))
+		if len(files)>0:
+			if inp_load_file(lines,files[0])==True:
+				bands=int(inp_search_token_value(lines, "#srh_bands"))
 
 		n=0
 		
@@ -110,24 +110,24 @@ class tab_electrical_mesh(gtk.Window):
 			t=t*1e9
 			Ev,=self.ax1.plot(t,Ev_data, 'go-', linewidth=3 ,alpha=0.5)
 
+			if len(files)>0:
+				if self.emesh_editor.mesh_dump_ctl.enable==True:
 
-			if self.emesh_editor.mesh_dump_ctl.enable==True:
+					Ec_max=max(Ec_data)
+					Ev_min=min(Ev_data)
 
-				Ec_max=max(Ec_data)
-				Ev_min=min(Ev_data)
+					x_len=t[len(t)-1]-t[0]
+					y_len=Ec_max-Ev_min
 
-				x_len=t[len(t)-1]-t[0]
-				y_len=Ec_max-Ev_min
-
-				x_pos=t[0]+(x_len)*(float(pos)/float(total))
-				x_size=(x_len)/float(total)/4
-				start=float(Ev_data[pos])
-				stop=float(Ec_data[pos])
-				y_pos=start
-				dy=(stop-start)/(bands*2)
-				while y_pos<stop:
-					self.ax1.add_patch(Ellipse((x_pos, y_pos), x_size,x_size*(y_len/x_len), facecolor='red', edgecolor=(0,0.0,0.0), linewidth=0, alpha=1.0))
-					y_pos=y_pos+dy
+					x_pos=t[0]+(x_len)*(float(pos)/float(total))
+					x_size=(x_len)/float(total)/4
+					start=float(Ev_data[pos])
+					stop=float(Ec_data[pos])
+					y_pos=start
+					dy=(stop-start)/(bands*2)
+					while y_pos<stop:
+						self.ax1.add_patch(Ellipse((x_pos, y_pos), x_size,x_size*(y_len/x_len), facecolor='red', edgecolor=(0,0.0,0.0), linewidth=0, alpha=1.0))
+						y_pos=y_pos+dy
 
 
 			t,s = loadtxt(os.path.join("equilibrium","Fi.dat"), unpack=True)
