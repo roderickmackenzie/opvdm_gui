@@ -123,6 +123,19 @@ def inp_search_token_value(lines, token):
 
 	return False
 
+def inp_search_token_value_multiline(lines, token):
+	ret=[]
+	for i in range(0, len(lines)):
+		if lines[i]==token:
+			pos=i+1
+			while (lines[pos][0]!="#"):
+				ret.append(lines[pos])
+				pos=pos+1
+
+			return ret
+
+	return False
+
 def inp_get_next_token_array(lines,pos):
 
 	ret=[]

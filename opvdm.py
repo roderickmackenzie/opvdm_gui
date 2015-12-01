@@ -82,7 +82,6 @@ from ver import ver
 import webbrowser
 from debug import debug_mode
 from qe import qe_window
-from opvdm_open import opvdm_open
 from tb_item_sun import tb_item_sun
 from tb_item_sim_mode import tb_item_sim_mode
 from opvdm_open import opvdm_open
@@ -93,7 +92,7 @@ from opvdm_notebook import opvdm_notebook
 from gui_util import process_events
 from epitaxy import epitaxy_load
 from global_objects import global_object_get
-
+from device_lib import device_lib_class
 
 
 
@@ -315,6 +314,26 @@ class opvdm_main_window(gobject.GObject):
 		elif response == gtk.RESPONSE_CANCEL:
 		    print 'Closed, no files selected'
 		dialog.destroy()
+
+	def callback_import_from_lib(self, widget, data=None):
+		device_lib=device_lib_class()
+		device_lib.init()
+		response=device_lib.run()
+
+		if response == True:
+			#self.change_dir_and_refresh_interface(os.getcwd())
+			#full_file_name=dialog.get_filename()
+			#self.plot_open.set_sensitive(True)
+
+			#plot_gen([dialog.get_filename()],[],"auto")
+
+			#self.plotted_graphs.refresh()
+			#self.plot_after_run_file=dialog.get_filename()
+			print "file opened",device_lib.file_path
+		elif response == False:
+		    print 'Closed, no files selected'
+
+		device_lib.destroy()
 
 
 	def callback_new(self, widget, data=None):
@@ -687,6 +706,7 @@ class opvdm_main_window(gobject.GObject):
 			("/File/_Open simulation", "<control>O", self.callback_open, 0, "<StockItem>", "gtk-open" ),
 		    ( "/File/_Export data",     None, self.callback_export, 0, "<StockItem>", "gtk-save" ),
 		    ( "/File/Import data",     None, self.callback_import, 0 , "<StockItem>", "gtk-harddisk"),
+		    ( "/File/Import from library",     None, self.callback_import_from_lib, 0 , "<StockItem>", "gtk-harddisk"),
 		    ( "/File/Quit",     "<control>Q", gtk.main_quit, 0, "<StockItem>", "gtk-quit" ),
 		    ( "/_Simulate",      None,         None, 0, "<Branch>" ),
 		    ( "/Simulate/Run",  None,         self.callback_simulate, 0, "<StockItem>", "gtk-media-play" ),
@@ -925,6 +945,7 @@ class opvdm_main_window(gobject.GObject):
 		self.make_window2(main_vbox)
 
 		self.window.show()
+
 
 		process_events()
 

@@ -23,7 +23,8 @@ import gtk
 import sys
 import os
 from cal_path import find_data_file
-from cal_path import get_install_path
+from cal_path import get_share_path
+from cal_path import get_bin_path
 
 from inp import inp_load_file
 
@@ -73,7 +74,7 @@ def ver_load_info():
 		mat=lines[5]
 		return True
 	else:
-		ver_error="I can not find the file sim.opvdm/ver.inp.\n\nI have tried looking in "+find_data_file("ver.inp")+"\n\nThe install path is"+get_install_path()+"\n\nThe current working dir is "+os.getcwd()+"\n\nTry reinstalling a new version of opvdm and/or report the bug to me at  roderick.mackenzie@nottingham.ac.uk."
+		ver_error="I can not find the file sim.opvdm/ver.inp.\n\nI have tried looking in "+find_data_file("ver.inp")+"\n\nThe share path is"+get_share_path()+"\n\nThe bin path is"+get_bin_path()+"\n\nThe current working dir is "+os.getcwd()+"\n\nTry reinstalling a new version of opvdm and/or report the bug to me at  roderick.mackenzie@nottingham.ac.uk."
 		return False
 
 

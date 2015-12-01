@@ -115,7 +115,7 @@ class opvdm_open(gtk.Dialog):
 		self.show_all()
 
 	def get_icon(self, name):
-		return gtk.gdk.pixbuf_new_from_file(find_data_file("gui/"+name+"_file.png"))
+		return gtk.gdk.pixbuf_new_from_file(find_data_file(os.path.join("gui",name+"_file.png")))
     
 
 	def create_store(self):
