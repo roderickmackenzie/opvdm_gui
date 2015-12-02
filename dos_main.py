@@ -40,6 +40,7 @@ from epitaxy import epitaxy_get_mat_file
 from global_objects import global_object_register
 from help import my_help_class
 from cal_path import find_data_file
+from epitaxy import epitaxy_get_name
 
 class dos_main(gtk.HBox,tab_base):
 	
@@ -75,7 +76,7 @@ class dos_main(gtk.HBox,tab_base):
 				tab=tab_class()
 				tab.show()
 				tab.visible=True
-				name="DoS of "+epitaxy_get_mat_file(i)
+				name="DoS of "+epitaxy_get_name(i)
 				print dos_layer,files
 
 				tab.init(dos_layer+".inp",name)

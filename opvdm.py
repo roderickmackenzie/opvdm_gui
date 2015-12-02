@@ -94,8 +94,6 @@ from epitaxy import epitaxy_load
 from global_objects import global_object_get
 from device_lib import device_lib_class
 
-
-
 if running_on_linux()==True:
 	import dbus
 	from dbus.mainloop.glib import DBusGMainLoop
@@ -319,21 +317,17 @@ class opvdm_main_window(gobject.GObject):
 		device_lib=device_lib_class()
 		device_lib.init()
 		response=device_lib.run()
-
+		path=device_lib.file_path
 		if response == True:
-			#self.change_dir_and_refresh_interface(os.getcwd())
-			#full_file_name=dialog.get_filename()
-			#self.plot_open.set_sensitive(True)
-
-			#plot_gen([dialog.get_filename()],[],"auto")
-
-			#self.plotted_graphs.refresh()
-			#self.plot_after_run_file=dialog.get_filename()
-			print "file opened",device_lib.file_path
+			device_lib.destroy()
+			import_archive(path,os.path.join(os.getcwd(),"sim.opvdm"),False)
+			self.change_dir_and_refresh_interface(os.getcwd())
+			print "file opened",path
 		elif response == False:
-		    print 'Closed, no files selected'
+			print "Closed, no files selected"
+			device_lib.destroy()
 
-		device_lib.destroy()
+		
 
 
 	def callback_new(self, widget, data=None):
@@ -386,6 +380,25 @@ class opvdm_main_window(gobject.GObject):
 			self.time_mesh_button.set_sensitive(True)
 			my_help_class.help_set_help(["play.png","<big><b>Now run the simulation</b></big>\n Click on the play icon to start a simulation."])
 
+			my_item=self.item_factory.get_item("/File/Import data")
+			if my_item!=None:
+				my_item.set_sensitive(True)
+			my_item=self.item_factory.get_item("/File/Export data")
+			if my_item!=None:
+				my_item.set_sensitive(True)
+			my_item=self.item_factory.get_item("/File/Import data")
+			if my_item!=None:
+				my_item.set_sensitive(True)
+			my_item=self.item_factory.get_item("/File/Import from library")
+			if my_item!=None:
+				my_item.set_sensitive(True)
+			my_item=self.item_factory.get_item("/Simulate/Run")
+			if my_item!=None:
+				my_item.set_sensitive(True)
+			my_item=self.item_factory.get_item("/Simulate/Parameter scan")
+			if my_item!=None:
+				my_item.set_sensitive(True)
+
 		else:
 			self.play.set_sensitive(False)
 			self.stop.set_sensitive(False)
@@ -396,6 +409,25 @@ class opvdm_main_window(gobject.GObject):
 			#self.save_sim.set_sensitive(False)
 			self.time_mesh_button.set_sensitive(False)
 			my_help_class.help_set_help(["icon.png","<big><b>Hi!</b></big>\n I'm the on-line help system :).  If you find any bugs please report them to roderick.mackenzie@nottingham.ac.uk.","new.png","Click on the new icon to make a new simulation directory."])
+
+			my_item=self.item_factory.get_item("/File/Import data")
+			if my_item!=None:
+				my_item.set_sensitive(False)
+			my_item=self.item_factory.get_item("/File/Export data")
+			if my_item!=None:
+				my_item.set_sensitive(False)
+			my_item=self.item_factory.get_item("/File/Import data")
+			if my_item!=None:
+				my_item.set_sensitive(False)
+			my_item=self.item_factory.get_item("/File/Import from library")
+			if my_item!=None:
+				my_item.set_sensitive(False)
+			my_item=self.item_factory.get_item("/Simulate/Run")
+			if my_item!=None:
+				my_item.set_sensitive(False)
+			my_item=self.item_factory.get_item("/Simulate/Parameter scan")
+			if my_item!=None:
+				my_item.set_sensitive(False)
 
 		if self.notebook.terminal!=None:
 			self.my_server.set_terminal(self.notebook.terminal)
@@ -425,10 +457,10 @@ class opvdm_main_window(gobject.GObject):
 			self.qe=qe_window()
 			self.qe.init()
 
-		myitem=self.item_factory.get_item("/Plots/One plot window")
-		myitem.set_active(self.config.get_value("#one_plot_window",False))
-		myitem=self.item_factory.get_item("/Plots/Plot after simulation")
-		myitem.set_active(self.config.get_value("#plot_after_simulation",False))
+		#myitem=self.item_factory.get_item("/Plots/One plot window")
+		#myitem.set_active(self.config.get_value("#one_plot_window",False))
+		#myitem=self.item_factory.get_item("/Plots/Plot after simulation")
+		#myitem.set_active(self.config.get_value("#plot_after_simulation",False))
 
 	def callback_open(self, widget, data=None):
 		dialog = gtk.FileChooserDialog("Open an existing opvdm simulation",
@@ -644,6 +676,7 @@ class opvdm_main_window(gobject.GObject):
 		return toolbar
 
 	def __init__(self):
+
 		gobject.GObject.__init__(self)
 
 		self.my_server=server()
@@ -663,6 +696,7 @@ class opvdm_main_window(gobject.GObject):
 			self.win_pipe.start()
 
 		self.window = gtk.Window(gtk.WINDOW_TOPLEVEL)
+		#self.window.set_size_request(-1,1000)
 		self.window.set_border_width(10)
 		self.window.set_title("Organic Photovoltaic Device Model (www.opvdm.com)")
 
@@ -726,19 +760,20 @@ class opvdm_main_window(gobject.GObject):
 
 		self.menubar = self.get_main_menu(self.window)
 
-		a = (( "/Plots/Plot after simulation",  None, self.callback_plot_after_run_toggle, 0, "<ToggleItem>" ),   )
-		self.item_factory.create_items( a, )
+		#a = (( "/Plots/Plot after simulation",  None, self.callback_plot_after_run_toggle, 0, "<ToggleItem>" ),   )
+		#self.item_factory.create_items( a, )
 
 
-		a = (( "/Plots/One plot window",  None, self.callback_set_plot_auto_close, 0, "<ToggleItem>" ),   )
-		self.item_factory.create_items( a, )
+		#a = (( "/Plots/One plot window",  None, self.callback_set_plot_auto_close, 0, "<ToggleItem>" ),   )
+		#self.item_factory.create_items( a, )
+
 
 		#table.show()
 		self.window.connect("destroy", gtk.main_quit)
 
 		self.tooltips = gtk.Tooltips()
 
-		self.window.set_size_request(-1, -1)
+		self.window.set_size_request(-1, 780)
 		main_vbox = gtk.VBox(False, 5)
 		main_vbox.set_border_width(1)
 		self.window.add(main_vbox)

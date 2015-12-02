@@ -78,7 +78,6 @@ class tokens:
 	lib.append(my_data("#electricalclamp","au","Electrical clamp",["text"],"e",1.0))
 	lib.append(my_data("#posclamp","au","Poisson clamping",["text"],"e",1.0))
 	lib.append(my_data("#electricalerror","au","Minimum electrical error",["text"],"e",1.0))
-	lib.append(my_data("#free_to_free_recombination","m^{3}s^{-1}","Free to free recombination",["text"],"e",1.0))
 	lib.append(my_data("#sun","filename","Sun's spectra",["text"],"e",1.0))
 	lib.append(my_data("#meshpoints","au","Mesh points (x)",["text"],"e",1.0))
 	lib.append(my_data("#lpoints","au","Mesh points (lambda)",["text"],"e",1.0))
@@ -402,6 +401,8 @@ class tokens:
 	lib.append(my_data("#pl_te_fh","0.0-1.0","n_{trap} to p_{free} photon generation efficiency",["text"],"e",1.0))
 	lib.append(my_data("#pl_th_fe","0.0-1.0","n_{trap} to p_{free} photon generation efficiency",["text"],"e",1.0))
 	lib.append(my_data("#pl_fh_th","0.0-1.0","p_{free} to p_{free} photon generation efficiency",["text"],"e",1.0))
+
+	lib.append(my_data("#free_to_free_recombination","0.0-1.0","n_{free} to p_{free} Recombination rate constant",["text"],"e",1.0))
 
 	def find(self,token):
 		for i in range(0, len(self.lib)):

@@ -34,6 +34,30 @@ import glob
 from win_lin import running_on_linux
 from cal_path import get_inp_file_path
 
+def zip_lsdir(file_name):
+	my_list=[]
+	my_dir=os.path.dirname(file_name)
+
+	if my_dir=="":
+		my_dir=os.getcwd()
+		file_name=os.path.join(os.getcwd(),file_name)
+
+	if os.path.isdir(my_dir):
+		my_list=os.listdir(my_dir)
+	else:
+		return False
+
+	if os.path.isfile(file_name):
+		zf = zipfile.ZipFile(file_name, 'r')
+		items=zf.namelist()
+		for i in range(0,len(items)):
+			if my_list.count(items[i])==0:
+				my_list.append(items[i])
+		zf.close()
+		return my_list
+
+	return False
+
 def zip_get_data_file(file_name):
 	found=False
 	lines=[]

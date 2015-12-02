@@ -55,6 +55,8 @@ from epitaxy import epitaxy_get_layers
 from epitaxy import epitaxy_get_mat_file
 from epitaxy import epitaxy_get_electrical_layer
 from epitaxy import epitaxy_get_width
+from epitaxy import epitaxy_get_name
+from inp import inp_search_token_value
 
 def find_modes(path):
 	result = []
@@ -199,7 +201,7 @@ class class_optical(gtk.Window):
 		tool_bar_pos=tool_bar_pos+1
 
 		image = gtk.Image()
-   		image.set_from_file(find_data_file("gui/play.png"))
+   		image.set_from_file(find_data_file(os.path.join("gui","play.png")))
 		self.play = gtk.ToolButton(image)
    		#image.set_from_file(self.icon_theme.lookup_icon("media-playback-start", 32, 0).get_filename())
 		refresh = gtk.ToolButton(image)
@@ -477,29 +479,37 @@ class class_optical(gtk.Window):
 			layer_material=epitaxy_get_mat_file(i)
 
 			delta=float(layer_ticknes)*1e9
-			mat_file='./phys/'+layer_material+'/mat.inp'
-			myfile = open(mat_file)
-			self.mat_file_lines = myfile.readlines()
-			myfile.close()
+			if epitaxy_get_electrical_layer(i)=="none":
+				mat_file=os.path.join(os.getcwd(),'phys',layer_material,'mat.inp')
+				myfile = open(mat_file)
+				self.mat_file_lines = myfile.readlines()
+				myfile.close()
 			
-			for ii in range(0, len(self.mat_file_lines)):
-				self.mat_file_lines[ii]=self.mat_file_lines[ii].rstrip()
+				for ii in range(0, len(self.mat_file_lines)):
+					self.mat_file_lines[ii]=self.mat_file_lines[ii].rstrip()
+
+				lumo=-float(self.mat_file_lines[1])
+				Eg=float(self.mat_file_lines[3])
+			else:
+				lines=[]
+				if inp_load_file(lines,epitaxy_get_electrical_layer(i)+".inp")==True:
+					lumo=-float(inp_search_token_value(lines, "#Xi"))
+					Eg=float(inp_search_token_value(lines, "#Eg"))
 
 			x = [x_pos,x_pos+delta,x_pos+delta,x_pos]
-			lumo=-float(self.mat_file_lines[1])
+
 			lumo_delta=lumo-0.1
-			Eg=float(self.mat_file_lines[3])
 			homo=lumo-Eg
 			homo_delta=homo-0.1
 			if Eg==0.0:
-				lumo_delta=lumo-0.5
+				lumo_delta=-7.0
 				homo=0.0
 			lumo_shape = [lumo,lumo,lumo_delta,lumo_delta]
 			x_pos=x_pos+delta
 			self.layer_end.append(x_pos)
 			self.layer_name.append(layer_material)
 			ax2.fill(x,lumo_shape, color[layer],alpha=0.4)
-			ax2.text(x_pos-delta/1.5, lumo-0.3, layer_material.upper())
+			ax2.text(x_pos-delta/1.5, lumo-0.4, epitaxy_get_name(i))
 
 			if homo!=0.0:
 				homo_shape = [homo,homo,homo_delta,homo_delta]
@@ -516,14 +526,15 @@ class class_optical(gtk.Window):
 		#ax2.axis(max=)#autoscale(enable=True, axis='x', tight=None)
 		pwd=os.getcwd()
 		loaded=False
-		if os.path.isfile("./light_dump.zip"):
-			zf = zipfile.ZipFile("./light_dump.zip", 'r')
+		mode_path=os.path.join(pwd,"light_dump",self.optical_mode_file)
+		if os.path.isfile("light_dump.zip"):
+			zf = zipfile.ZipFile("light_dump.zip", 'r')
 			lines = zf.read(self.optical_mode_file).split("\n")
 			zf.close()
 			loaded=True
-		elif os.path.isfile(os.path.join(pwd,"light_dump",self.optical_mode_file)):
-			f = open(os.path.join(pwd,"light_dump",self.optical_mode_file))
-			#print "I want to load",os.path.join(pwd,"light_dump",self.optical_mode_file)
+		elif os.path.isfile(mode_path):
+			print "I want to load",mode_path
+			f = open(mode_path)
 			lines = f.readlines()
 			f.close()
 			loaded=True
@@ -549,6 +560,8 @@ class class_optical(gtk.Window):
 			self.optical_mode_file="light_1d_photons_tot_norm.dat"
 		else:
 			self.optical_mode_file="light_1d_"+cb_text[:-3]+"_photons_norm.dat"
+		print "drawing"
+		self.draw_graph()
 		self.fig.canvas.draw()
 
 	def on_cb_model_changed(self, widget):

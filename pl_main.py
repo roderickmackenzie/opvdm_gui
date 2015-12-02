@@ -41,6 +41,7 @@ from epitaxy import epitaxy_get_mat_file
 from global_objects import global_object_register
 from help import my_help_class
 from cal_path import find_data_file
+from epitaxy import epitaxy_get_name
 
 class pl_main(gtk.HBox,tab_base):
 	
@@ -76,7 +77,7 @@ class pl_main(gtk.HBox,tab_base):
 				tab=tab_class()
 				tab.show()
 				tab.visible=True
-				name="Luminescence of "+epitaxy_get_mat_file(i)
+				name="Luminescence of "+epitaxy_get_name(i)
 				print pl_file,files
 
 				tab.init(pl_file+".inp",name)

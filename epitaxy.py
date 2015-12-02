@@ -49,6 +49,7 @@ width=[]
 mat_file=[]
 electrical_layer=[]
 pl_file=[]
+name=[]
 
 def epitaxy_load():
 	lines=[]
@@ -58,6 +59,7 @@ def epitaxy_load():
 	global mat_file
 	global electrical_layer
 	global pl_file
+	global name
 
 	layers=0
 	electrical_layers=0
@@ -65,7 +67,7 @@ def epitaxy_load():
 	mat_file=[]
 	electrical_layer=[]
 	pl_file=[]
-
+	name=[]
 
 	if inp_load_file(lines,"epitaxy.inp")==True:
 		pos=0
@@ -74,6 +76,9 @@ def epitaxy_load():
 		for i in range(0, int(lines[pos])):
 			pos=pos+1
 			#label=lines[pos]				#read label
+
+			pos=pos+1
+			name.append(lines[pos])
 
 			pos=pos+1
 			width.append(float(lines[pos]))
@@ -106,7 +111,7 @@ def epitay_get_next_pl():
 		if pl_file.count(name)==0:
 			return name
 
-def epitaxy_load_from_arrays(in_width,in_material,in_dos_layer,in_pl_file):
+def epitaxy_load_from_arrays(in_name,in_width,in_material,in_dos_layer,in_pl_file):
 	lines=[]
 	global layers
 	global electrical_layers
@@ -114,6 +119,7 @@ def epitaxy_load_from_arrays(in_width,in_material,in_dos_layer,in_pl_file):
 	global mat_file
 	global electrical_layer
 	global pl_file
+	global name
 
 	layers=0
 	electrical_layers=0
@@ -121,8 +127,11 @@ def epitaxy_load_from_arrays(in_width,in_material,in_dos_layer,in_pl_file):
 	mat_file=[]
 	electrical_layer=[]
 	pl_file=[]
+	name=[]
 
 	for i in range(0, len(in_width)):
+
+		name.append(in_name[i])
 
 		width.append(float(in_width[i]))
 
@@ -145,6 +154,7 @@ def epitaxy_save():
 	global mat_file
 	global electrical_layer
 	global pl_file
+	global name
 
 	dos_text=""
 	lines=[]
@@ -154,6 +164,7 @@ def epitaxy_save():
 	layer=0
 	for i in range(0,layers):
 		lines.append("#layer"+str(layer))
+		lines.append(str(name[i]))
 		lines.append(str(width[i]))
 		lines.append(mat_file[i])
 		lines.append(electrical_layer[i])
@@ -161,7 +172,7 @@ def epitaxy_save():
 		layer=layer+1
 
 	lines.append("#ver")			
-	lines.append("1.1")			
+	lines.append("1.2")			
 	lines.append("#end")
 
 	#print lines
@@ -196,4 +207,8 @@ def epitaxy_get_mat_file(i):
 def epitaxy_get_pl_file(i):
 	global pl_file
 	return pl_file[i]
+
+def epitaxy_get_name(i):
+	global name
+	return name[i]
 

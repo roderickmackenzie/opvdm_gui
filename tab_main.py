@@ -40,6 +40,7 @@ from epitaxy import epitaxy_get_electrical_layer
 from help import my_help_class
 from cal_path import find_data_file
 from epitaxy import epitaxy_get_pl_file
+from epitaxy import epitaxy_get_name
 
 class tab_main(gtk.VBox,tab_base):
 
@@ -109,9 +110,9 @@ class tab_main(gtk.VBox,tab_base):
 		self.cr.fill()
 
 		if epitaxy_get_electrical_layer(layer)=="none":
-			text=epitaxy_get_mat_file(layer)+"  (Layer"+str(layer)+")"
+			text=epitaxy_get_name(layer)
 		else:
-			text=epitaxy_get_mat_file(layer)+"  (Layer"+str(layer)+" active)"
+			text=epitaxy_get_name(layer)+" (active)"
 			points=[(x+285,y-60), (x+295,y-60), (x+295,y+z-60), (x+285,y+z-60)]
 			self.cr.set_source_rgb(0.0,0.0,0.7)
 			self.cr.move_to(points[0][0], points[0][1])

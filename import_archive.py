@@ -39,6 +39,7 @@ from inp import inp_search_token_value
 from inp import inp_merge
 from util_zip import write_lines_to_archive
 import tempfile
+from util_zip import zip_lsdir
 
 
 def copy_check_ver(dest_archive,src_archive,file_name,only_over_write,clever):
@@ -68,7 +69,7 @@ def copy_check_ver(dest_archive,src_archive,file_name,only_over_write,clever):
 	if dest_exists==True:
 		dest_ver=inp_search_token_value(dest_lines, "#ver")
 
-
+		
 	#if we are only over writing only copy if dest file exists
 	if (only_over_write==True):
 		if dest_exists==True:
@@ -78,15 +79,16 @@ def copy_check_ver(dest_archive,src_archive,file_name,only_over_write,clever):
 			do_copy=False
 			return
 
-	if src_ver!=dest_ver:
-		print "Warning: Verstion numbers do not match for files",dest_archive,src_archive,file_name
-		print "dest ver=",dest_ver,"src_ver=",src_ver
+	if dest_exists==True:
+		if src_ver!=dest_ver:
+			print "Warning: Verstion numbers do not match for files",dest_archive,src_archive,file_name
+			print "src_ver=",src_ver,"dest ver=",dest_ver
 
-		if clever==False:
-			print "Not copying that file you will have to deal that with by hand"
-			return
+			if clever==False:
+				print "Not copying that file you will have to deal that with by hand"
+				return
 
-	if clever==True:
+	if clever==True and dest_exists==True:
 		errors=inp_merge(dest_lines,src_lines) 
 		if len(errors)!=0:
 			print "File ",file_name,errors
@@ -108,11 +110,28 @@ def import_archive(src_archive,dest_archive,only_over_write):
 
 	src_dir=os.path.dirname(src_archive)
 	dest_dir=os.path.dirname(dest_archive)
-	files=[ "sim.inp", "device.inp", "stark.inp" ,"shg.inp" ,"dos0.inp", "dos1.inp"  ,"jv.inp" ,"celiv.inp" , "optics.inp", "math.inp",  "dump.inp" , "light.inp", "tpv.inp", "otrace.inp", "server.inp", "pulse_voc.inp","pulse.inp","light_exp.inp","pl0.inp", "pl1.inp" ]
+	files=[ "sim.inp", "device.inp", "stark.inp" ,"shg.inp"   ,"jv.inp" ,"celiv.inp" , "optics.inp", "math.inp",  "dump.inp" , "light.inp", "tpv.inp", "otrace.inp", "server.inp", "pulse_voc.inp","pulse.inp","light_exp.inp" ]
 
 	for my_file in files:
 		print "Importing",my_file,"to",dest_archive
 		copy_check_ver(dest_archive,src_archive,my_file,only_over_write,True)
+
+	files=[]
+
+	ls=zip_lsdir(src_archive)
+	for i in range(0,len(ls)):
+		if ls[i].startswith("dos"):
+			if ls[i].endswith("inp"):
+				files.append(ls[i])
+				print "adding",ls[i]
+
+		if ls[i].startswith("pl"):
+			if ls[i].endswith("inp"):
+				files.append(ls[i])
+
+	for my_file in files:
+		print "Importing",my_file,"to",dest_archive
+		copy_check_ver(dest_archive,src_archive,my_file,False,True)
 
 	files=[ "epitaxy.inp", "fit.inp", "constraints.inp","duplicate.inp", "thermal.inp","lumo0.inp","homo0.inp","time_mesh_config.inp","mesh.inp" ]
 
@@ -121,7 +140,6 @@ def import_archive(src_archive,dest_archive,only_over_write):
 		copy_check_ver(dest_archive,src_archive,my_file,only_over_write,False)
 
 	import_scan_dirs(dest_dir,src_dir)
-	exit("")
 
 def import_scan_dirs(dest_dir,src_dir):
 	sim_dirs=[]
