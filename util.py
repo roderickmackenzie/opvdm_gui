@@ -316,5 +316,5 @@ def opvdm_clone():
 	if os.path.isdir(os.path.join(src,"exp")):
 		shutil.copytree(os.path.join(src,"exp"), os.path.join(pwd,"exp"))
 
-	shutil.copytree(os.path.join(src,"phys"), os.path.join(pwd,"phys"))
+	shutil.copytree(os.path.join(src,"materials"), os.path.join(pwd,"materials"))
 

@@ -160,7 +160,7 @@ def clean_simulation(dir_to_clean,simulation_dirs):
 				if path.endswith("exp"):
 					delete=False
 
-				if path.endswith("phys"):
+				if path.endswith("materials"):
 					delete=False
 
 				if path.endswith(".opvdm"):

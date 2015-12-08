@@ -118,6 +118,7 @@ def import_archive(src_archive,dest_archive,only_over_write):
 
 	files=[]
 
+	print src_archive
 	ls=zip_lsdir(src_archive)
 	for i in range(0,len(ls)):
 		if ls[i].startswith("dos"):

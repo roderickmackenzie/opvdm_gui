@@ -38,7 +38,7 @@ from cal_path import find_data_file
 from emesh import tab_electrical_mesh
 from plot_gen import plot_gen
 from opvdm_open import opvdm_open
-from cal_path import get_phys_path
+from cal_path import get_materials_path
 from optics import class_optical
 from global_objects import global_object_get
 from epitaxy import epitaxy_get_width
@@ -123,7 +123,7 @@ class layer_widget(gtk.VBox):
 	def callback_view_materials(self, widget, data=None):
 		dialog=opvdm_open()
 
-		dialog.init(get_phys_path())
+		dialog.init(get_materials_path())
 		dialog.show_inp_files=False
 		response=dialog.run()
 

@@ -134,7 +134,7 @@ class opvdm_open(gtk.Dialog):
 			if os.path.isdir(file_name):
 				show_dir=True
 
-				if fl=="phys":
+				if fl=="materials":
 					show_dir=False
 				
 				if os.path.isfile(os.path.join(file_name,"opvdm_gui_config.inp"))==True:
@@ -161,7 +161,7 @@ class opvdm_open(gtk.Dialog):
 					#print self.show_inp_files
 					self.store.append([fl, self.spectra_icon, "spectra"])
 
-				if (file_name.endswith(".mat")==True):
+				if (file_name.endswith(".omat")==True):
 					#print self.show_inp_files
 					self.store.append([fl, self.mat_icon, "mat"])
 	def on_home_clicked(self, widget):

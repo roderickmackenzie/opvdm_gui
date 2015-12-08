@@ -28,9 +28,6 @@ import shutil
 from numpy import *
 from inp import inp_update_token_value
 from inp import inp_get_token_value
-from matplotlib.figure import Figure
-from numpy import arange, sin, pi
-from matplotlib.backends.backend_gtkagg import FigureCanvasGTKAgg as FigureCanvas
 import gobject
 import os, fnmatch
 from plot_gen import plot_gen
@@ -38,7 +35,6 @@ from cal_path import find_data_file
 import zipfile
 import glob
 from scan_item import scan_item_add
-from util import lines_to_xyz
 from tab import tab_class
 from win_lin import running_on_linux
 from photon_dist import photon_dist_class
@@ -47,7 +43,7 @@ from plot_state import plot_state
 from plot_io import plot_load_info
 import webbrowser
 from progress import progress_class
-from cal_path import get_phys_path
+from cal_path import get_materials_path
 from cal_path import get_light_dll_path
 from cal_path import get_exe_command
 from inp import inp_load_file
@@ -57,6 +53,7 @@ from epitaxy import epitaxy_get_electrical_layer
 from epitaxy import epitaxy_get_width
 from epitaxy import epitaxy_get_name
 from inp import inp_search_token_value
+from band_graph import band_graph
 
 def find_modes(path):
 	result = []
@@ -64,7 +61,7 @@ def find_modes(path):
 	pwd=os.getcwd()
 
 	if os.path.isfile(os.path.join(pwd,"light_dump.zip")):
-		zf = zipfile.ZipFile("./light_dump.zip", 'r')
+		zf = zipfile.ZipFile("light_dump.zip", 'r')
 
 		for file in zf.filelist:
 			file_names.append(file.filename)
@@ -102,7 +99,7 @@ def find_models():
 def find_light_source():
 	ret=[]
 
-	path=get_phys_path()
+	path=get_materials_path()
 
 	
 	for file in glob.glob(os.path.join(path,"*.spectra")):
@@ -113,19 +110,13 @@ def find_light_source():
 def find_materials():
 	ret=[]
 
-	path=get_phys_path()
+	path=get_materials_path()
 
 	for file in glob.glob(os.path.join(path,"*")):
 		if os.path.isdir(file)==True:
 			ret.append(os.path.splitext(os.path.basename(file))[0])
 
 	return ret
-
-class scan_item(gtk.CheckButton):
-	name=""
-	token=""
-	filename=""
-	line=""
 
 class class_optical(gtk.Window):
 
@@ -154,10 +145,6 @@ class class_optical(gtk.Window):
 		toolbar.set_style(gtk.TOOLBAR_ICONS)
 		toolbar.set_size_request(-1, 50)
 		self.main_vbox.pack_start(toolbar, False, False, 0)
-
-
-		#self.optical_mode_file=self.dump_dir+"/light_1d_photons_tot_norm.dat"
-		self.optical_mode_file="light_1d_photons_tot_norm.dat"
 		
 		self.edit_list=[]
 		self.line_number=[]
@@ -180,25 +167,15 @@ class class_optical(gtk.Window):
 		self.update_light_source_model()
 		self.light_source_model.show()
 
-		self.fig = Figure(figsize=(5,4), dpi=100)
-		self.canvas = FigureCanvas(self.fig)  # a gtk.DrawingArea
-	
-		cid = self.fig.canvas.mpl_connect('button_press_event', self.onclick)
-		canvas_vbox=gtk.VBox()
-		canvas_vbox.show()
-		self.canvas.figure.patch.set_facecolor('white')
-		self.canvas.set_size_request(600, 400)
-		self.canvas.show()
+		self.fig_photon_density = band_graph()
+		self.fig_photon_density.set_data_file("light_1d_photons_tot_norm.dat")
+		self.fig_photon_density.init()
 
-
-		self.connect('key_press_event', self.on_key_press_event)
+		self.fig_photon_abs = band_graph()
+		self.fig_photon_abs.set_data_file("light_1d_photons_tot_abs_norm.dat")
+		self.fig_photon_abs.init()
 
 		tool_bar_pos=0
-		save = gtk.ToolButton(gtk.STOCK_SAVE)
-		save.connect("clicked", self.callback_save_image)
-		toolbar.insert(save, tool_bar_pos)
-		toolbar.show_all()
-		tool_bar_pos=tool_bar_pos+1
 
 		image = gtk.Image()
    		image.set_from_file(find_data_file(os.path.join("gui","play.png")))
@@ -260,8 +237,9 @@ class class_optical(gtk.Window):
 		tool_bar_pos=tool_bar_pos+1
 
 
-		canvas_vbox.pack_start(self.canvas, False, False, 0)
-		self.notebook.append_page(canvas_vbox,gtk.Label("Device configuration") )
+		self.notebook.append_page(self.fig_photon_density,gtk.Label("Photon density") )
+		self.notebook.append_page(self.fig_photon_abs,gtk.Label("Photon absorbed") )
+
 		self.main_vbox.pack_start(self.notebook, False, False, 0)
 
 		optics_config=tab_class()
@@ -283,8 +261,8 @@ class class_optical(gtk.Window):
 		input_files.append("./light_dump/reflect.dat")
 
 		plot_labels=[]
-		plot_labels.append("Photon dist.")
-		plot_labels.append("Photon dist ads.")
+		plot_labels.append("Photon distribution")
+		plot_labels.append("Photon distribution absorbed")
 		plot_labels.append("Reflection")
 
 		self.plot_widgets=[]
@@ -305,7 +283,10 @@ class class_optical(gtk.Window):
 		self.add(self.main_vbox)
 		self.set_size_request(850,-1)
 		self.main_vbox.show()
-		self.draw_graph()
+
+		self.fig_photon_density.draw_graph()
+		self.fig_photon_abs.draw_graph()
+
 		self.set_icon_from_file(find_data_file("gui/image.jpg"))
 		self.set_title("Optical Model - (www.opvdm.com)")
 		self.set_position(gtk.WIN_POS_CENTER)
@@ -319,7 +300,7 @@ class class_optical(gtk.Window):
 			if (self.layer_end[i]>event.xdata):
 				break
 		pwd=os.getcwd()
-		plot_gen([os.path.join(pwd,"phys",self.layer_name[i],"alpha.mat")],[],None,"")
+		plot_gen([os.path.join(pwd,"materials",self.layer_name[i],"alpha.omat")],[],None,"")
 
 	def update_cb(self):
 		self.cb.handler_block(self.cb_id)
@@ -361,30 +342,6 @@ class class_optical(gtk.Window):
 		self.light_source_model.set_active(models.index(used_model))
 		scan_item_add("optics.inp","#sun","Light source",1)
 
-
-	def callback_save_image(self, widget):
-		dialog = gtk.FileChooserDialog("Save plot",
-                               None,
-                               gtk.FILE_CHOOSER_ACTION_SAVE,
-                               (gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL,
-                                gtk.STOCK_SAVE, gtk.RESPONSE_OK))
-		dialog.set_default_response(gtk.RESPONSE_OK)
-		dialog.set_action(gtk.FILE_CHOOSER_ACTION_CREATE_FOLDER)
-
-		filter = gtk.FileFilter()
-		filter.set_name("png")
-		filter.add_pattern("*.png")
-		dialog.add_filter(filter)
-
-		response = dialog.run()
-		if response == gtk.RESPONSE_OK:
-			self.fig.savefig(dialog.get_filename())
-
-		elif response == gtk.RESPONSE_CANCEL:
-		    print 'Closed'
-		dialog.destroy()
-
-
 	def callback_close(self, widget, data=None):
 		self.hide()
 		return True
@@ -406,7 +363,6 @@ class class_optical(gtk.Window):
 
 		menu_items = (
 		    ( "/_File",         None,         None, 0, "<Branch>" ),
-		    ( "/File/_Save...",     None, self.callback_save_image, 0, "<StockItem>", "gtk-save" ),
 		    ( "/File/Refresh",     None, self.callback_refresh, 0 , "<ImageItem>"),
 		    ( "/File/Close",     "<control>Q", self.callback_close, 0, "<StockItem>", "gtk-quit" ),
 
@@ -422,147 +378,38 @@ class class_optical(gtk.Window):
 		vbox.pack_start(menubar, False, True, 0)
 
 
-	def on_key_press_event(self,widget, event):
-		keyname = gtk.gdk.keyval_name(event.keyval)
-		if keyname == "c":
-			if event.state == gtk.gdk.CONTROL_MASK:
-				self.do_clip()
-
-		self.fig.canvas.draw()
-
 	def update_graph(self):
 		cmd = get_exe_command()+' --optics'
 		print cmd
 		ret= os.system(cmd)
-		self.fig.clf()
-		self.draw_graph()
-		self.fig.canvas.draw()
+		self.fig_photon_density.my_figure.clf()
+		self.fig_photon_density.draw_graph()
+		self.fig_photon_density.canvas.draw()
+
+		self.fig_photon_abs.my_figure.clf()
+		self.fig_photon_abs.draw_graph()
+		self.fig_photon_abs.canvas.draw()
+
 		for i in range(0,len(self.plot_widgets)):
 			self.plot_widgets[i].update()
 
 
-	def do_clip(self):
-		snap = self.canvas.get_snapshot()
-		pixbuf = gtk.gdk.pixbuf_get_from_drawable(None, snap, snap.get_colormap(),0,0,0,0,snap.get_size()[0], snap.get_size()[1])
-		clip = gtk.Clipboard()
-		clip.set_image(pixbuf)
-
-	def draw_graph(self):
-
-
-		self.layer_end=[]
-		self.layer_name=[]
-
-		n=0
-		self.fig.clf()
-		ax1 = self.fig.add_subplot(111)
-		ax2 = ax1.twinx()
-		x_pos=0.0
-		layer=0
-		color =['r','g','b','y','o','r','g','b','y','o']
-		start=0.0
-
-		for i in range(0,epitaxy_get_layers()):
-			#print "LAYER!!!!!!!!!!",epitaxy_get_electrical_layer(i),epitaxy_get_layers()
-			if epitaxy_get_electrical_layer(i)=="none":
-				start=start-epitaxy_get_width(i)
-			else:
-				break
-		print "START=",start
-		start=start*1e9
-
-		x_pos=start
-		for i in range(0,epitaxy_get_layers()):
-
-			label=epitaxy_get_mat_file(i)
-			layer_ticknes=epitaxy_get_width(i)
-			layer_material=epitaxy_get_mat_file(i)
-
-			delta=float(layer_ticknes)*1e9
-			if epitaxy_get_electrical_layer(i)=="none":
-				mat_file=os.path.join(os.getcwd(),'phys',layer_material,'mat.inp')
-				myfile = open(mat_file)
-				self.mat_file_lines = myfile.readlines()
-				myfile.close()
-			
-				for ii in range(0, len(self.mat_file_lines)):
-					self.mat_file_lines[ii]=self.mat_file_lines[ii].rstrip()
-
-				lumo=-float(self.mat_file_lines[1])
-				Eg=float(self.mat_file_lines[3])
-			else:
-				lines=[]
-				if inp_load_file(lines,epitaxy_get_electrical_layer(i)+".inp")==True:
-					lumo=-float(inp_search_token_value(lines, "#Xi"))
-					Eg=float(inp_search_token_value(lines, "#Eg"))
-
-			x = [x_pos,x_pos+delta,x_pos+delta,x_pos]
-
-			lumo_delta=lumo-0.1
-			homo=lumo-Eg
-			homo_delta=homo-0.1
-			if Eg==0.0:
-				lumo_delta=-7.0
-				homo=0.0
-			lumo_shape = [lumo,lumo,lumo_delta,lumo_delta]
-			x_pos=x_pos+delta
-			self.layer_end.append(x_pos)
-			self.layer_name.append(layer_material)
-			ax2.fill(x,lumo_shape, color[layer],alpha=0.4)
-			ax2.text(x_pos-delta/1.5, lumo-0.4, epitaxy_get_name(i))
-
-			if homo!=0.0:
-				homo_shape = [homo,homo,homo_delta,homo_delta]
-				ax2.fill(x,homo_shape, color[layer],alpha=0.4)
-
-			layer=layer+1
-
-			n=n+1
-
-		ax1.set_ylabel('Photon density')
-		ax1.set_xlabel('Position (nm)')
-		ax2.set_ylabel('Energy (eV)')
-		ax2.set_xlim([start, x_pos])
-		#ax2.axis(max=)#autoscale(enable=True, axis='x', tight=None)
-		pwd=os.getcwd()
-		loaded=False
-		mode_path=os.path.join(pwd,"light_dump",self.optical_mode_file)
-		if os.path.isfile("light_dump.zip"):
-			zf = zipfile.ZipFile("light_dump.zip", 'r')
-			lines = zf.read(self.optical_mode_file).split("\n")
-			zf.close()
-			loaded=True
-		elif os.path.isfile(mode_path):
-			print "I want to load",mode_path
-			f = open(mode_path)
-			lines = f.readlines()
-			f.close()
-			loaded=True
-		
-		if loaded==True:
-			xx=[]
-			yy=[]
-			zz=[]
-			lines_to_xyz(xx,yy,zz,lines)
-			t = asarray(xx)
-			s = asarray(yy)
-
-			t=t*1e9
-			ax1.plot(t,s, 'black', linewidth=3 ,alpha=0.5)
-
-			
-
-		self.fig.tight_layout()
-
 	def on_changed(self, widget):
 		cb_text=widget.get_active_text()
 		if cb_text=="all":
-			self.optical_mode_file="light_1d_photons_tot_norm.dat"
+			self.fig_photon_density.set_data_file("light_1d_photons_tot_norm.dat")
+			self.fig_photon_abs.set_data_file("light_1d_photons_tot_abs_norm.dat")
 		else:
-			self.optical_mode_file="light_1d_"+cb_text[:-3]+"_photons_norm.dat"
+			self.fig_photon_density.set_data_file("light_1d_"+cb_text[:-3]+"_photons_norm.dat")
+			self.fig_photon_abs.set_data_file("light_1d_"+cb_text[:-3]+"_photons_abs.dat")
+
 		print "drawing"
-		self.draw_graph()
-		self.fig.canvas.draw()
+		self.fig_photon_density.draw_graph()
+		self.fig_photon_density.canvas.draw()
+
+		print "drawing"
+		self.fig_photon_abs.draw_graph()
+		self.fig_photon_abs.canvas.draw()
 
 	def on_cb_model_changed(self, widget):
 		cb_text=widget.get_active_text()

@@ -38,7 +38,7 @@ def export_archive(target):
 
 	for path, dirs, files in os.walk(os.getcwd()):	
 		for file_name in files:
-			if file_name.endswith(".inp") or file_name.endswith(".dat") or file_name.endswith(".mat"):  
+			if file_name.endswith(".inp") or file_name.endswith(".dat") or file_name.endswith(".omat"):  
 				file_list.append(os.path.join(path,file_name))
 
 

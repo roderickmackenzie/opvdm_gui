@@ -26,7 +26,7 @@ from win_lin import running_on_linux
 if running_on_linux()==False:
 	import _winreg
 
-phys_path=None
+materials_path=None
 light_dll_path=None
 exe_command=None
 share_path=None
@@ -88,7 +88,7 @@ def cal_bin_path():
 def calculate_paths():
 	global share_path
 	global lib_path
-	global phys_path
+	global materials_path
 	global exe_command
 	global device_lib_path
 	global light_dll_path
@@ -98,7 +98,7 @@ def calculate_paths():
 	cal_bin_path()
 
 	device_lib_path=os.path.join(share_path,"device_lib")
-	phys_path=os.path.join(share_path,"phys")
+	materials_path=os.path.join(share_path,"materials")
 
 	if running_on_linux() == True:
 		if os.path.isfile("./main.c")==True:
@@ -120,9 +120,9 @@ def get_share_path():
 	global share_path
 	return share_path
 
-def get_phys_path():
-	global phys_path
-	return phys_path
+def get_materials_path():
+	global materials_path
+	return materials_path
 
 def get_device_lib_path():
 	global device_lib_path

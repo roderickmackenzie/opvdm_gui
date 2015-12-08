@@ -28,7 +28,7 @@ import random
 from layer_widget import layer_widget
 from util import read_xyz_data
 import os
-from cal_path import get_phys_path
+from cal_path import get_materials_path
 from inp import inp_load_file
 from inp import inp_search_token_value
 from util import str2bool
@@ -186,7 +186,7 @@ class tab_main(gtk.VBox,tab_base):
 		for i in range(0,epitaxy_get_layers()):
 			thick=200.0*epitaxy_get_width(l-i)/tot
 			pos=pos+thick
-			path=os.path.join(get_phys_path(),epitaxy_get_mat_file(l-i),"mat.inp")
+			path=os.path.join(get_materials_path(),epitaxy_get_mat_file(l-i),"mat.inp")
 
 			if inp_load_file(lines,path)==True:
 				red=float(inp_search_token_value(lines, "#Red"))
