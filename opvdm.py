@@ -359,11 +359,13 @@ class opvdm_main_window(gobject.GObject):
 		dialog.destroy()
 
 	def change_dir_and_refresh_interface(self,new_dir):
+		print "rod",os.getcwd(),new_dir
  		scan_items_clear()
 		os.chdir(new_dir)
 		calculate_paths()
 		epitaxy_load()
 		self.config.load(os.getcwd())
+		print "rod",os.getcwd(),new_dir
 		self.status_bar.push(self.context_id, os.getcwd())
 		#self.plot_open.set_sensitive(False)
 

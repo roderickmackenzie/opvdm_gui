@@ -110,7 +110,8 @@ class tab_time_mesh(gtk.Window):
 		else:
 			self.store.append(data)
 
-		self.update_mesh()
+		self.build_mesh()
+		self.save_mesh()
 		self.draw_graph()
 		self.fig.canvas.draw()
 		self.save_data()
@@ -124,7 +125,9 @@ class tab_time_mesh(gtk.Window):
 			path = model.get_path(iter)[0]
 			model.remove(iter)
 
-		self.update_mesh()
+		self.build_mesh()
+		self.save_mesh()
+
 		self.draw_graph()
 		self.fig.canvas.draw()
 		self.save_data()
@@ -138,7 +141,8 @@ class tab_time_mesh(gtk.Window):
 			path = model.get_path(iter)[0]
  			self.store.move_after( iter,self.store.iter_next(iter))
 
-		self.update_mesh()
+		self.build_mesh()
+		self.save_mesh()
 		self.draw_graph()
 		self.fig.canvas.draw()
 		self.save_data()
@@ -148,7 +152,8 @@ class tab_time_mesh(gtk.Window):
 
 		if new_time!=None:
 			self.start_time=float(new_time)
-			self.update_mesh()
+			self.build_mesh()
+			self.save_mesh()
 			self.draw_graph()
 			self.fig.canvas.draw()
 			self.save_data()
@@ -159,14 +164,16 @@ class tab_time_mesh(gtk.Window):
 
 		if new_time!=None:
 			self.fs_laser_time=float(new_time)
-			self.update_mesh()
+			self.build_mesh()
+			self.save_mesh()
 			self.draw_graph()
 			self.fig.canvas.draw()
 			self.save_data()
 
 	def on_cell_edited_length(self, cell, path, new_text, model):
 		model[path][SEG_LENGTH] = new_text
-		self.update_mesh()
+		self.build_mesh()
+		self.save_mesh()
 		self.draw_graph()
 		self.fig.canvas.draw()
 		self.save_data()
@@ -174,42 +181,48 @@ class tab_time_mesh(gtk.Window):
 	def on_cell_edited_dt(self, cell, path, new_text, model):
 		#print "Rod",path
 		model[path][SEG_DT] = new_text
-		self.update_mesh()
+		self.build_mesh()
+		self.save_mesh()
 		self.draw_graph()
 		self.fig.canvas.draw()
 		self.save_data()
 
 	def on_cell_edited_voltage_start(self, cell, path, new_text, model):
 		model[path][SEG_VOLTAGE_START] = new_text
-		self.update_mesh()
+		self.build_mesh()
+		self.save_mesh()
 		self.draw_graph()
 		self.fig.canvas.draw()
 		self.save_data()
 
 	def on_cell_edited_voltage_stop(self, cell, path, new_text, model):
 		model[path][SEG_VOLTAGE_STOP] = new_text
-		self.update_mesh()
+		self.build_mesh()
+		self.save_mesh()
 		self.draw_graph()
 		self.fig.canvas.draw()
 		self.save_data()
 
 	def on_cell_edited_sun(self, cell, path, new_text, model):
 		model[path][SEG_SUN] = new_text
-		self.update_mesh()
+		self.build_mesh()
+		self.save_mesh()
 		self.draw_graph()
 		self.fig.canvas.draw()
 		self.save_data()
 
 	def on_cell_edited_laser(self, cell, path, new_text, model):
 		model[path][SEG_LASER] = new_text
-		self.update_mesh()
+		self.build_mesh()
+		self.save_mesh()
 		self.draw_graph()
 		self.fig.canvas.draw()
 		self.save_data()
 
 	def on_cell_edited_mul(self, cell, path, new_text, model):
 		model[path][SEG_MUL] = new_text
-		self.update_mesh()
+		self.build_mesh()
+		self.save_mesh()
 		self.draw_graph()
 		self.fig.canvas.draw()
 		self.save_data()
@@ -220,7 +233,12 @@ class tab_time_mesh(gtk.Window):
 	def draw_graph(self):
 
 		n=0
-		mul,unit=time_with_units(float(self.time[len(self.time)-1]-self.time[0]))
+		if (len(self.time)>0):
+			mul,unit=time_with_units(float(self.time[len(self.time)-1]-self.time[0]))
+		else:
+			mul=1.0
+			unit="s"
+
 		time=[]
 		for i in range(0,len(self.time)):
 			time.append(self.time[i]*mul)
@@ -369,12 +387,14 @@ class tab_time_mesh(gtk.Window):
 			column.set_visible(False)
 		treeview.append_column(column)
 
-	def load_data(self,file_name):
+	def load_data(self):
 		lines=[]
 		self.start_time=0.0
 		self.fs_laser_time=0.0
 		self.segments=0
 		self.list=[]
+
+		file_name="time_mesh_config.inp"
 
 		ret=inp_load_file(lines,file_name)
 		if ret==True:
@@ -400,13 +420,18 @@ class tab_time_mesh(gtk.Window):
 					self.list.append((length,dt,voltage_start,voltage_stop,mul,sun,laser))
 
 				print self.list
+				return True
 			else:
 				print "file "+file_name+"wrong version"
 				exit("")
+				return False
 		else:
-			print "file "+file_name+"not found"
+			print "file "+file_name+" not found"
+			return False
 
-	def update_mesh(self):
+		return False
+
+	def build_mesh(self):
 		self.laser=[]
 		self.sun=[]
 		self.voltage=[]
@@ -458,6 +483,8 @@ class tab_time_mesh(gtk.Window):
 
 		self.statusbar.push(0, str(len(self.time))+" mesh points")
 
+
+	def save_mesh(self):
 		lines=[]
 		
 		lines.append(str(len(self.time)))
@@ -480,7 +507,7 @@ class tab_time_mesh(gtk.Window):
 
 		self.list=[]
 
-		self.load_data("time_mesh_config.inp")
+		self.load_data()
 
 		gui_pos=gui_pos+1
 
@@ -595,10 +622,10 @@ class tab_time_mesh(gtk.Window):
 
 		self.vbox.show()
 
-		self.update_mesh()
+		self.build_mesh()
 		self.draw_graph()
 
-		self.save_data()
+		#self.save_data()
 
 		self.add(self.vbox)
 		self.set_title("Time domain mesh editor - (www.opvdm.com)")

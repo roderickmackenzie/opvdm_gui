@@ -27,3 +27,10 @@ def running_on_linux():
 		return True
 	else:
 		return False
+
+def get_distro():
+	if platform.system()=="Linux":
+		return platform.dist()[0]
+	else:
+		return ""
+

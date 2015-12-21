@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 #    Organic Photovoltaic Device Model - a drift diffusion base/Shockley-Read-Hall
 #    model for organic solar cells. 
 #    Copyright (C) 2012 Roderick C. I. MacKenzie

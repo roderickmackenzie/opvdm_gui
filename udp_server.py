@@ -38,9 +38,11 @@ import atexit
 from listen_for_files_on_network import listen_for_files_on_network
 from listen_for_files_on_network import encode_for_tcp
 from win_lin import running_on_linux
+from win_lin import get_distro
 
 if running_on_linux()==True:
-	from awake import wol
+	if get_distro=="Fedora":
+		from awake import wol
 
 class myjob:
 	def __init__(self):
@@ -222,11 +224,12 @@ class udp_server:
 
 	def wake_nodes(self):
 		if running_on_linux()==True:
-			print "waking all nodes:" 
-			node=0
-			for i in range(0, len(self.nodes)):
-				print "waking", self.nodes[i].mac
-				wol.send_magic_packet(self.nodes[i].mac)
+			if get_distro=="Fedora":
+				print "waking all nodes:" 
+				node=0
+				for i in range(0, len(self.nodes)):
+					print "waking", self.nodes[i].mac
+					wol.send_magic_packet(self.nodes[i].mac)
 
 	def add_job(self,command):
 		print "Adding job",command
