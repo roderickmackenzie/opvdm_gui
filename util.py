@@ -318,3 +318,15 @@ def opvdm_clone():
 
 	shutil.copytree(os.path.join(src,"materials"), os.path.join(pwd,"materials"))
 
+
+def strextract_interger(val):
+	build=""
+	for i in range(0,len(val)):
+		if val[i].isdigit()==True:
+			build=build+val[i]
+
+	if len(build)==0:
+		return -1
+	else:
+		return int(build)
+

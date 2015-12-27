@@ -29,47 +29,30 @@ from cal_path import find_data_file
 from inp import inp_update_token_value
 from inp import inp_get_token_value
 from inp import inp_load_file
-from inp import inp_lsdir
-from inp import inp_search_token_value
-class store:
-	def __init__(self,token,file):
-		self.token=token
-		self.file=file
 
-class tb_item_sim_mode(gtk.ToolItem):
+class tb_pulse_load_type(gtk.ToolItem):
 
-	def update(self):
-		self.sim_mode.get_model().clear()
-		lines=[]
-		self.store_list=[]
-
-		files=inp_lsdir()
-		if files!=False:
-			for i in range(0,len(files)):
-				if files[i].endswith(".inp"):
-					inp_load_file(lines,files[i])
-					value=inp_search_token_value(lines, "#sim_menu_name")
-					if value!=False:
-						if value.count("@")==1:
-							value=value.rstrip()
-							command,module=value.split("@")
-							self.sim_mode.append_text(command)
-							self.store_list.append(store(command,module))
-
-
-			token=inp_get_token_value("sim.inp", "#simmode")
-			command,module=token.split("@")
-			liststore = self.sim_mode.get_model()
-			for i in xrange(len(liststore)):
-				if liststore[i][0] == command:
-					self.sim_mode.set_active(i)
-
-	def init(self):
+	def init(self,index):
+		self.index=index
 		self.sim_mode = gtk.combo_box_entry_new_text()
 		self.sim_mode.set_size_request(-1, 20)
-		self.sim_mode.child.connect('changed', self.call_back_sim_mode_changed)
 
-		lable=gtk.Label("Simulation mode:")
+		lines=[]
+		inp_load_file(lines,find_data_file("pulse"+str(self.index)+".inp"))
+
+		self.sim_mode.append_text("open_circuit")
+		self.sim_mode.append_text("load")
+
+
+		self.sim_mode.child.connect('changed', self.call_back_sim_mode_changed)
+		token=inp_get_token_value("pulse"+str(self.index)+".inp", "#pulse_sim_mode")
+		liststore = self.sim_mode.get_model()
+		for i in xrange(len(liststore)):
+		    if liststore[i][0] == token:
+		        self.sim_mode.set_active(i)
+
+		lable=gtk.Label("Load type:")
+		#lable.set_width_chars(15)
 		lable.show()
 
 		hbox = gtk.HBox(False, 2)
@@ -79,12 +62,12 @@ class tb_item_sim_mode(gtk.ToolItem):
 
 		self.add(hbox);
 		self.show_all()
-		self.update()
+
 
 	def call_back_sim_mode_changed(self, widget, data=None):
 		mode=self.sim_mode.get_active_text()
-		for i in range(0,len(self.store_list)):
-			if self.store_list[i].token==mode:
-				inp_update_token_value("sim.inp", "#simmode", mode+"@"+self.store_list[i].file,1)
+		inp_update_token_value("pulse"+str(self.index)+".inp", "#pulse_sim_mode", mode,1)
+		self.emit("changed")
 
-
+gobject.type_register(tb_pulse_load_type)
+gobject.signal_new("changed", tb_pulse_load_type, gobject.SIGNAL_RUN_FIRST,gobject.TYPE_NONE, ())

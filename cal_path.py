@@ -157,7 +157,7 @@ def get_inp_file_path():
 	global share_path
 	return share_path
 
-def get_icon_file_path():
+def get_image_file_path():
 	global share_path
 	return os.path.join(share_path,"gui")
 

@@ -124,6 +124,11 @@ def zip_search_file(source,target):
 	return False
 	
 def zip_remove_file(zip_file_name,target):
+	file_path=os.path.join(os.path.dirname(zip_file_name),target)
+
+	if os.path.isfile(file_path)==True:
+		os.remove(file_path)
+
 	if os.path.isfile(zip_file_name):
 		source = zipfile.ZipFile(zip_file_name, 'r')
 

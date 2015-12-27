@@ -38,7 +38,7 @@ from ver import ver_core
 from ver import ver_mat
 from ver import ver_gui
 import gobject
-from cal_path import get_icon_file_path
+from cal_path import get_image_file_path
 from global_objects import global_object_register
 import webbrowser
 
@@ -118,7 +118,7 @@ class help_class(gtk.Window):
 
 		pos=0
 		image = gtk.Image()
-   		image.set_from_file(os.path.join(get_icon_file_path(),"qe.png"))
+   		image.set_from_file(os.path.join(get_image_file_path(),"qe.png"))
 
 		self.back = gtk.ToolButton(gtk.STOCK_GO_BACK)
 		toolbar.insert(self.back, pos)
@@ -142,7 +142,7 @@ class help_class(gtk.Window):
 		pos=pos+1
 
 		image = gtk.Image()
-   		image.set_from_file(os.path.join(get_icon_file_path(),"www.png"))
+   		image.set_from_file(os.path.join(get_image_file_path(),"www.png"))
 		self.play = gtk.ToolButton(image)
 
 		help_book = gtk.ToolButton(image)
@@ -207,7 +207,7 @@ class help_class(gtk.Window):
 			self.box[i].hide_all()
 
 		for i in range(0,len(self.last[self.pos])/2):
-			self.image[i].set_from_file(os.path.join(get_icon_file_path(),self.last[self.pos][i*2]))
+			self.image[i].set_from_file(os.path.join(get_image_file_path(),self.last[self.pos][i*2]))
 			self.label[i].set_markup(self.last[self.pos][i*2+1]+"\n")
 			self.box[i].show_all()
 			self.image[i].show()

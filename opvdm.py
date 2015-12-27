@@ -58,7 +58,7 @@ from scan import scan_class
 from search import find_fit_error
 from util import opvdm_clone
 from export_as import export_as
-from tmesh import tab_time_mesh
+from experiment import experiment
 from copying import copying
 from plot_gen import plot_gen
 from plot_gen import set_plot_auto_close
@@ -91,7 +91,8 @@ from server import server
 from opvdm_notebook import opvdm_notebook
 from gui_util import process_events
 from epitaxy import epitaxy_load
-from global_objects import global_object_get
+from global_objects import global_object_register
+
 from device_lib import device_lib_class
 
 if running_on_linux()==True:
@@ -188,10 +189,14 @@ class opvdm_main_window(gobject.GObject):
 		self.config.set_value("#plot_after_simulation",data.get_active())
 
 	def callback_qe_window(self, widget):
-		if self.qe.get_property("visible")==True:
-			self.qe.hide_all()
+		if self.qe_window==None:
+			self.qe_window=qe_window()
+			self.qe_window.init()
+
+		if self.qe_window.get_property("visible")==True:
+			self.qe_window.hide_all()
 		else:
-			self.qe.show_all()
+			self.qe_window.show_all()
 
 	def callback_set_plot_auto_close(self, widget, data):
 		set_plot_auto_close(data.get_active())
@@ -371,6 +376,7 @@ class opvdm_main_window(gobject.GObject):
 
 		self.notebook.set_item_factory(self.item_factory)
 		if self.notebook.load()==True:
+			self.sim_mode.update()
 			self.ti_light.connect('refresh', self.notebook.main_tab.update)
 			self.play.set_sensitive(True)
 			self.stop.set_sensitive(True)
@@ -379,7 +385,7 @@ class opvdm_main_window(gobject.GObject):
 			self.plot_select.set_sensitive(True)
 			self.undo.set_sensitive(True)
 			#self.save_sim.set_sensitive(True)
-			self.time_mesh_button.set_sensitive(True)
+			self.experiment_window_button.set_sensitive(True)
 			my_help_class.help_set_help(["play.png","<big><b>Now run the simulation</b></big>\n Click on the play icon to start a simulation."])
 
 			my_item=self.item_factory.get_item("/File/Import data")
@@ -409,7 +415,7 @@ class opvdm_main_window(gobject.GObject):
 			self.plot_select.set_sensitive(False)
 			self.undo.set_sensitive(False)
 			#self.save_sim.set_sensitive(False)
-			self.time_mesh_button.set_sensitive(False)
+			self.experiment_window_button.set_sensitive(False)
 			my_help_class.help_set_help(["icon.png","<big><b>Hi!</b></big>\n I'm the on-line help system :).  If you find any bugs please report them to roderick.mackenzie@nottingham.ac.uk.","new.png","Click on the new icon to make a new simulation directory."])
 
 			my_item=self.item_factory.get_item("/File/Import data")
@@ -438,7 +444,6 @@ class opvdm_main_window(gobject.GObject):
 		self.plotted_graphs.init(os.getcwd(),self.callback_last_menu_click)
 
 		set_active_name(self.light, inp_get_token_value("light.inp", "#Psun"))
-		set_active_name(self.sim_mode, inp_get_token_value("sim.inp", "#simmode"))
 
 		scan_item_add("sim.inp","#simmode","sim mode",1)
 		scan_item_add("light.inp","#Psun","light intensity",1)
@@ -448,16 +453,13 @@ class opvdm_main_window(gobject.GObject):
 			del self.scan_window
 			self.scan_window=None
 
+		if self.experiment_window!=None:
+			del self.experiment_window
+			self.experiment_window=None
 
-		if self.time_mesh!=None:
-			del self.time_mesh
-			self.time_mesh=tab_time_mesh()
-			self.time_mesh.init()
-
-		if self.qe!=None:
-			del self.qe
-			self.qe=qe_window()
-			self.qe.init()
+		if self.qe_window!=None:
+			del self.qe_window
+			self.qe_window=None
 
 		#myitem=self.item_factory.get_item("/Plots/One plot window")
 		#myitem.set_active(self.config.get_value("#one_plot_window",False))
@@ -564,13 +566,17 @@ class opvdm_main_window(gobject.GObject):
         		md.destroy()
 			return
 
-	def callback_edit_time_mesh(self, widget, data=None):
+	def callback_edit_experiment_window(self, widget, data=None):
+
+		if self.experiment_window==None:
+			self.experiment_window=experiment()
+			self.experiment_window.init()
 
 		my_help_class.help_set_help(["time.png","<big><b>The time mesh editor</b></big>\n To do time domain simulations one must define how voltage the light vary as a function of time.  This can be done in this window.  Also use this window to define the simulation length and time step."])
-		if self.time_mesh.get_property("visible")==True:
-			self.time_mesh.hide_all()
+		if self.experiment_window.get_property("visible")==True:
+			self.experiment_window.hide_all()
 		else:
-			self.time_mesh.show_all()
+			self.experiment_window.show_all()
 
 	def callback_undo(self, widget, data=None):
 		l=self.undo_list.get_list()
@@ -631,10 +637,10 @@ class opvdm_main_window(gobject.GObject):
 			self.qe_button.show_all()
 			pos=pos+1
 
-		sim_mode=tb_item_sim_mode()
-		sim_mode.init()
-		self.sim_mode=sim_mode.sim_mode
-		toolbar.insert(sim_mode, pos)
+		self.sim_mode=tb_item_sim_mode()
+		self.sim_mode.init()
+		global_object_register("tb_item_sim_mode_update",self.sim_mode.update)
+		toolbar.insert(self.sim_mode, pos)
 		pos=pos+1
 
 		self.ti_light=tb_item_sun()
@@ -716,12 +722,9 @@ class opvdm_main_window(gobject.GObject):
 		self.undo_list.init()
 
 
-		self.time_mesh=tab_time_mesh()
-		self.time_mesh.init()
+		self.experiment_window=None
 
-		self.qe=qe_window()
-		self.qe.init()
-
+		self.qe_window=None
 
 		self.win_list=windows()
 		self.win_list.load()
@@ -912,10 +915,10 @@ class opvdm_main_window(gobject.GObject):
 
 		image = gtk.Image()
 	   	image.set_from_file(find_data_file(os.path.join("gui","time.png")))
-		self.time_mesh_button = gtk.ToolButton(image)
-		self.tooltips.set_tip(self.time_mesh_button, "Edit the time mesh")
-		self.time_mesh_button.connect("clicked", self.callback_edit_time_mesh)
-		toolbar.insert(self.time_mesh_button, pos)
+		self.experiment_window_button = gtk.ToolButton(image)
+		self.tooltips.set_tip(self.experiment_window_button, "Edit the time mesh")
+		self.experiment_window_button.connect("clicked", self.callback_edit_experiment_window)
+		toolbar.insert(self.experiment_window_button, pos)
 		pos=pos+1
 
 

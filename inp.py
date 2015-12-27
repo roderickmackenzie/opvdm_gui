@@ -32,6 +32,13 @@ from util_zip import zip_remove_file
 from util_zip import write_lines_to_archive
 from util_zip import read_lines_from_archive
 from util_zip import archive_isfile
+from util_zip import zip_lsdir
+
+def inp_lsdir():
+	return zip_lsdir("sim.opvdm")
+
+def inp_remove_file(file_name):
+	zip_remove_file("sim.opvdm",file_name)
 
 def inp_read_next_item(lines,pos):
 	token=lines[pos]
